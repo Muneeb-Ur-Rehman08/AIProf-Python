@@ -12,10 +12,6 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,7 +26,7 @@ SECRET_KEY = 'django-insecure-95a2r*)4pi@50=l5zd+%w8zf5bqs3ais2ke_!ypton$9c%zq89
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['.vercel.app']
 
 
 # Application definition
@@ -141,10 +137,3 @@ CORS_ALLOW_ALL_ORIGINS = True
 #     "http://example.com",
 #     "https://example.com",
 # ]
-
-# Access the GROQ API key
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-
-# Ensure the key is available
-if not GROQ_API_KEY:
-    raise ValueError("GROQ_API_KEY is not set in the environment")

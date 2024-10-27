@@ -1,9 +1,11 @@
 from django.http import JsonResponse, StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.shortcuts import render
 from app.modals.chat import get_chat_completion, get_chat_completion_with_conversation_id
 from app.modals.anon_conversation import save_conversation, fetch_conversation_history  # Updated import
 from app.utils.conversations import get_user_id
+from django.http import HttpResponse
 import json
 import time
 import os
