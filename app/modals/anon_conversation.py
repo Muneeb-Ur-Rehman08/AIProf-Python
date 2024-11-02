@@ -1,6 +1,7 @@
 import os
 import time
 from app.configs.supabase_config import SUPABASE_CLIENT
+from app.utils.supabase_methods import supabase_methods
 import sys
 
 def save_conversation(content, conversation_id, parent_message_id, role, created_at, updated_at, user_id):
@@ -17,7 +18,7 @@ def save_conversation(content, conversation_id, parent_message_id, role, created
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 def fetch_conversation_history(user_id):  # Renamed function
-    response = SUPABASE_CLIENT.table("anon_conversations").select("*").eq("user_id", user_id).execute()
+    response = supabase_methods["fetch"]("anon_conversations", {"user_id": user_id})
     re_arranged_data = []
 
     for data in response.data:

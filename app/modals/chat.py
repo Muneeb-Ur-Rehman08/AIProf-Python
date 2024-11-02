@@ -1,12 +1,17 @@
 import os
 
-from groq import Groq
-from app.modals.anon_conversation import fetch_conversation_history  # Updated import
+from langchain_groq import ChatGroq
+from app.modals.anon_conversation import fetch_conversation_history
 from app.utils.prompts import get_system_instruction
 
 def get_llm():
     api_key = os.environ.get("GROQ_API_KEY")
-    return Groq(api_key=api_key)
+    return ChatGroq(
+        api_key=api_key,
+        model="llama3-8b-8192",
+        temperature=0.5,
+        max_retries=3
+    )
 
 def get_chat_completion(conversation_history, message_content):
     print('get_chat_completion')
@@ -16,29 +21,17 @@ def get_chat_completion(conversation_history, message_content):
     if not api_key:
         raise ValueError("GROQ_API_KEY environment variable is not set")
     
-    llm =  get_llm()
+    llm = get_llm()
 
     try:
         # Prepare the messages for the LLM, including the conversation history
-        messages = [
-            {"role": "system", "content": get_system_instruction()}
-        ] + (conversation_history or []) + [
-            {
-                "role": "user",
-                "content": message_content,
-            }
-        ]
+        messages = get_system_instruction(conversation_history, message_content)
 
-        chat_completion = llm.chat.completions.create(
-            messages=messages,
-            model="llama3-8b-8192",
-            stream=True,
-            max_tokens=1000,
-        )
+        chat_completion = llm.stream(messages)
         
         # Yield each part of the streamed response
         for response in chat_completion:
-            content = response.choices[0].delta.content
+            content = response.content
             if content is not None:
                 yield content
 

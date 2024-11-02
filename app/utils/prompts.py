@@ -19,6 +19,12 @@ def get_help_prompt():
     """Return the help prompt."""
     return HELP_PROMPT
 
-def get_system_instruction():
+def get_system_instruction(conversation_history, user_message):
     """Return the system instruction."""
-    return SYSTEM_INSTRUCTION
+    response = [
+        {"role": "system", "content": SYSTEM_INSTRUCTION},
+    ] + (conversation_history or []) + [
+        {"role": "user", "content": user_message}
+    ]
+
+    return response
