@@ -1,11 +1,12 @@
 from django.http import JsonResponse, StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.shortcuts import render
-from app.modals.chat import get_chat_completion, get_chat_completion_with_conversation_id
-from app.modals.anon_conversation import save_conversation, fetch_conversation_history  # Updated import
+from app.modals.chat import get_chat_completion
+from app.modals.anon_conversation import save_conversation, fetch_conversation_history
 from app.utils.conversations import get_user_id
 from django.http import HttpResponse
+from app.utils.vector_store import store_embedding_vectors_in_supabase, get_answer, is_valid_uuid
+# from app.modals.qna import get_qna
 import json
 import time
 import os
@@ -43,7 +44,6 @@ def chat_view(request):
     if not prompt:
         return JsonResponse({"error": "prompt is required"}, status=400)
     conversation_history = fetch_conversation_history(user_id)
-    print(conversation_history)
 
     def stream_response():
         response_chunks = []  # Define response_chunks outside the try block
@@ -74,11 +74,55 @@ def chat_view(request):
     return StreamingHttpResponse(stream_response(), content_type='text/plain')
 
 
+@csrf_exempt
+@require_http_methods(["POST"])
+def upload_doc(request):
+    if request.method == 'POST':
+        if 'file' in request.FILES:
+            uploaded_file = request.FILES['file']
+
+            # Define a temporary directory within your project
+            temp_dir = os.path.join('temp')
+            os.makedirs(temp_dir, exist_ok=True)  # Create the directory if it doesn't exist
+
+            # Save the uploaded file temporarily
+            temp_file_path = os.path.join(temp_dir, uploaded_file.name)
+            with open(temp_file_path, 'wb+') as temp_file:
+                for chunk in uploaded_file.chunks():
+                    temp_file.write(chunk)
+
+            # Pass the path of the temporary file to `store_embedding_vectors_in_supabase`
+            result = store_embedding_vectors_in_supabase(temp_file_path)
+
+            # Clean up the temporary file after processing
+            os.remove(temp_file_path)
+
+            return JsonResponse({'message': 'File uploaded successfully', 'result': result})
+        else:
+            return JsonResponse({'error': 'No file uploaded'}, status=400)
+
+    return JsonResponse({'error': 'Only POST requests are allowed'}, status=405)
 
 
 @csrf_exempt
-@require_http_methods(["GET", "OPTIONS"])
-def get_conversation_history(request):
-    user_id = get_user_id(request)
-    conversation_history = fetch_conversation_history(user_id)
-    return JsonResponse(conversation_history, safe=False)  # Set safe=False
+@require_http_methods(["POST"])
+def get_rag_answer(request):
+    if request.method == 'POST':
+        data = json.loads(request.body.decode('utf-8'))
+        question = data.get("question")
+        doc_id = data.get("doc_id")
+
+        if not question:
+            return JsonResponse({'error': 'question is required'}, status=400)
+        if not doc_id:
+            return JsonResponse({'error': 'doc_id is required'}, status=400)
+        # check if doc_id is valid uuid 
+        if not is_valid_uuid(doc_id):
+            return JsonResponse({'error': 'doc_id is not a valid uuid'}, status=400)
+        
+        answer = get_answer(question, doc_id)
+
+        return JsonResponse({'answer': answer}, status=200)
+    
+    return JsonResponse({'error': 'Only POST requests are allowed'}, status=405)
+
