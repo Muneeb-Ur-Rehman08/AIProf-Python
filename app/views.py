@@ -11,6 +11,8 @@ import json
 import time
 import os
 import uuid
+from django.shortcuts import render
+from django.template import TemplateDoesNotExist
 
 # Ensure the GROQ_API_KEY is loaded from the environment
 api_key = os.getenv('GROQ_API_KEY')
@@ -125,4 +127,10 @@ def get_rag_answer(request):
         return JsonResponse({'answer': answer}, status=200)
     
     return JsonResponse({'error': 'Only POST requests are allowed'}, status=405)
+
+def index_view(request):
+    try:
+        return render(request, 'index.html')
+    except TemplateDoesNotExist:
+        return HttpResponse("Template not found", status=404)
 
