@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 class AssistantConfig(BaseModel):
     """Pydantic model for assistant configuration with validation"""
     user_id: uuid.UUID
-    ass_id: uuid.UUID
-    name: str
+    ass_id: Optional[uuid.UUID] = None
+    assistant_name: str
     subject: str
     teacher_instructions: str
     knowledge_base: Optional[List[str]] = None
@@ -45,58 +45,75 @@ class TeachingAssistant:
 
     async def save_to_supabase(self) -> dict:
         """Save assistant configuration to Supabase"""
+        logger.info(f"Before save Assistant data: {self.config}")
         assistant_data = {
             "user_id": str(self.config.user_id),
-            "ass_id": str(self.config.ass_id),
-            "name": self.config.name,
+            # "ass_id": str(self.config.ass_id),
+            "assistant_name": self.config.assistant_name,
             "subject": self.config.subject,
             "teacher_instructions": self.config.teacher_instructions,
             "created_at": datetime.now().isoformat(),
             "updated_at": datetime.now().isoformat(),
         }
-        logger.info(f"Assistant data {assistant_data}")
-        return await self.supabase_manager.save_assistant(assistant_data)
+        # Include ass_id if provided
+        if self.config.ass_id:
+            assistant_data["ass_id"] = str(self.config.ass_id)
+
+        logger.info(f"After add dictAssistant data {assistant_data}")
+
+        # Save to Supabase and retrieve the generated ass_id if not provided
+        response = await self.supabase_manager.save_assistant(assistant_data)
+        
+        # If ass_id was not provided, update the config with the generated ass_id
+        if not self.config.ass_id:
+            self.config.ass_id = response['ass_id']
+        return response
 
     async def initialize_knowledge_base(self, pdf_paths: List[str]) -> None:
         """Initialize knowledge base with PDF documents and save to Supabase"""
         try:
             for pdf_path in pdf_paths:
+                logger.info(f"Assistant data: {self.config}")
+                docs = store_embedding_vectors_in_supabase(pdf_path, self.config.user_id, self.config.ass_id)
+                logger.info(f"Doc data: {docs}")
+                docs
                 # Load and process PDF
                 # Create and save document metadata
-                doc_metadata = DocumentMetadata(
-                    doc_id=str(uuid.uuid4()),
-                    file_name=os.path.basename(pdf_path),
-                    upload_date=datetime.now().isoformat(),
-                    ass_id=str(self.config.ass_id),
-                    user_id=str(self.config.user_id)
-                )
-                saved_document = await self.supabase_manager.save_document(doc_metadata)
-                self.documents.append(doc_metadata)
-                print(f"Document saved: {saved_document}")  # Fetch and print the saved document
+                # doc_metadata = DocumentMetadata(
+                #     doc_id=str(uuid.uuid4()),
+                #     file_name=os.path.basename(pdf_path),
+                #     upload_date=datetime.now().isoformat(),
+                #     ass_id=str(self.config.ass_id),
+                #     user_id=str(self.config.user_id)
+                # )
+                # # saved_document = await self.supabase_manager.save_document(doc_metadata)
+                # self.documents.append(doc_metadata)
+                # print(f"Document saved: {pdf_path}")  # Fetch and print the saved document
 
-                # Process and store embeddings with metadata
-                split_documents = get_split_documents(pdf_path)
-                for doc in split_documents:
-                    doc.metadata["doc_id"] = str(doc_metadata.doc_id)
-                    doc.metadata["file_name"] = doc_metadata.file_name
-                    doc.metadata["upload_date"] = doc_metadata.upload_date
-                    doc.metadata["ass_id"] = doc_metadata.ass_id
-                    doc.metadata["user_id"] = doc_metadata.user_id
+                # # Process and store embeddings with metadata
+                # split_documents = get_split_documents(pdf_path)
+                # for doc in split_documents:
+                #     doc.metadata["doc_id"] = str(doc_metadata.doc_id)
+                #     doc.metadata["file_name"] = doc_metadata.file_name
+                #     doc.metadata["upload_date"] = doc_metadata.upload_date
+                #     doc.metadata["ass_id"] = doc_metadata.ass_id
+                #     doc.metadata["user_id"] = doc_metadata.user_id
+                #     print(f"\n\nDoc: {doc.metadata}\n\n")
 
-                # Store the document data in vector form with metadata in Supabase
-                result_data = {
-                    "id": str(doc_metadata.doc_id),
-                    "source": doc_metadata.file_name,
-                    "metadata": {
-                        "doc_id": str(doc_metadata.doc_id),
-                        "file_name": doc_metadata.file_name,
-                        "upload_date": doc_metadata.upload_date,
-                        "ass_id": doc_metadata.ass_id,
-                        "user_id": doc_metadata.user_id
-                    }
-                }
-                await store_embedding_vectors_in_supabase(result_data)
-                print(f"Document data stored in vector form with metadata: {result_data}")
+                # # Store the document data in vector form with metadata in Supabase
+                # result_data = {
+                #     "id": str(doc_metadata.doc_id),
+                #     "source": doc_metadata.file_name,
+                #     "metadata": {
+                #         # "doc_id": str(doc_metadata.doc_id),
+                #         "file_name": doc_metadata.file_name,
+                #         "upload_date": doc_metadata.upload_date,
+                #         "ass_id": doc_metadata.ass_id,
+                #         "user_id": doc_metadata.user_id
+                #     }
+                # }
+                # await store_embedding_vectors_in_supabase(result_data)
+                # print(f"Document data stored in vector form with metadata: {result_data}")
         except Exception as e:
             logger.error(f"Error initializing knowledge base: {e}")
             raise
@@ -112,7 +129,6 @@ class TeachingAssistant:
                 k=1,
                 filter={
                     "ass_id": str(self.config.ass_id),
-                    
                     "user_id": str(self.config.user_id)
                 }
             )
@@ -197,39 +213,5 @@ class AssistantManager:
             return None
         
 
-async def main():
-       test_config = AssistantConfig(
-           user_id=uuid.uuid4(),
-           ass_id=uuid.uuid4(),
-           name="Math Teaching Assistant",
-           subject="Mathematics",
-           teacher_instructions="""
-           Explain concepts clearly with examples and visual aids.
-           Focus on step-by-step problem solving.
-           Provide practice problems for reinforcement.
-           """,
-           knowledge_base=["D:\\MyProjects\\pythonProject\\Python-Learn-in-24hrs.pdf"]
-       )
 
-       # Initialize manager and create assistant
-       async def test_initialize_knowledge_base():
-           try:
-               # Create a TeachingAssistant instance
-               assistant = TeachingAssistant(test_config)
-               # Initialize knowledge base with a PDF path
-               pdf_path = "D:\\MyProjects\\pythonProject\\Python-Learn-in-24hrs.pdf"
-               await assistant.initialize_knowledge_base([pdf_path])
-               print("Knowledge base initialized successfully.")
-           except Exception as e:
-               logger.error(f"Error initializing knowledge base: {e}")
-               raise
 
-       # Call the test function
-       await test_initialize_knowledge_base()
-       manager = AssistantManager()
-       assistant = await manager.create_assistant(test_config)
-       print("successfully create assistant",assistant)
-
-if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())

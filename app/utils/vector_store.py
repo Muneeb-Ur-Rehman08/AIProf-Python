@@ -29,7 +29,7 @@ class Document:
         self.page_content = page_content
         self.metadata = metadata or {}
 
-def get_split_documents(file_path):
+def get_split_documents(file_path, user_id, ass_id):
     # Use load_pdf to extract text from the PDF
     text = load_pdf(file_path)
     
@@ -40,7 +40,7 @@ def get_split_documents(file_path):
     text_chunks = text_splitter.split_text(text)
     
     # Wrap each chunk in a Document object with metadata
-    docs = [Document(chunk, metadata={"source": file_path, "id": str(uuid.uuid4())}) for chunk in text_chunks]
+    docs = [Document(chunk, metadata={"source": file_path, "id": str(uuid.uuid4()), "user_id": str(user_id), "ass_id": str(ass_id)}) for chunk in text_chunks]
     
     return docs
 
@@ -61,8 +61,8 @@ def load_pdf(file_path):
         raise RuntimeError(f"Error loading {file_path}") from e
     
 
-def store_embedding_vectors_in_supabase(file):
-    docs = get_split_documents(file)
+def store_embedding_vectors_in_supabase(file, user_id, ass_id):
+    docs = get_split_documents(file, user_id, ass_id)
     result = vector_store.add_documents(
         docs,
         chunk_size=1000,
