@@ -77,15 +77,17 @@ class AssistantManager:
             logger.error(f"Error retrieving assistant: {e}")
             return None
     
-    def process_query(self, ass_id:uuid.UUID, user_id: uuid.UUID, query: str) -> Tuple[str, List[str]]:
+    async def process_query(self, ass_id:uuid.UUID, user_id: uuid.UUID, query: str) -> Tuple[str, List[str]]:
         """Process a query using the appropriate assistant"""
         try:
-            assistant = self.get_assistant(ass_id, user_id)
+            assistant = await self.get_assistant(ass_id, user_id)
+            logger.info(f"get assistant in process query: {assistant}\n")
             if not assistant:
                 return "Assistant not found.", []
             
             # Get relevant context
-            context = assistant.get_relevant_context(query)
+            context = await assistant.get_relevant_context(query)
+            logger.info(f"Retreived context:\n {context}\n")
             
             # Use DSPy module to process query
             input_data = AssistantInput(
@@ -94,8 +96,10 @@ class AssistantManager:
                 query=query,
                 teaching_instructions=assistant.config.teacher_instructions
             )
+
+            # logger.info(f"Input data send to process query: {input_data}\n")
             # Process query using assistant module
-            return self.assistant_module.process_query(input_data)
+            return await self.assistant_module.process_query(input_data)
         except Exception as e:
             logger.error(f"Error processing query: {e}")
             return "Unable to process query at this time.", []
@@ -169,26 +173,26 @@ async def main():
         knowledge_base=['D:\\MyProjects\\pythonProject\\Python-Learn-in-24hrs.pdf']
     )
 
-    assistant_without_id = await assistant_manager.create_assistant(config_without_id)
+    # assistant_without_id = await assistant_manager.create_assistant(config_without_id)
 
     # The assistant's config will now have the generated ass_id if it was not provided
-    print(f"Assistant create with id{assistant_without_id}")  # This will show the generated ass_id
+    # print(f"Assistant create with id{assistant_without_id}")  # This will show the generated ass_id
     
 
 
     # Test Get assistant
-    # get_assistant = await manager.get_assistant("a558445a-df9a-4ea1-81ef-3f580dba1742", "0fe175e6-8a82-4fcf-8e45-baeaf289459f")
-    # print(get_assistant)
+    get_assistant = await assistant_manager.get_assistant("a558445a-df9a-4ea1-81ef-3f580dba1742", "0fe175e6-8a82-4fcf-8e45-baeaf289459f")
+    print("Get assitant", get_assistant)
     
     # # Process a query
-    # explanation, examples = manager.process_query(
-    #     assistant.config.ass_id,
-    #     assistant.config.user_id,
-    #     "Explain the Pythagorean theorem"
-    # )
+    explanation, examples = await assistant_manager.process_query(
+        "855e07bb-332a-4557-a5ef-d95006051390",
+        "0fe175e6-8a82-4fcf-8e45-baeaf289459f",
+        "Explain the setup python on windows?"
+    )
     
-    # print("Explanation:", explanation)
-    # print("Examples:", examples)
+    print("Explanation:", explanation)
+    print("Examples:", examples)
 
 if __name__ == "__main__":
     import asyncio

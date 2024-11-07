@@ -22,7 +22,7 @@ class AssistantSignature(dspy.Signature):
     subject = dspy.InputField(desc="The subject area being taught")
     context = dspy.InputField(desc="Relevant context from knowledge base")
     query = dspy.InputField(desc="The query or concept to process")
-    teaching_instructions = dspy.InputField(desc="Teaching instructions")  # Renamed field
+    teaching_instructions = dspy.InputField(desc="Teaching instructions that use for response the query")  # Renamed field
     
     explanation = dspy.OutputField(desc="Generated explanation or response")
     examples = dspy.OutputField(desc="List of relevant examples")
@@ -53,4 +53,11 @@ class AssistantModule(dspy.Module):
         except Exception as e:
             logger.error(f"Error in AssistantModule: {e}")
             return "Unable to process query at this time.", []
-        
+    
+    async def process_query(self, input_data: AssistantInput) -> Tuple[str, List[str]]:
+        """Async wrapper for processing queries"""
+        try:
+            return self.forward(input_data)
+        except Exception as e:
+            logger.error(f"Error processing query: {e}")
+            return "Unable to process query at this time.", []
