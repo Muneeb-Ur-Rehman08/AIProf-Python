@@ -1,11 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=W, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <h1>Welcome to AI Prof</h1>
-</body>
-</html>
+{% extends 'base.html' %}
+
+
+{% block content %}
+
+<h1 class="mt-4 mb-6 text-2xl leading-none tracking-tight text-white md:text-3xl lg:text-4xl">
+    Welcome to AI Prof Assistant Portal
+</h1>
+
+{% include 'assistant/assistant_form.html' %}
+
+{% endblock content %}
