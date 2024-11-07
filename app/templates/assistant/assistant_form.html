@@ -1,0 +1,37 @@
+<form hx-post="/upload_doc" hx-encoding="multipart/form-data" class="p-8 bg-gray-900 rounded-lg shadow-lg">
+    {% csrf_token %}
+    <div class="mb-4">
+        <label class="block text-white text-lg font-bold mb-2">Name</label>
+        <input type="text" placeholder="Name your GPT" class="input input-bordered w-full bg-gray-800 text-white" />
+    </div>
+    <div class="mb-4">
+        <label class="block text-white text-lg font-bold mb-2">Description</label>
+        <input type="text" placeholder="Add a short description about what this GPT does" class="input input-bordered w-full bg-gray-800 text-white" />
+    </div>
+    <div class="mb-4">
+        <label class="block text-white text-lg font-bold mb-2">Instructions</label>
+        <textarea placeholder="What does this GPT do? How does it behave? What should it avoid doing?" class="textarea textarea-bordered w-full bg-gray-800 text-white" rows="4"></textarea>
+    </div>
+    <div class="mb-4">
+        <input type="file" id="fileInput" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-white hover:file:bg-gray-600"
+               _="on change
+                  set #files-container's innerHTML to ''
+                  repeat for file in my.files
+                    if file.type matches 'image.*'
+                      set img to document.createElement('img')
+                      set img.src to URL.createObjectURL(file)
+                      set img.style.height to '15px'
+                      set img.style.display to 'block'
+                      set img.style.marginRight to '5px'
+                      set img.style.marginLeft to '5px'
+                      set fileInfo to document.createElement('p')
+                      set fileInfo.textContent to 'File Name: ' + file.name + ', Type: ' + file.type + ', Size: ' + file.size + ' bytes'
+                      set fileInfo.style.fontSize to '14px'
+                      set fileInfo.style.marginTop to '0'
+                      set imgHTML to img.outerHTML
+                      append imgHTML to #files-container
+                      log imgHTML
+                      " />
+        <div class="flex items-center mt-4" id="files-container"></div>
+    </div>
+</form>
