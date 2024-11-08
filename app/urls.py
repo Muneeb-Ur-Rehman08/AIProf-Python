@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from .views import chat_view, upload_doc, get_rag_answer, index_view
+from .views import chat_view, upload_doc, get_rag_answer, index_view, auth_view, create_assistant
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -24,4 +24,6 @@ urlpatterns = [
     path('api/upload_doc/', upload_doc, name='upload_doc'),
     path('api/rag/', get_rag_answer, name='rag'),
     path('', index_view, name='index'),
+    path('auth/', auth_view, name='auth_view'),
+    path('create_assistant/', create_assistant, name='create_assistant'),
 ]
