@@ -34,11 +34,11 @@ def get_split_documents(file_path, user_id, ass_id):
     text = load_pdf(file_path)
     
     # Initialize the text splitter
-    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+    text_splitter = CharacterTextSplitter(separator="\n", chunk_size=1000, chunk_overlap=200)
     
     # Split the text into chunks
     text_chunks = text_splitter.split_text(text)
-    
+
     # Wrap each chunk in a Document object with metadata
     docs = [Document(chunk, metadata={"source": file_path, "id": str(uuid.uuid4()), "user_id": str(user_id), "ass_id": str(ass_id)}) for chunk in text_chunks]
     
@@ -63,42 +63,53 @@ def load_pdf(file_path):
 
 def store_embedding_vectors_in_supabase(file, user_id, ass_id):
     docs = get_split_documents(file, user_id, ass_id)
-    result = vector_store.add_documents(
-        docs,
-        chunk_size=1000,
-        chunk_overlap=0
-    )
-    response = supabase_methods['fetch']('documents', {'id': result[0]})
 
-     # Access metadata as a dictionary key
-    result_data = response.data[0].get('metadata', {})
-    print("Document stored in supabase ", result_data)
-    return result_data
+    index = 1
+    # Store each document chunk in the vector store
+    for doc in docs:
+        result = vector_store.add_documents([doc])
+        response = supabase_methods['fetch']('documents', {'id': result[0]})
+
+        # Access metadata as a dictionary key
+        result_data = response.data[0].get('metadata', {})
+        index += 1
+    print(f"Document chunks stored in supabase: {index}")
+    return [doc.metadata for doc in docs]
 
 
-def get_answer(query, id):
+def get_answer(query, ass_id):
     llm = get_llm()
 
-    # get similar text from the vector store
-    result = vector_store.similarity_search(query, k=1, filter={ "id": id})
+    # Get similar text from the vector store
+    results = vector_store.similarity_search(query, k=3, filter={"ass_id": ass_id})
 
-    source_knowledge = "\n".join([x.page_content for x in result])
+    # Check if multiple records are returned
+    if not results:
+        print("No records found.")
+        return "No relevant context found."
+    
+    # Join the page content of all results
+    source_knowledge = "\n".join([x.page_content for x in results])
+    
+    # Print the length of the result
+    print(f"Number of records found: {len(results)}")
 
+    # Construct the augmented prompt
     augmented_prompt = f"""Using the contexts below, answer the query.
-    dont use any other information than the contexts provided.
-    if you dont know the answer, just say that you dont know. dont make up an answer.
-    if the question is not related to the contexts, say that you dont know.
-    if the question is unclear, say that you dont know.
+    Don't use any other information than the contexts provided.
+    If you don't know the answer, just say that you don't know. Don't make up an answer.
+    If the question is not related to the contexts, say that you don't know.
+    If the question is unclear, say that you don't know.
 
     Contexts:
     {source_knowledge}
 
     Query: {query}"""
 
+    # Invoke the language model with the augmented prompt
     response = llm.invoke(augmented_prompt)
-
+    print(response.content)
     return response.content
-
 
 def is_valid_uuid(uuid_to_test, version=4):
     try:

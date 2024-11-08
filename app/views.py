@@ -4,15 +4,12 @@ from django.views.decorators.http import require_http_methods
 from app.modals.chat import get_chat_completion
 from app.modals.anon_conversation import save_conversation, fetch_conversation_history
 from app.utils.conversations import get_user_id
-from django.http import HttpResponse
 from app.utils.vector_store import store_embedding_vectors_in_supabase, get_answer, is_valid_uuid
-# from app.modals.qna import get_qna
 import json
 import time
 import os
 import uuid
-from django.shortcuts import render
-from django.template import TemplateDoesNotExist
+from app.template_views import index_view, auth_view, create_assistant  # Import the moved methods
 
 # Ensure the GROQ_API_KEY is loaded from the environment
 api_key = os.getenv('GROQ_API_KEY')
@@ -127,10 +124,4 @@ def get_rag_answer(request):
         return JsonResponse({'answer': answer}, status=200)
     
     return JsonResponse({'error': 'Only POST requests are allowed'}, status=405)
-
-def index_view(request):
-    try:
-        return render(request, 'index.html')
-    except TemplateDoesNotExist:
-        return HttpResponse("Template not found", status=404)
 
