@@ -27,12 +27,14 @@ class SupabaseManager:
 
         if not url or not key:
             raise EnvironmentError("Supabase credentials not found in environment variables")
-        self.client: Client = SUPABASE_CLIENT
+        self.client = SUPABASE_CLIENT
 
     async def save_assistant(self, assistant_data: dict) -> dict:
         """Save assistant data to Supabase"""
         try:
-            response = await self.client.table('assistants').insert(assistant_data).execute()
+            logger.info(f"Assistant data: {assistant_data}")
+            response = self.client.table('assistants').insert(assistant_data).execute()
+            logger.info(f"Assistant data: {response}")
             return response.data[0]
         except Exception as e:
             logger.error(f"Error saving assistant to Supabase: {e}")
@@ -42,14 +44,15 @@ class SupabaseManager:
         """Save document metadata to Supabase"""
         try:
             data = document_metadata.model_dump()
+            print(data)
             data['doc_id'] = str(data['doc_id'])
             data['ass_id'] = str(data['ass_id'])
             data['user_id'] = str(data['user_id'])
             data['upload_date'] = data['upload_date'].isoformat()
             
-
+            print(f"\n\nsupabase data: {data}\n\n")
             response = await self.client.table('documents').insert(data).execute()
-            print(response)
+            print(f"\n\nsupabase response: {response}\n\n")
             return response.data[0]
         except Exception as e:
             logger.error(f"Error saving document to Supabase: {e}")
@@ -57,8 +60,10 @@ class SupabaseManager:
 
     async def get_assistant(self, ass_id: uuid.UUID, user_id: uuid.UUID) -> Optional[dict]:
         """Retrieve assistant data from Supabase"""
+        logger.info(f"Get Assistant data from supabase: {ass_id} {user_id}\n")
         try:
-            response = await self.client.table('assistants').select("*").eq('ass_id', str(ass_id)).eq('user_id', str(user_id)).execute()
+            response = self.client.table('assistants').select("*").eq('ass_id', str(ass_id)).eq('user_id', str(user_id)).execute()
+            logger.info(f"After Get Assistant data from supabase: {response}\n")
             return response.data[0] if response.data else None
         except Exception as e:
             logger.error(f"Error retrieving assistant from Supabase: {e}")
