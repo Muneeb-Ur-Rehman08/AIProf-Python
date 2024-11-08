@@ -20,7 +20,7 @@ class AssistantInput:
 class AssistantSignature(dspy.Signature):
     """Signature for assistant operations"""
     subject = dspy.InputField(desc="The subject area being taught")
-    context = dspy.InputField(desc="Relevant context from knowledge base")
+    context = dspy.InputField(desc="Content use as relevant context from knowledge base to answer the query")
     query = dspy.InputField(desc="The query or concept to process")
     teaching_instructions = dspy.InputField(desc="Teaching instructions that use for response the query")  # Renamed field
     

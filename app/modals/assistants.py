@@ -43,10 +43,9 @@ class TeachingAssistant:
         self.supabase_client = SUPABASE_CLIENT
         self.documents: List[DocumentMetadata] = []
         
-
+    
     async def save_to_supabase(self) -> dict:
         """Save assistant configuration to Supabase"""
-        logger.info(f"Before save Assistant data: {self.config}")
         assistant_data = {
             "user_id": str(self.config.user_id),
             # "ass_id": str(self.config.ass_id),
@@ -56,11 +55,6 @@ class TeachingAssistant:
             "created_at": datetime.now().isoformat(),
             "updated_at": datetime.now().isoformat(),
         }
-        # Include ass_id if provided
-        if self.config.ass_id:
-            assistant_data["ass_id"] = str(self.config.ass_id)
-
-        logger.info(f"After add dictAssistant data {assistant_data}")
 
         # Save to Supabase and retrieve the generated ass_id if not provided
         response = await self.supabase_manager.save_assistant(assistant_data)
@@ -74,56 +68,57 @@ class TeachingAssistant:
         """Initialize knowledge base with PDF documents and save to Supabase"""
         try:
             for pdf_path in pdf_paths:
-                logger.info(f"Assistant data: {self.config}")
-                docs = store_embedding_vectors_in_supabase(pdf_path, self.config.user_id, self.config.ass_id)
-                logger.info(f"Doc data: {docs}")
-                docs
+                
+                store_embedding_vectors_in_supabase(pdf_path, self.config.user_id, self.config.ass_id)
                 
         except Exception as e:
             logger.error(f"Error initializing knowledge base: {e}")
             raise
 
 
-    async def get_relevant_context(self, query: str) -> str:
-        """Get relevant context from vector store with error handling"""
-        try:
-            logger.info(f"Table name vector store: {vector_store.table_name}\n")
-            if not vector_store:
-                logger.warning("Vector store not initialized")
-                return ""
+    # async def get_relevant_context(self, query: str) -> str:
+    #     """Get relevant context from vector store with error handling"""
+    #     try:
+    #         logger.info(f"Table name vector store: {vector_store.table_name}\n")
+    #         if not vector_store:
+    #             logger.warning("Vector store not initialized")
+    #             return ""
             
-            # Log the filter values
-            logger.info(f"Searching for context with ass_id: {self.config.ass_id}, user_id: {self.config.user_id}, query: {query}")
-            content_id = self.supabase_client.table("documents") \
-                .select("id", "metadata", "embedding") \
-                .filter("metadata->>ass_id", "eq", self.config.ass_id) \
-                .filter("metadata->>user_id", "eq", self.config.user_id) \
-                .execute()
-            
-            logger.info(f"Content id {content_id.data[0]['id']}")
+    #         vector_query = vector_store.embeddings.embed_query(query)
+    #         # logger.info(f"Convert query to vectors: {vector_query}")
+    #         # Log the filter values
+    #         logger.info(f"Searching for context with ass_id: {self.config.ass_id}, user_id: {self.config.user_id}, query: {query}")
+    #         # content_id = self.supabase_client.table("documents") \
+    #         #     .select("id", "metadata", "embedding", "content") \
+    #         #     .filter("metadata->>ass_id", "eq", self.config.ass_id) \
+    #         #     .filter("metadata->>user_id", "eq", self.config.user_id) \
+    #         #     .execute()
+    #         # docs = content_id.data[0]['content']
+    #         # logger.info(f"Content id {content_id.data[0]['content']}")
+    #         get_text = await self.supabase_manager.get_releveant_context()
 
             
-            # Await the similarity_search if it's a coroutine
-            docs_data = vector_store.similarity_search(
-                query=query,
-                k=1,
-                filter={
-                    "metadata->>ass_id": str(self.config.ass_id),
-                    "metadata->>user_id": str(self.config.user_id)
-                }
-            )
+    #         # Await the similarity_search if it's a coroutine
+    #         docs_data = vector_store.similarity_search_by_vector(
+    #             embedding=vector_query,
+    #             k=1,
+    #             filter={
+    #                 "metadata->>ass_id": str(self.config.ass_id),
+    #                 "metadata->>user_id": str(self.config.user_id)
+    #             }
+    #         )
             
-            logger.info(f"Docs from similarity search: {docs_data}")
+    #         logger.info(f"Docs from similarity search: {docs_data}")
             
-            if not docs_data:
-                logger.warning("No documents found for the given query and filters.")
-                return ""  # Return empty context if no documents found
+    #         if not docs_data:
+    #             logger.warning("No documents found for the given query and filters.")
+    #             return ""  # Return empty context if no documents found
             
-            # Ensure that docs is a list of objects that have a page_content attribute
-            return docs_data[0].page_content  # This assumes docs is a list of objects
-        except Exception as e:
-            logger.error(f"Error retrieving context: {e}")
-            return ""
+    #         # Ensure that docs is a list of objects that have a page_content attribute
+    #         return docs_data  # This assumes docs is a list of objects
+    #     except Exception as e:
+    #         logger.error(f"Error retrieving context: {e}")
+    #         return ""
 
     async def explain_concept(self, concept: str) -> Tuple[str, List[str]]:
         """Explain a concept using the ConceptExplainer module with context"""

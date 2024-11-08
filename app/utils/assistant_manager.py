@@ -7,6 +7,7 @@ import logging
 from app.utils.supabase_manager import SupabaseManager
 from app.modals.assistants import TeachingAssistant, AssistantConfig
 from app.modals.assitant_module import AssistantModule, AssistantInput
+from app.utils.vector_store import vector_store
 
 
 # Set up logging
@@ -27,14 +28,11 @@ class AssistantManager:
     async def create_assistant(self, config) -> TeachingAssistant:
         """Create and save a new teaching assistant"""
         try:
-            logger.info(f"\nInitial create Assistant data from assistant manager: {config}\n")
-            if not config.ass_id:  # Generate ass_id if not provided
-                config.ass_id = uuid.uuid4()
             assistant = TeachingAssistant(config)
             
-            logger.info(f"\nAfter create Assistant data: {config}\n")
             # Save assistant configuration to Supabase
-            await assistant.save_to_supabase()
+            assistant_data = await assistant.save_to_supabase()
+            logger.info(f"\nSuccessfully saved assistant with: {assistant_data}\n")
             
             # Initialize knowledge base if provided
             if config.knowledge_base:
@@ -51,7 +49,6 @@ class AssistantManager:
     # Get existing assistant here
     async def get_assistant(self, ass_id: uuid.UUID, user_id: uuid.UUID) -> Optional[TeachingAssistant]:
         """Retrieve an assistant by ID with caching"""
-        logger.info(f"Before get Assistant data: {ass_id} {user_id}\n")
         try:
             # Check local cache first
             cache_key = f"{ass_id}_{user_id}"
@@ -61,7 +58,7 @@ class AssistantManager:
 
             # If not found locally, check Supabase
             assistant_data = await self.supabase_manager.get_assistant(ass_id, user_id)
-            logger.info(f"After get Assistant data: {assistant_data} \n")
+            logger.info(f"Successfully get Assistant data: {assistant_data} \n")
             if assistant_data:
                 config = AssistantConfig(**assistant_data)
                 assistant = TeachingAssistant(config)
@@ -80,26 +77,36 @@ class AssistantManager:
     async def process_query(self, ass_id:uuid.UUID, user_id: uuid.UUID, query: str) -> Tuple[str, List[str]]:
         """Process a query using the appropriate assistant"""
         try:
-            assistant = await self.get_assistant(ass_id, user_id)
+            assistant = await self.supabase_manager.get_assistant(ass_id, user_id)
             logger.info(f"get assistant in process query: {assistant}\n")
             if not assistant:
                 return "Assistant not found.", []
             
+            get_doc_id = await self.supabase_manager.get_documents(ass_id, user_id)
+            logger.info(f"Get data from doc: {get_doc_id['id']}")
             # Get relevant context
-            context = await assistant.get_relevant_context(query)
+            context = vector_store.similarity_search(
+                query,
+                k=1,
+                filter={
+                    "id": get_doc_id['id']
+                    # "metadata->ass_id": assistant['ass_id'],
+                    # "metadata->user_id": assistant['user_id']
+                }
+                )
             logger.info(f"Retreived context:\n {context}\n")
             
             # Use DSPy module to process query
             input_data = AssistantInput(
-                subject=assistant.config.subject,
+                subject=assistant['subject'],
                 context=context,
                 query=query,
-                teaching_instructions=assistant.config.teacher_instructions
+                teaching_instructions=assistant['teacher_instructions']
             )
-
+            result = await self.assistant_module.process_query(input_data)
             # logger.info(f"Input data send to process query: {input_data}\n")
             # Process query using assistant module
-            return await self.assistant_module.process_query(input_data)
+            return result
         except Exception as e:
             logger.error(f"Error processing query: {e}")
             return "Unable to process query at this time.", []
@@ -124,6 +131,7 @@ class AssistantManager:
             # Update cache
             cache_key = f"{ass_id}_{user_id}"
             self.assistants[cache_key] = assistant
+            
             
             return assistant
         except Exception as e:
@@ -150,43 +158,32 @@ class AssistantManager:
 
 
 async def main():
-    # Example usage with provided ass_id
-    # config_with_id = AssistantConfig(
-    #     user_id="0fe175e6-8a82-4fcf-8e45-baeaf289459f",
-    #     ass_id=uuid.uuid4(),  # Providing an ass_id
-    #     assistant_name='Physics numerical',
-    #     subject='Physics',
-    #     teacher_instructions='Explain concepts clearly with examples',
-    #     knowledge_base=['D:\\MyProjects\\pythonProject\\Python-Learn-in-24hrs.pdf']
-    # )
 
     assistant_manager = AssistantManager()
     # assistant_with_id = await assistant_manager.create_assistant(config_with_id)
 
-    # print(f"Assistant create with id{assistant_with_id}")
     # Example usage without providing ass_id
-    config_without_id = AssistantConfig(
-        user_id="0fe175e6-8a82-4fcf-8e45-baeaf289459f",
-        assistant_name='Chemist',
-        subject='Chemistry',
-        teacher_instructions='Provide detailed explanations.',
-        knowledge_base=['D:\\MyProjects\\pythonProject\\Python-Learn-in-24hrs.pdf']
-    )
+    # config_without_id = AssistantConfig(
+    #     user_id="0fe175e6-8a82-4fcf-8e45-baeaf289459f",
+    #     assistant_name='Pythonic',
+    #     subject='Python Basics',
+    #     teacher_instructions='Provide detailed explanations.',
+    #     knowledge_base=['D:\\MyProjects\\pythonProject\\Python-Learn-in-24hrs.pdf']
+    # )
 
     # assistant_without_id = await assistant_manager.create_assistant(config_without_id)
 
-    # The assistant's config will now have the generated ass_id if it was not provided
-    # print(f"Assistant create with id{assistant_without_id}")  # This will show the generated ass_id
+    # # The assistant's config will now have the generated ass_id if it was not provided
+    # print(f"Assistant create with id{assistant_without_id.config.ass_id}")  # This will show the generated ass_id
     
 
-
     # Test Get assistant
-    get_assistant = await assistant_manager.get_assistant("a558445a-df9a-4ea1-81ef-3f580dba1742", "0fe175e6-8a82-4fcf-8e45-baeaf289459f")
-    print("Get assitant", get_assistant)
+    get_assistant = await assistant_manager.get_assistant("747873c1-6ec1-456f-bc24-62d1562fd5f0", "0fe175e6-8a82-4fcf-8e45-baeaf289459f")
+    print("Get assitant", get_assistant.config.ass_id)
     
     # # Process a query
     explanation, examples = await assistant_manager.process_query(
-        "855e07bb-332a-4557-a5ef-d95006051390",
+        "747873c1-6ec1-456f-bc24-62d1562fd5f0",
         "0fe175e6-8a82-4fcf-8e45-baeaf289459f",
         "Explain the setup python on windows?"
     )

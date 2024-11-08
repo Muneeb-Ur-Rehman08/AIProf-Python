@@ -29,10 +29,11 @@ class SupabaseManager:
             raise EnvironmentError("Supabase credentials not found in environment variables")
         self.client = SUPABASE_CLIENT
 
+    # Save assistant to supabse working
     async def save_assistant(self, assistant_data: dict) -> dict:
         """Save assistant data to Supabase"""
         try:
-            logger.info(f"Assistant data: {assistant_data}")
+            
             response = self.client.table('assistants').insert(assistant_data).execute()
             logger.info(f"Assistant data: {response}")
             return response.data[0]
@@ -67,4 +68,20 @@ class SupabaseManager:
             return response.data[0] if response.data else None
         except Exception as e:
             logger.error(f"Error retrieving assistant from Supabase: {e}")
+            raise
+
+    
+    async def get_documents(self, ass_id: uuid.UUID, user_id: uuid.UUID) -> Optional[dict]:
+        """Retrieve documents data from Supabase"""
+        logger.info(f"Get Assistant data from supabase: {ass_id} {user_id}\n")
+        try:
+            response = self.client.table("documents") \
+                .select("*") \
+                .filter("metadata->>ass_id", "eq", str(ass_id)) \
+                .filter("metadata->>user_id", "eq", str(user_id)) \
+                .execute()
+            
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"Error retrieving document from Supabase: {e}")
             raise
