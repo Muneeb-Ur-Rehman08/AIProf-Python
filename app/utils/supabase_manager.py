@@ -35,7 +35,23 @@ class SupabaseManager:
         try:
             
             response = self.client.table('assistants').insert(assistant_data).execute()
-            logger.info(f"Assistant data: {response}")
+            logger.info(f"Assistant data save: {response}")
+            return response.data[0]
+        except Exception as e:
+            logger.error(f"Error saving assistant to Supabase: {e}")
+            raise
+    
+
+    async def update_assistant(self, assistant_data: dict) -> dict:
+        """Save assistant data to Supabase"""
+        try:
+            logger.info(f"data send for the update: {assistant_data}")
+            response = self.client.table('assistants')\
+                .update(assistant_data)\
+                .eq("ass_id", assistant_data["ass_id"])\
+                .eq("user_id", assistant_data["user_id"])\
+                .execute()
+            logger.info(f"Assistant data update: {response}")
             return response.data[0]
         except Exception as e:
             logger.error(f"Error saving assistant to Supabase: {e}")
@@ -61,7 +77,7 @@ class SupabaseManager:
 
     async def get_assistant(self, ass_id: uuid.UUID, user_id: uuid.UUID) -> Optional[dict]:
         """Retrieve assistant data from Supabase"""
-        logger.info(f"Get Assistant data from supabase: {ass_id} {user_id}\n")
+        # logger.info(f"Get Assistant data from supabase: {ass_id} {user_id}\n")
         try:
             response = self.client.table('assistants').select("*").eq('ass_id', str(ass_id)).eq('user_id', str(user_id)).execute()
             logger.info(f"After Get Assistant data from supabase: {response}\n")
@@ -71,6 +87,15 @@ class SupabaseManager:
             raise
 
     
+    async def delete_assistant(self, ass_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+        """Delete assistant data from Supabase"""
+        try:
+            response = self.client.table('assistants').delete().eq('ass_id', str(ass_id)).eq('user_id', str(user_id)).execute()
+            return response
+        except Exception as e:
+            logger.error(f"Error deleting assistant from Supabase: {e}")
+            raise
+
     async def get_documents(self, ass_id: uuid.UUID, user_id: uuid.UUID) -> Optional[dict]:
         """Retrieve documents data from Supabase"""
         logger.info(f"Get Assistant data from supabase: {ass_id} {user_id}\n")

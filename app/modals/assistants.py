@@ -64,6 +64,7 @@ class TeachingAssistant:
             self.config.ass_id = response['ass_id']
         return response
 
+
     async def initialize_knowledge_base(self, pdf_paths: List[str]) -> None:
         """Initialize knowledge base with PDF documents and save to Supabase"""
         try:
@@ -75,50 +76,22 @@ class TeachingAssistant:
             logger.error(f"Error initializing knowledge base: {e}")
             raise
 
-
-    # async def get_relevant_context(self, query: str) -> str:
-    #     """Get relevant context from vector store with error handling"""
-    #     try:
-    #         logger.info(f"Table name vector store: {vector_store.table_name}\n")
-    #         if not vector_store:
-    #             logger.warning("Vector store not initialized")
-    #             return ""
-            
-    #         vector_query = vector_store.embeddings.embed_query(query)
-    #         # logger.info(f"Convert query to vectors: {vector_query}")
-    #         # Log the filter values
-    #         logger.info(f"Searching for context with ass_id: {self.config.ass_id}, user_id: {self.config.user_id}, query: {query}")
-    #         # content_id = self.supabase_client.table("documents") \
-    #         #     .select("id", "metadata", "embedding", "content") \
-    #         #     .filter("metadata->>ass_id", "eq", self.config.ass_id) \
-    #         #     .filter("metadata->>user_id", "eq", self.config.user_id) \
-    #         #     .execute()
-    #         # docs = content_id.data[0]['content']
-    #         # logger.info(f"Content id {content_id.data[0]['content']}")
-    #         get_text = await self.supabase_manager.get_releveant_context()
-
-            
-    #         # Await the similarity_search if it's a coroutine
-    #         docs_data = vector_store.similarity_search_by_vector(
-    #             embedding=vector_query,
-    #             k=1,
-    #             filter={
-    #                 "metadata->>ass_id": str(self.config.ass_id),
-    #                 "metadata->>user_id": str(self.config.user_id)
-    #             }
-    #         )
-            
-    #         logger.info(f"Docs from similarity search: {docs_data}")
-            
-    #         if not docs_data:
-    #             logger.warning("No documents found for the given query and filters.")
-    #             return ""  # Return empty context if no documents found
-            
-    #         # Ensure that docs is a list of objects that have a page_content attribute
-    #         return docs_data  # This assumes docs is a list of objects
-    #     except Exception as e:
-    #         logger.error(f"Error retrieving context: {e}")
-    #         return ""
+    async def get_relevant_context_in_chunks(self, query: str, user_id: uuid.UUID, ass_id: uuid.UUID) -> List[str]:
+        """Retrieve relevant context from the vector store in chunks"""
+        try:
+            context = vector_store.similarity_search(
+                query,
+                k=3,
+                filter={
+                    "ass_id": str(ass_id),
+                    "user_id": str(user_id)
+                }
+            )
+            # logger.info(f"\nthe get relevant context : {context}\n")
+            return [doc.page_content for doc in context]
+        except Exception as e:
+            logger.error(f"Error getting relevant context: {e}")
+            return []
 
     async def explain_concept(self, concept: str) -> Tuple[str, List[str]]:
         """Explain a concept using the ConceptExplainer module with context"""

@@ -58,7 +58,7 @@ class AssistantManager:
 
             # If not found locally, check Supabase
             assistant_data = await self.supabase_manager.get_assistant(ass_id, user_id)
-            logger.info(f"Successfully get Assistant data: {assistant_data} \n")
+            # logger.info(f"Successfully get Assistant data: {assistant_data} \n")
             if assistant_data:
                 config = AssistantConfig(**assistant_data)
                 assistant = TeachingAssistant(config)
@@ -74,34 +74,23 @@ class AssistantManager:
             logger.error(f"Error retrieving assistant: {e}")
             return None
     
-    async def process_query(self, ass_id:uuid.UUID, user_id: uuid.UUID, query: str) -> Tuple[str, List[str]]:
+    async def process_query(self, ass_id, user_id, query: str) -> Tuple[str, List[str]]:
         """Process a query using the appropriate assistant"""
         try:
-            assistant = await self.supabase_manager.get_assistant(ass_id, user_id)
-            logger.info(f"get assistant in process query: {assistant}\n")
+            assistant = await self.get_assistant(ass_id, user_id)
+            logger.info(f"get assistant in process query: {assistant.config.ass_id}\n")
             if not assistant:
                 return "Assistant not found.", []
             
-            get_doc_id = await self.supabase_manager.get_documents(ass_id, user_id)
-            logger.info(f"Get data from doc: {get_doc_id['id']}")
-            # Get relevant context
-            context = vector_store.similarity_search(
-                query,
-                k=1,
-                filter={
-                    "id": get_doc_id['id']
-                    # "metadata->ass_id": assistant['ass_id'],
-                    # "metadata->user_id": assistant['user_id']
-                }
-                )
+            context = await assistant.get_relevant_context_in_chunks(query, user_id, ass_id)
             logger.info(f"Retreived context:\n {context}\n")
             
             # Use DSPy module to process query
             input_data = AssistantInput(
-                subject=assistant['subject'],
+                subject=assistant.config.subject,
                 context=context,
                 query=query,
-                teaching_instructions=assistant['teacher_instructions']
+                teaching_instructions=assistant.config.teacher_instructions
             )
             result = await self.assistant_module.process_query(input_data)
             # logger.info(f"Input data send to process query: {input_data}\n")
@@ -112,21 +101,30 @@ class AssistantManager:
             return "Unable to process query at this time.", []
         
     
-    async def update_assistant(self, ass_id: uuid.UUID, user_id: uuid.UUID, 
+    async def update_assistant(self, ass_id, user_id, 
                              updates: Dict) -> Optional[TeachingAssistant]:
         """Update an existing assistant's configuration"""
         try:
             assistant = await self.get_assistant(ass_id, user_id)
             if not assistant:
                 return None
-            
+            logger.info(f"the data need to be updated: {updates}")
             # Update configuration
             for key, value in updates.items():
                 if hasattr(assistant.config, key):
                     setattr(assistant.config, key, value)
-            
+            data = {
+                "user_id": str(assistant.config.user_id),
+                "ass_id": str(assistant.config.ass_id),
+                "assistant_name": assistant.config.assistant_name,
+                "subject": assistant.config.subject,
+                "teacher_instructions": assistant.config.teacher_instructions,
+            }
+            if assistant.config.knowledge_base:
+                assistant.initialize_knowledge_base(assistant.config.knowledge_base)
+            logger.info(f"data need to be updated: {assistant}\n")
             # Save updates to Supabase
-            await assistant.save_to_supabase()
+            await self.supabase_manager.update_assistant(data)
             
             # Update cache
             cache_key = f"{ass_id}_{user_id}"
@@ -160,30 +158,30 @@ class AssistantManager:
 async def main():
 
     assistant_manager = AssistantManager()
-    # assistant_with_id = await assistant_manager.create_assistant(config_with_id)
-
-    # Example usage without providing ass_id
-    # config_without_id = AssistantConfig(
-    #     user_id="0fe175e6-8a82-4fcf-8e45-baeaf289459f",
-    #     assistant_name='Pythonic',
-    #     subject='Python Basics',
-    #     teacher_instructions='Provide detailed explanations.',
-    #     knowledge_base=['D:\\MyProjects\\pythonProject\\Python-Learn-in-24hrs.pdf']
-    # )
-
-    # assistant_without_id = await assistant_manager.create_assistant(config_without_id)
-
-    # # The assistant's config will now have the generated ass_id if it was not provided
-    # print(f"Assistant create with id{assistant_without_id.config.ass_id}")  # This will show the generated ass_id
     
+    update_data = {
+        # "user_id":"0fe175e6-8a82-4fcf-8e45-baeaf289459f",
+        # "ass_id": "deddc9c6-be68-42e6-a6f7-de1d26fffe07",
+        "assistant_name": 'Pythonic',
+        "subject": 'Python Basics and Advance Level',
+        "teacher_instructions": 'Provide detailed explanations according not to go outside from the knowledge_base documents provided',
+        # "knowledge_base": "['D:\\MyProjects\\pythonProject\\Python-Learn-in-24hrs.pdf']"
+    }
 
-    # Test Get assistant
-    get_assistant = await assistant_manager.get_assistant("747873c1-6ec1-456f-bc24-62d1562fd5f0", "0fe175e6-8a82-4fcf-8e45-baeaf289459f")
+    # Test for get assistant
+    get_assistant = await assistant_manager.get_assistant("1e4c86be-e8bb-4351-8849-1e0a59f4fa63", "0fe175e6-8a82-4fcf-8e45-baeaf289459f")
     print("Get assitant", get_assistant.config.ass_id)
     
+    # Test for update assistant
+    assistant_without_id = await assistant_manager.update_assistant(updates=update_data, ass_id=str(get_assistant.config.ass_id), user_id=str(get_assistant.config.user_id))
+    # The assistant's config will now have the generated ass_id if it was not provided
+    print(f"Successfully Assistant update with id: {assistant_without_id}")  # This will show the generated ass_id
+    
+    # assistant_delete = await assistant_manager.delete_assistant("dc6693b2-7796-4ffc-b9fa-e1498bab85bf", "0fe175e6-8a82-4fcf-8e45-baeaf289459f")
+
     # # Process a query
     explanation, examples = await assistant_manager.process_query(
-        "747873c1-6ec1-456f-bc24-62d1562fd5f0",
+        "1e4c86be-e8bb-4351-8849-1e0a59f4fa63",
         "0fe175e6-8a82-4fcf-8e45-baeaf289459f",
         "Explain the setup python on windows?"
     )
