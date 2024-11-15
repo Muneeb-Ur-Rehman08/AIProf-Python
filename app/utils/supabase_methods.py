@@ -17,8 +17,16 @@ def insert(table, data):
 def get_vector_store(embeddings):
     return SUPABASE_CLIENT.table("teacher").select("*").execute()
 
+def get_session():
+    return SUPABASE_CLIENT.auth.get_session()
+
+def set_session(access_token, refresh_token):
+    SUPABASE_CLIENT.auth.set_session(access_token,refresh_token)
+
 supabase_methods = {
     "fetch": fetch,
     "insert": insert,
-    "get_vector_store": get_vector_store
+    "get_vector_store": get_vector_store,
+    "get_session": get_session,
+    "set_session": set_session
 }

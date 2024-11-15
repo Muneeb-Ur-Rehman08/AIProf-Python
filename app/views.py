@@ -9,7 +9,6 @@ import json
 import time
 import os
 import uuid
-from app.template_views import index_view, auth_view, create_assistant  # Import the moved methods
 
 # Ensure the GROQ_API_KEY is loaded from the environment
 api_key = os.getenv('GROQ_API_KEY')

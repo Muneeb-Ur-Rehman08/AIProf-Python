@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.template import TemplateDoesNotExist
@@ -5,14 +6,14 @@ from app.utils.supabase_methods import supabase_methods
 from app.configs.supabase_config import SUPABASE_CLIENT
 
 def index_view(request):
-    # Check if the user is authenticated with Supabase
-    session = supabase_methods["get_session"]()
-    print(f"session: {session}")
-    if not session or not session.user:
-        return redirect('/auth/')
-    
     try:
-        return render(request, './index.html')
+        context = {
+            'store_session': supabase_methods['set_session'],
+            'message': 'Hello World'
+        }
+        render(request, './index.html', context)
+        
+        return HttpResponse(res)
     except TemplateDoesNotExist:
         return HttpResponse("Template not found", status=404)
 
