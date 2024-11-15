@@ -38,15 +38,23 @@ class AssistantConfig(BaseModel):
 
 class TeachingAssistant:
     def __init__(self, config: AssistantConfig):
+        """Initialize the TeachingAssistant with configuration.
+
+        Args:
+            config (AssistantConfig): The configuration for the assistant.
+        """
         self.config = config
         self.supabase_manager = SupabaseManager()
         self.supabase_client = SUPABASE_CLIENT
         self.documents: List[DocumentMetadata] = []
         
+    
+    def save_to_supabase(self) -> dict:
+        """Save assistant configuration to Supabase.
 
-    async def save_to_supabase(self) -> dict:
-        """Save assistant configuration to Supabase"""
-        logger.info(f"Before save Assistant data: {self.config}")
+        Returns:
+            dict: The response from Supabase containing assistant data.
+        """
         assistant_data = {
             "user_id": str(self.config.user_id),
             # "ass_id": str(self.config.ass_id),
@@ -56,79 +64,67 @@ class TeachingAssistant:
             "created_at": datetime.now().isoformat(),
             "updated_at": datetime.now().isoformat(),
         }
-        # Include ass_id if provided
-        if self.config.ass_id:
-            assistant_data["ass_id"] = str(self.config.ass_id)
-
-        logger.info(f"After add dictAssistant data {assistant_data}")
 
         # Save to Supabase and retrieve the generated ass_id if not provided
-        response = await self.supabase_manager.save_assistant(assistant_data)
+        response = self.supabase_manager.save_assistant(assistant_data)
         
         # If ass_id was not provided, update the config with the generated ass_id
         if not self.config.ass_id:
             self.config.ass_id = response['ass_id']
         return response
 
-    async def initialize_knowledge_base(self, pdf_paths: List[str]) -> None:
-        """Initialize knowledge base with PDF documents and save to Supabase"""
+
+    def initialize_knowledge_base(self, pdf_paths: List[str]) -> None:
+        """Initialize knowledge base with PDF documents and save to Supabase.
+
+        Args:
+            pdf_paths (List[str]): List of paths to PDF documents.
+        """
         try:
             for pdf_path in pdf_paths:
-                logger.info(f"Assistant data: {self.config}")
-                docs = store_embedding_vectors_in_supabase(pdf_path, self.config.user_id, self.config.ass_id)
-                logger.info(f"Doc data: {docs}")
-                docs
+                
+                store_embedding_vectors_in_supabase(pdf_path, self.config.user_id, self.config.ass_id)
                 
         except Exception as e:
             logger.error(f"Error initializing knowledge base: {e}")
             raise
 
+    def get_relevant_context_in_chunks(self, query: str, user_id: uuid.UUID, ass_id: uuid.UUID) -> List[str]:
+        """Retrieve relevant context from the vector store in chunks.
 
-    async def get_relevant_context(self, query: str) -> str:
-        """Get relevant context from vector store with error handling"""
+        Args:
+            query (str): The query string to search for.
+            user_id (uuid.UUID): The user's ID.
+            ass_id (uuid.UUID): The assistant's ID.
+
+        Returns:
+            List[str]: The relevant context retrieved.
+        """
         try:
-            logger.info(f"Table name vector store: {vector_store.table_name}\n")
-            if not vector_store:
-                logger.warning("Vector store not initialized")
-                return ""
-            
-            # Log the filter values
-            logger.info(f"Searching for context with ass_id: {self.config.ass_id}, user_id: {self.config.user_id}, query: {query}")
-            content_id = self.supabase_client.table("documents") \
-                .select("id", "metadata", "embedding") \
-                .filter("metadata->>ass_id", "eq", self.config.ass_id) \
-                .filter("metadata->>user_id", "eq", self.config.user_id) \
-                .execute()
-            
-            logger.info(f"Content id {content_id.data[0]['id']}")
-
-            
-            # Await the similarity_search if it's a coroutine
-            docs_data = vector_store.similarity_search(
-                query=query,
-                k=1,
+            context = vector_store.similarity_search(
+                query,
+                k=5,
                 filter={
-                    "metadata->>ass_id": str(self.config.ass_id),
-                    "metadata->>user_id": str(self.config.user_id)
+                    "ass_id": str(ass_id),
+                    "user_id": str(user_id)
                 }
             )
-            
-            logger.info(f"Docs from similarity search: {docs_data}")
-            
-            if not docs_data:
-                logger.warning("No documents found for the given query and filters.")
-                return ""  # Return empty context if no documents found
-            
-            # Ensure that docs is a list of objects that have a page_content attribute
-            return docs_data[0].page_content  # This assumes docs is a list of objects
+            return "\n".join([x.page_content for x in context])
         except Exception as e:
-            logger.error(f"Error retrieving context: {e}")
-            return ""
+            logger.error(f"Error getting relevant context: {e}")
+            return []
 
-    async def explain_concept(self, concept: str) -> Tuple[str, List[str]]:
-        """Explain a concept using the ConceptExplainer module with context"""
+    def explain_concept(self, concept: str) -> Tuple[str, List[str]]:
+        """Explain a concept using the ConceptExplainer module with context.
+
+        Args:
+            concept (str): The concept to explain.
+
+        Returns:
+            Tuple[str, List[str]]: The explanation and any examples generated.
+        """
         try:
-            context = await self.get_relevant_context(concept)
+            context = self.get_relevant_context(concept)
             prompt = dspy.Template(
                 """
                 Subject: {subject}
@@ -140,7 +136,7 @@ class TeachingAssistant:
                 """
             )
             
-            response = await self.lm.generate(
+            response = self.lm.generate(
                 prompt.format(
                     subject=self.config.subject,
                     context=context,
