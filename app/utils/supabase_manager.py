@@ -99,8 +99,9 @@ class SupabaseManager:
                 .filter("metadata->>ass_id", "eq", str(ass_id)) \
                 .filter("metadata->>user_id", "eq", str(user_id)) \
                 .execute()
-            
-            return response.data[0] if response.data else None
+            # print(f"supabase content: {[x["content"] for x in response.data]}")
+            content = [x["content"] for x in response.data]
+            return content
         except Exception as e:
             logger.error(f"Error retrieving document from Supabase: {e}")
             raise

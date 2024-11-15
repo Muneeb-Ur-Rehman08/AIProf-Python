@@ -8,6 +8,9 @@ from app.utils.supabase_manager import SupabaseManager
 from app.modals.assistants import TeachingAssistant, AssistantConfig
 from app.modals.assitant_module import AssistantModule, AssistantInput
 from app.utils.vector_store import vector_store
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 # Set up logging
@@ -103,21 +106,23 @@ class AssistantManager:
             
             context = assistant.get_relevant_context_in_chunks(query, user_id, ass_id)
             text_context = context.replace('\t', ' ')
-            logger.info(f"Page context for relevant search: {text_context}")
+
+            complete_context = self.supabase_manager.get_documents(assistant.config.ass_id, assistant.config.user_id)
+            # text = "\n".join([x.page_content for x in complete_context])
+            
 
             input_data = AssistantInput(
                 subject=assistant.config.subject,
-                context="\n".join(text_context),
+                # context="\n".join(text_context),
+                context=text_context,
                 query=query,
                 teaching_instructions=assistant.config.teacher_instructions
             )
-            logger.info(f"Input data send to process query: {input_data}\n")
-            result = self.assistant_module.process_query(input_data)
-            # for stream in result.explanation:
-            #     if stream is not None:
-            #         yield stream
-
+            # logger.info(f"Input data send to process query: {input_data}\n")
+            
             # Process query using assistant module
+            result = self.assistant_module.process_query(input_data)
+
             return result
         except Exception as e:
             logger.error(f"Error processing query: {e}")
@@ -214,8 +219,8 @@ def main():
     #     "ass_id": "4e3e58e8-620a-4a3b-b143-1097f4ce613f",
     #     "assistant_name": 'Pythonic',
     #     "subject": 'Python Basics and Advance Level',
-    #     "teacher_instructions": 'Provide detailed explanations according not to go outside from the knowledge_base documents provided',
-    #     "knowledge_base": ['D:\\MyProjects\\pythonProject\\Python-Learn-in-24hrs.pdf']
+    #     "teacher_instructions": 'Provide complete explanations that align with the knowledge base context and cover all topics according to the query, ensuring all information is derived from the knowledge_base documents without any external references.',
+    #     # "knowledge_base": ['D:\\MyProjects\\pythonProject\\Python-Learn-in-24hrs.pdf']
     # }
 
     # Test for get assistant
@@ -225,19 +230,19 @@ def main():
     # Test for update assistant
     # assistant_without_id = assistant_manager.update_assistant(updates=update_data, ass_id="4e3e58e8-620a-4a3b-b143-1097f4ce613f", user_id="efbfba82-eb0e-4019-b9c5-370b24a7f9c1")
     # The assistant's config will now have the generated ass_id if it was not provided
-    # print(f"Successfully Assistant update with id: {assistant_without_id.config}")  # This will show the generated ass_id
+    # print(f"Successfully Assistant update with id: {assistant_without_id.config.assistant_name}")  # This will show the generated ass_id
     
 
     # # Process a query
     explanation = assistant_manager.process_query(
         "4e3e58e8-620a-4a3b-b143-1097f4ce613f",
         "efbfba82-eb0e-4019-b9c5-370b24a7f9c1",
-        "Explain Python Data Variables with code examples."
+        "Write a factorial program in python."
     )
     
     # for response in explanation:
     print("Streaming response:", explanation)
-    # print("Examples:", examples)
+    # print("Rationale:", rationale)
 
 if __name__ == "__main__":
     main()

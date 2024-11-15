@@ -103,7 +103,7 @@ class TeachingAssistant:
         try:
             context = vector_store.similarity_search(
                 query,
-                k=10,
+                k=5,
                 filter={
                     "ass_id": str(ass_id),
                     "user_id": str(user_id)
