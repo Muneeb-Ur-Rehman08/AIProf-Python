@@ -10,6 +10,9 @@ import time
 import os
 import uuid
 from app.template_views import index_view, auth_view, create_assistant  # Import the moved methods
+from django.shortcuts import render, redirect
+from django.contrib.auth import login, authenticate
+from app.modals.supabase_auth import login_with_supabase
 
 # Ensure the GROQ_API_KEY is loaded from the environment
 api_key = os.getenv('GROQ_API_KEY')
@@ -125,3 +128,13 @@ def get_rag_answer(request):
     
     return JsonResponse({'error': 'Only POST requests are allowed'}, status=405)
 
+
+def custom_login(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        user = authenticate(request, email=email, password=password)
+        if user:
+            login(request, user)
+            return redirect('index')
+    return render(request, 'custom_login.html')

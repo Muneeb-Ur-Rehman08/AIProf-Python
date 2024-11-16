@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from .views import chat_view, upload_doc, get_rag_answer, index_view, auth_view, create_assistant
+from .views import chat_view, upload_doc, get_rag_answer, index_view, auth_view, create_assistant, custom_login
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -26,6 +26,7 @@ urlpatterns = [
     path('', index_view, name='index'),
     path('auth/', auth_view, name='auth_view'),
     path('create_assistant/', create_assistant, name='create_assistant'),
+    path('custom_login/', custom_login, name='custom_login'),
 
     # demo app route
     path('demo/', include('demo.urls'))
