@@ -13,6 +13,8 @@ from app.template_views import index_view, auth_view, create_assistant  # Import
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate
 from app.modals.supabase_auth import login_with_supabase
+from django.contrib.auth.decorators import login_required
+from app.utils.auth_backend import SupabaseBackend
 
 # Ensure the GROQ_API_KEY is loaded from the environment
 api_key = os.getenv('GROQ_API_KEY')
@@ -128,13 +130,27 @@ def get_rag_answer(request):
     
     return JsonResponse({'error': 'Only POST requests are allowed'}, status=405)
 
-
+@csrf_exempt
+@require_http_methods(["POST"])
 def custom_login(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
-        user = authenticate(request, email=email, password=password)
+        name = request.POST.get('name')
+        user = authenticate(request, username=email, password=password, name=name)
         if user:
             login(request, user)
             return redirect('index')
-    return render(request, 'custom_login.html')
+        else:
+            return JsonResponse({'error': 'Authentication failed'}, status=400)
+    return JsonResponse({'error': 'Only POST requests are allowed'}, status=405)
+
+# logout view
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
+def logout(request):
+    # Create an instance of SupabaseBackend
+    backend = SupabaseBackend()
+    # Call the logout method with the request
+    return backend.logout(request)

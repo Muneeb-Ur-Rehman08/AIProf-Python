@@ -102,8 +102,7 @@ DATABASES = {
 }
 
 AUTHENTICATION_BACKENDS = [
-    'app.modals.supabase_auth.login_with_supabase',
-    'app.modals.supabase_auth.register_with_supabase',
+    'app.utils.auth_backend.SupabaseBackend',
 ]
 
 
