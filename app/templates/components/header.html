@@ -1,13 +1,52 @@
-<header class="bg-gray-800 p-4 flex justify-between items-center">
+<!-- <header class="bg-gray-800 p-4 flex justify-between items-center">
     <a href="{% url 'index' %}">
         <img src="https://readymadeui.com/readymadeui-white.svg" alt="logo" class="w-40" />
     </a>
     <div>
-        <!-- <a href="{% url 'auth_view' %}" class="text-white font-bold py-2 px-4 rounded bg-blue-500 hover:bg-blue-700">Sign In</a>
-        <a href="{% url 'create_assistant' %}" class="text-white font-bold py-2 px-4 rounded bg-green-500 hover:bg-green-700 ml-4">Create Assistant</a> -->
-        <!-- redirect to auth page -->
+         <a href="{% url 'auth_view' %}" class="text-white font-bold py-2 px-4 rounded bg-blue-500 hover:bg-blue-700">Sign In</a>
+        <a href="{% url 'create_assistant' %}" class="text-white font-bold py-2 px-4 rounded bg-green-500 hover:bg-green-700 ml-4">Create Assistant</a>
+         redirect to auth page 
         <a href="{% url 'auth_view' %}" class="text-white font-bold py-2 px-4 rounded bg-blue-500 hover:bg-blue-700">Sign In</a>
-        <!-- redirect to create assistant page -->
+        redirect to create assistant page
         <a href="{% url 'create_assistant' %}" class="text-white font-bold py-2 px-4 rounded bg-green-500 hover:bg-green-700 ml-4">Create Assistant</a>
     </div>
+</header> -->
+
+{% load static %}
+
+<header class="header-basic" id="page-header">
+    <div class="container max-w-container-sm md:max-w-container-md lg:max-w-container-lg xl:max-w-container-xl">
+        <!--Start navbar-->
+        <nav class="menu-navbar" id="main-nav">
+            <div class="header-logo">
+                <a class="logo-link" href="#page-hero">
+                    <img class="logo-img light-logo" loading="lazy" src="{% static 'assets/images/logo/logo.svg' %}" alt="logo" />
+                </a>
+            </div>
+            <div class="links menu-wrapper ">
+                <ul class="list-js links-list">
+                    <li class="nav-item menu-item has-sub-menu">
+                        <a class="nav-link menu-link active"
+                            href="#page-hero">home</a>
+                    </li>
+                    <li class="nav-item menu-item">
+                        <a class="nav-link menu-link" href="#services">services </a>
+                    </li>
+                    <li class="nav-item menu-item"><a class="nav-link menu-link  " href="#about">about </a></li>
+                    <li class="nav-item menu-item"><a class="nav-link menu-link  " href="#pricing">pricing </a></li>
+                    <li class="nav-item menu-item"><a class="nav-link menu-link  "
+                            href="https://meetyourai.github.io/AIProf/blog/BlogIndex">Blog </a></li>
+                    <li class="nav-item menu-item"><a class="nav-link menu-link  " href="#faq">FAQ </a></li>
+                    <li class="nav-item menu-item"><a class="nav-link menu-link  " href="#contact-us">contact us
+                        </a></li>
+                </ul>
+            </div>
+            <!-- for mobile navbar menu -->
+            <div class="controls-box">
+                <!--Menu Toggler button-->
+                <div class="control  menu-toggler"><span></span><span></span><span></span></div>
+            </div>
+        </nav>
+    </div>
+    <!--End navbar-->
 </header>
