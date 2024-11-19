@@ -9,7 +9,14 @@ import json
 import time
 import os
 import uuid
-from app.template_views import index_view, auth_view, create_assistant  # Import the moved methods
+from app.template_views import index_view   # Import the moved methods
+from django.shortcuts import render, redirect
+from django.contrib.auth import login, authenticate
+from app.modals.supabase_auth import login_with_supabase
+from django.contrib.auth.decorators import login_required
+from app.utils.auth_backend import SupabaseBackend
+from app.utils.assistant_manager import AssistantManager
+from app.modals.assistants import AssistantConfig
 
 # Ensure the GROQ_API_KEY is loaded from the environment
 api_key = os.getenv('GROQ_API_KEY')
@@ -123,5 +130,71 @@ def get_rag_answer(request):
 
         return JsonResponse({'answer': answer}, status=200)
     
+    return JsonResponse({'error': 'Only POST requests are allowed'}, status=405)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def custom_login(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        name = request.POST.get('name')
+        user = authenticate(request, username=email, password=password, name=name)
+        if user:
+            login(request, user)
+            return redirect('index')
+        else:
+            return JsonResponse({'error': 'Authentication failed'}, status=400)
+    return JsonResponse({'error': 'Only POST requests are allowed'}, status=405)
+
+# logout view
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
+def logout(request):
+    # Create an instance of SupabaseBackend
+    backend = SupabaseBackend()
+    # Call the logout method with the request
+    return backend.logout(request)
+
+
+# create assistant view
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
+def create_assistant(request):
+    if request.method == 'POST':
+        data = request.POST
+        assistant_name = data.get("assistant_name")
+        subject = data.get("subject")
+        teacher_instructions = data.get("teacher_instructions")
+        knowledge_base = []
+        if 'knowledge_base' in data:
+            uploaded_files = data.get("knowledge_base")
+            for file in uploaded_files:
+                temp_dir = os.path.join('temp')
+                os.makedirs(temp_dir, exist_ok=True)  # Create the directory if it doesn't exist
+
+                # Save the uploaded file temporarily
+                temp_file_path = os.path.join(temp_dir, file.name)
+                with open(temp_file_path, 'wb+') as temp_file:
+                    for chunk in file.chunks():
+                        temp_file.write(chunk)
+                knowledge_base.append(temp_file_path)
+
+        assistant_manager = AssistantManager()
+
+        print(f"knowledge_base: {knowledge_base}, assistant_name: {assistant_name}, subject: {subject}, teacher_instructions: {teacher_instructions}, user_id: {request.user.id}")
+
+        config = AssistantConfig(
+            user_id=request.user.id,
+            assistant_name=assistant_name,
+            subject=subject,
+            teacher_instructions=teacher_instructions,
+            knowledge_base=knowledge_base
+        )
+        assistant_manager.create_assistant(config)
+
+        return JsonResponse({'message': 'Assistant created successfully'}, status=200)
     return JsonResponse({'error': 'Only POST requests are allowed'}, status=405)
 
