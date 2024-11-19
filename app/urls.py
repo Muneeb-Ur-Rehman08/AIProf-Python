@@ -27,6 +27,6 @@ urlpatterns = [
     path('auth/', auth_view, name='auth_view'),
     path('create_assistant/', create_assistant, name='create_assistant'),
 
-    # demo app route
-    path('demo/', include('demo.urls'))
+    # users app route
+    path('users/', include('users.urls'))
 ]
