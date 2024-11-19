@@ -16,8 +16,8 @@ def auth_view(request):
     except TemplateDoesNotExist:
         return HttpResponse("Template not found", status=404)
 # assistant form is show only if user is logged in
-@login_required
-def create_assistant(request):
+@login_required(login_url='auth_view')
+def create_assistant_view(request):
     try:
         print(f"user is authenticated: {request.user}")
         return render(request, 'assistant/assistant_form.html')
