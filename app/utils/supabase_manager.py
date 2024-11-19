@@ -2,7 +2,7 @@ import logging
 from app.configs.supabase_config import SUPABASE_CLIENT, url, key
 from supabase import Client
 import uuid
-from typing import Optional
+from typing import Optional, List, Dict, Any
 import datetime
 from pydantic import BaseModel
 
@@ -80,6 +80,17 @@ class SupabaseManager:
         except Exception as e:
             logger.error(f"Error retrieving assistant from Supabase: {e}")
             raise
+    
+    def list_assistants(self) -> List[Dict[str, Any]]:
+        """Retrieve all assistants for a given user from Supabase."""
+        try:
+            # Adjust the query based on your Supabase table structure
+            result = self.client.table('assistants').select("*").execute()
+            
+            return result.data if result.data else []
+        except Exception as e:
+            logger.error(f"Supabase error listing assistants: {e}")
+            return []
 
     def delete_assistant(self, ass_id: uuid.UUID, user_id: uuid.UUID) -> bool:
         """Delete assistant data from Supabase"""

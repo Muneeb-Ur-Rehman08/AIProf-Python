@@ -27,9 +27,11 @@ urlpatterns = [
     path('api/create_assistant/', create_assistant, name='create_assistant'),
     path('', index_view, name='index'),
     path('auth/', auth_view, name='auth_view'),
+
+    # users app route
+    path('users/', include('users.urls')),
     path('create_assistant/', create_assistant_view, name='create_assistant'),
     path('login/', custom_login, name='login'),
     path('logout/', logout, name='logout'),
     # demo app route
-    path('demo/', include('demo.urls'))
 ]
