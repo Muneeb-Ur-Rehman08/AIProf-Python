@@ -131,7 +131,8 @@ def manage_assistant(request):
                     data['knowledge_base'].strip('[]').split(',') 
                     if kb.strip()
                 ]
-
+                print(data['knowledge_base'])
+                
             # Validate required fields
             required_fields = ["user_id", "assistant_name", "subject", "teacher_instructions"]
             missing_fields = [field for field in required_fields if field not in data]
