@@ -3,11 +3,32 @@
         <img src="https://readymadeui.com/readymadeui-white.svg" alt="logo" class="w-40" />
     </a>
     <div>
-        <!-- <a href="{% url 'auth_view' %}" class="text-white font-bold py-2 px-4 rounded bg-blue-500 hover:bg-blue-700">Sign In</a>
-        <a href="{% url 'create_assistant' %}" class="text-white font-bold py-2 px-4 rounded bg-green-500 hover:bg-green-700 ml-4">Create Assistant</a> -->
-        <!-- redirect to auth page -->
-        <a href="{% url 'auth_view' %}" class="text-white font-bold py-2 px-4 rounded bg-blue-500 hover:bg-blue-700">Sign In</a>
-        <!-- redirect to create assistant page -->
-        <a href="{% url 'create_assistant' %}" class="text-white font-bold py-2 px-4 rounded bg-green-500 hover:bg-green-700 ml-4">Create Assistant</a>
+        {% if not request.user.is_authenticated %}
+            <a href="{% url 'auth_view' %}" class="text-white font-bold py-2 px-4 rounded bg-blue-500 hover:bg-blue-700" onclick="showLoading()">Sign In</a>
+        {% endif %}
+        {% if request.user.is_authenticated %}
+            <a href="{% url 'create_assistant' %}" class="text-white font-bold py-2 px-4 rounded bg-green-500 hover:bg-green-700 ml-4" onclick="showLoading()">Create Assistant</a>
+            <a hx-post="{% url 'logout' %}" hx-trigger="click" hx-target="body" hx-swap="outerHTML" hx-redirect="{% url 'index' %}" class="text-white font-bold py-2 px-4 rounded bg-red-500 hover:bg-red-700 ml-4" onclick="showLoading()">Logout</a>
+        {% endif %}
     </div>
 </header>
+
+<script>
+    function showLoading() {
+        // Display a loading indicator
+        const loadingDiv = document.createElement('div');
+        loadingDiv.id = 'loading';
+        loadingDiv.style.position = 'fixed';
+        loadingDiv.style.top = '0';
+        loadingDiv.style.left = '0';
+        loadingDiv.style.width = '100%';
+        loadingDiv.style.height = '100%';
+        loadingDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        loadingDiv.style.display = 'flex';
+        loadingDiv.style.justifyContent = 'center';
+        loadingDiv.style.alignItems = 'center';
+        loadingDiv.style.zIndex = '1000';
+        loadingDiv.innerHTML = '<div class="text-white font-bold">Loading...</div>';
+        document.body.appendChild(loadingDiv);
+    }
+</script>
