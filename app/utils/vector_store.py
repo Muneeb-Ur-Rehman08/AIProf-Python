@@ -2,7 +2,9 @@ import os
 from langchain_community.vectorstores import SupabaseVectorStore
 from langchain_openai import OpenAIEmbeddings
 from app.configs.supabase_config import SUPABASE_CLIENT
-from langchain_community.document_loaders import TextLoader
+# from langchain_community.document_loaders import TextLoader
+from langchain.docstore.document import Document
+from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import CharacterTextSplitter
 from app.utils.supabase_methods import supabase_methods
 from app.modals.chat import get_llm
@@ -23,24 +25,25 @@ vector_store = SupabaseVectorStore(
 
 
 # Define a Document class with id, page_content, and metadata
-class Document:
-    def __init__(self, page_content, metadata=None):
-        self.id = str(uuid.uuid4())  # Generate a unique ID for each document
-        self.page_content = page_content
-        self.metadata = metadata or {}
+# class Document:
+#     def __init__(self, page_content, metadata=None):
+#         self.id = str(uuid.uuid4())  # Generate a unique ID for each document
+#         self.page_content = page_content
+#         self.metadata = metadata or {}
 
 def get_split_documents(file_path, user_id, ass_id):
-    # Use load_pdf to extract text from the PDF
-    text = load_pdf(file_path)
+    # Use PyPDFLoader to extract text from the PDF
+    loader = PyPDFLoader(file_path)
+    pages = loader.load_and_split()
     
-    # Initialize the text splitter
-    text_splitter = CharacterTextSplitter(separator="\n", chunk_size=1000, chunk_overlap=200)
-    
-    # Split the text into chunks
-    text_chunks = text_splitter.split_text(text)
-
-    # Wrap each chunk in a Document object with metadata
-    docs = [Document(chunk, metadata={"source": file_path, "id": str(uuid.uuid4()), "user_id": str(user_id), "ass_id": str(ass_id)}) for chunk in text_chunks]
+    # Wrap each page in a Document object with metadata
+    docs = [Document(page_content=page.page_content, metadata={
+        "source": file_path,
+        "id": str(uuid.uuid4()),
+        "user_id": str(user_id),
+        "ass_id": str(ass_id),
+        "page_number": i + 1
+    }) for i, page in enumerate(pages)]
     
     return docs
 
