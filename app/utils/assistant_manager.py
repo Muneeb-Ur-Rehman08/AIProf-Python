@@ -60,17 +60,17 @@ class AssistantManager:
             logger.error(f"Error creating assistant: {e}")
             raise
     
-    def get_assistant(self, ass_id: uuid.UUID, user_id: uuid.UUID) -> Optional[TeachingAssistant]:
+    def get_assistant(self, ass_id: uuid.UUID) -> Optional[TeachingAssistant]:
         """Retrieve an assistant by ID with caching"""
         try:
             # Check local cache first
-            cache_key = f"{ass_id}_{user_id}"
+            cache_key = f"G-{ass_id}_jk"
             if cache_key in self.assistants:
                 logger.info(f"Retrieved assistant from cache: {cache_key}")
                 return self.assistants[cache_key]
 
             # If not found locally, check Supabase
-            assistant_data = self.supabase_manager.get_assistant(ass_id, user_id)
+            assistant_data = self.supabase_manager.get_assistant(ass_id)
             # logger.info(f"Successfully get Assistant data: {assistant_data} \n")
             if assistant_data:
                 config = AssistantConfig(**assistant_data)
@@ -81,7 +81,7 @@ class AssistantManager:
                 logger.info(f"Retrieved assistant from Supabase: {cache_key}")
                 return assistant
             
-            logger.warning(f"Assistant not found: {ass_id}, {user_id}")
+            logger.warning(f"Assistant not found: {ass_id}")
             return None
         except Exception as e:
             logger.error(f"Error retrieving assistant: {e}")

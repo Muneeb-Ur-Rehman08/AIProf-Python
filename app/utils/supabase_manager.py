@@ -71,10 +71,10 @@ class SupabaseManager:
             logger.error(f"Error saving document to Supabase: {e}")
             raise
 
-    def get_assistant(self, ass_id: uuid.UUID, user_id: uuid.UUID) -> Optional[dict]:
+    def get_assistant(self, ass_id: uuid.UUID) -> Optional[dict]:
         """Retrieve assistant data from Supabase"""
         try:
-            response = self.client.table('assistants').select("*").eq('ass_id', str(ass_id)).eq('user_id', str(user_id)).execute()
+            response = self.client.table('assistants').select("*").eq('ass_id', str(ass_id)).execute()
             logger.info(f"After Get Assistant data from supabase: {response}\n")
             return response.data[0] if response.data else None
         except Exception as e:
@@ -86,6 +86,7 @@ class SupabaseManager:
         try:
             # Adjust the query based on your Supabase table structure
             result = self.client.table('assistants').select("*").execute()
+            print("Assistants", result)
             
             return result.data if result.data else []
         except Exception as e:
