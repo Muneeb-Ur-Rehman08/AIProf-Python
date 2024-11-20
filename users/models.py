@@ -19,13 +19,28 @@ load_dotenv()
 class SupabaseUser(models.Model):
     """
     Proxy model for Supabase auth.users table
+    This model connects to Supabase's auth.users table, not a Django database.
+    
+    To get user data from Supabase:
+    1. First authenticate with Supabase client
+    2. Then query through this model:
+       
+       # Get single user
+       user = SupabaseUser.objects.get(email='user@example.com')
+       
+       # The id and email fields will be populated from Supabase auth.users table
+       user_id = user.id  # UUID from Supabase
+       user_email = user.email
+       
+    Note: This is a read-only proxy to Supabase auth - any changes should be made
+    through Supabase authentication APIs, not through this model.
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True)
-    # email = models.EmailField(unique=True)
+    email = models.EmailField(unique=True)
     
     class Meta:
-        managed = False
-        db_table = 'auth\".\"users'
+        managed = False  # This tells Django this table exists in Supabase, not Django
+        db_table = 'auth\".\"users'  # Points to Supabase auth.users table
 
 
 
