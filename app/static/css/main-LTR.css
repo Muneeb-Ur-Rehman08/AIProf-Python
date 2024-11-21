@@ -19,7 +19,7 @@
 - blog
 - 404 Page
 - pricing
-- stats
+- stats-section-section
 - Dark Theme Rules
 ===*/
 /* start global, helper classes , Components Rules*/
@@ -4606,31 +4606,31 @@ body.rounded-btns .read-more {
 }
 
 /*    End pricing Section  */
-/*   Start stats section Rules  */
-.stats {
+/*   Start stats-section-section section Rules  */
+.stats-section-section {
   position: relative;
   overflow: hidden;
   z-index: 0;
   background-color: var(--clr-dark-blue);
 }
-.stats .section-heading .line-solid-color {
+.stats-section-section .section-heading .line-solid-color {
   background: var(--clr-white);
 }
-.stats .stat-box {
+.stats-section-section .stat-box {
   position: relative;
   text-align: center;
 }
 @media (max-width: 991px) {
-  .stats .stat-box {
+  .stats-section-section .stat-box {
     margin-bottom: 2rem;
   }
 }
 @media (max-width: 767px) {
-  .stats .stat-box {
+  .stats-section-section .stat-box {
     padding: 1rem 3rem;
   }
 }
-.stats .stat-box-inner {
+.stats-section-section .stat-box-inner {
   text-align: center;
   position: relative;
   padding: 2rem;
@@ -4641,7 +4641,7 @@ body.rounded-btns .read-more {
   border-bottom-left-radius: 0.5rem;
   border-bottom-right-radius: 0.5rem;
 }
-.stats .stat-icon {
+.stats-section-section .stat-icon {
   font-size: 3rem;
   line-height: 1;
   display: flex;
@@ -4651,7 +4651,7 @@ body.rounded-btns .read-more {
   opacity: 0.65;
   transition: all 0.2s ease-in-out 0s;
 }
-.stats .stat-num {
+.stats-section-section .stat-num {
   display: block;
   font-size: 3rem;
   font-weight: 600;
@@ -4659,18 +4659,18 @@ body.rounded-btns .read-more {
   margin-bottom: 0;
 }
 @media (max-width: 767px) {
-  .stats .stat-num {
+  .stats-section-section .stat-num {
     font-size: 2rem;
   }
 }
-.stats .stat-desc {
+.stats-section-section .stat-descs {
   font-size: 1.25rem;
   font-weight: 400;
   display: block;
   text-transform: capitalize;
 }
 
-/*  End  stats section Rules    */
+/*  End  stats-section-section section Rules    */
 /*    Start dark theme rules  */
 body.dark-theme {
   color: var(--clr-white);
@@ -4725,7 +4725,7 @@ body.dark-theme .team-member .profile {
 body.dark-theme .about .cta-area .signature .signature-img {
   background-image: url("../assets/images/about/signature-light.png");
 }
-body.dark-theme .about .stats-counter.stats-cards .stat-box {
+body.dark-theme .about .stats-section-section-counter.stats-section-cards .stat-box {
   background: var(--clr-semi-dark-blue);
 }
 

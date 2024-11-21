@@ -19,27 +19,8 @@
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" type="text/css" />
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    screens: {
-            sm: '576px',
-            md: '768px',
-            lg: '992px',
-            xl: '1200px',
-          },
-          maxWidth: {
-                    'container-sm': '540px',
-                    'container-md': '720px',
-                    'container-lg': '960px',
-                    'container-xl': '1140px',
-                },
-            }
-        }
-        }
-    </script>
-    <script src="https://unpkg.com/hyperscript.org@0.9.6"></script>
+ 
+    <!-- <script src="https://unpkg.com/hyperscript.org@0.9.6"></script> -->
     <!-- particles.js -->
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <!-- particles-init.js -->
@@ -108,10 +89,59 @@
     {% block content %}
     {% endblock %}
 
-    <!-- Include particles.js library -->
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-    <script src="{% static 'js/particles-init.js' %}"></script>
+    <!-- Tailwind CSS Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    screens: {
+                        sm: '576px',
+                        md: '768px',
+                        lg: '992px',
+                        xl: '1200px',
+                    },
+                    maxWidth: {
+                        'container-sm': '540px',
+                        'container-md': '720px',
+                        'container-lg': '960px',
+                        'container-xl': '1140px',
+                    },
+                }
+            }
+        }
+    </script>
 
+    <!--     JQuery     -->
+    <script src="{% static 'js/vendors/jquery-3.6.1.min.js' %}"></script>
+    <!--     appear     -->
+    <script src="{% static 'js/vendors/appear.min.js' %}"></script>
+    <!--     countTo     -->
+    <script src="{% static 'js/vendors/jquery.countTo.js' %}"></script>
+    <!--     wow     -->
+    <script src="{% static 'js/vendors/wow.min.js' %}"></script>
+    <!--     swiper     -->
+    <script src="{% static 'js/vendors/swiper-bundle.min.js' %}"></script>
+    <!--     particles     -->
+    <script src="{% static 'js/vendors/particles.min.js' %}"></script>
+    <!--     Vanilla-tilt     -->
+    <script src="{% static 'js/vendors/vanilla-tilt.min.js' %}"></script>
+    <!--     isotope     -->
+    <script src="{% static 'js/vendors/isotope-min.js' %}"></script>
+    <!--     fancybox     -->
+    <script src="{% static 'js/vendors/jquery.fancybox.min.js' %}  "></script>
+    <!--     main     -->
+    <script src="{% static 'js/main.js' %}"></script>
+    <!-- for js testing codes -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- add chart js -->
+    <script src="{% static 'js/app.js' %}"></script>
+    <!--for chatbot -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="{% static 'js/askMe.js' %}"></script>
+    <!-- For img gen -->
+    <script src="{% static 'js/Teacher.js' %}"></script>
+    <script src="{% static 'js/GenImage.js' %}"></script>
+    <script src="{% static 'js/sendText.js' %}"></script>
 
 </body>
 
