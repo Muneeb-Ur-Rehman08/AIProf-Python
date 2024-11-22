@@ -40,11 +40,25 @@
                     <li class="nav-item menu-item"><a class="nav-link menu-link  " href="#contact-us">contact us
                         </a></li>
                         {% if not request.user.is_authenticated %}
-            <a href="{% url 'auth_view' %}" class="text-white font-bold py-2 px-4 rounded bg-blue-500 hover:bg-blue-700" onclick="showLoading()">Sign In</a>
+                <div class="cta-links-area flex justify-center">
+                    <li class="nav-item menu-item">
+                        <a href="{% url 'auth_view' %}" class="btn-outline cta-link cta-link-primary" onclick="showLoading()">Sign In</a>
+                    </li>
+                </div>
         {% endif %}
         {% if request.user.is_authenticated %}
-            <a href="{% url 'create_assistant' %}" class="text-white font-bold py-2 px-4 rounded bg-green-500 hover:bg-green-700 ml-4" onclick="showLoading()">Create Assistant</a>
-            <a hx-post="{% url 'logout' %}" hx-trigger="click" hx-target="body" hx-swap="outerHTML" hx-redirect="{% url 'index' %}" class="text-white font-bold py-2 px-4 rounded bg-red-500 hover:bg-red-700 ml-4" onclick="showLoading()">Logout</a>
+            <div class="cta-links-area flex justify-center">
+               <li class="nav-item menu-item">
+                <a class="btn-outline cta-link cta-link-primary" onclick="showLoading()" href="{% url 'create_assistant' %}">
+                    Create Assistant
+                </a>
+               </li>
+               <li class="nav-item menu-item">
+                <a class="btn-outline cta-link cta-link-primary" hx-post="{% url 'logout' %}" hx-trigger="click" hx-target="body" hx-swap="outerHTML" hx-redirect="{% url 'index' %}" class="" onclick="showLoading()">
+                    Logout
+                    </a>
+               </li>
+            </div>
         {% endif %}
                 </ul>
             </div>
