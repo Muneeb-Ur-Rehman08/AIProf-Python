@@ -91,7 +91,7 @@ class TeachingAssistant:
             logger.error(f"Error initializing knowledge base: {e}")
             raise
 
-    def get_relevant_context_in_chunks(self, query: str, user_id: uuid.UUID, ass_id: uuid.UUID) -> List[str]:
+    def get_relevant_context_in_chunks(self, query: str, ass_id: uuid.UUID) -> List[str]:
         """Retrieve relevant context from the vector store in chunks.
 
         Args:
@@ -108,7 +108,7 @@ class TeachingAssistant:
                 k=5,
                 filter={
                     "ass_id": str(ass_id),
-                    "user_id": str(user_id)
+                    
                 }
             )
             return "\n".join([x.page_content for x in context])
