@@ -60,17 +60,17 @@ class AssistantManager:
             logger.error(f"Error creating assistant: {e}")
             raise
     
-    def get_assistant(self, ass_id: uuid.UUID, user_id: uuid.UUID) -> Optional[TeachingAssistant]:
+    def get_assistant(self, ass_id: uuid.UUID) -> Optional[TeachingAssistant]:
         """Retrieve an assistant by ID with caching"""
         try:
             # Check local cache first
-            cache_key = f"{ass_id}_{user_id}"
+            cache_key = f"G-{ass_id}_jk"
             if cache_key in self.assistants:
                 logger.info(f"Retrieved assistant from cache: {cache_key}")
                 return self.assistants[cache_key]
 
             # If not found locally, check Supabase
-            assistant_data = self.supabase_manager.get_assistant(ass_id, user_id)
+            assistant_data = self.supabase_manager.get_assistant(ass_id)
             # logger.info(f"Successfully get Assistant data: {assistant_data} \n")
             if assistant_data:
                 config = AssistantConfig(**assistant_data)
@@ -81,12 +81,29 @@ class AssistantManager:
                 logger.info(f"Retrieved assistant from Supabase: {cache_key}")
                 return assistant
             
-            logger.warning(f"Assistant not found: {ass_id}, {user_id}")
+            logger.warning(f"Assistant not found: {ass_id}")
             return None
         except Exception as e:
             logger.error(f"Error retrieving assistant: {e}")
             return None
     
+    def list_assistants(self) -> List[TeachingAssistant]:
+        """Retrieve all assistants for a given user."""
+        try:
+            # Retrieve assistant data from Supabase
+            assistants_data = self.supabase_manager.list_assistants()
+            
+            assistants = []
+            for assistant_data in assistants_data:
+                config = AssistantConfig(**assistant_data)
+                assistant = TeachingAssistant(config)
+                assistants.append(assistant)
+            
+            return assistants
+        except Exception as e:
+            logger.error(f"Error listing assistants: {e}")
+            return []
+
     def process_query(self, ass_id, user_id, query: str) -> Tuple[str, List[str]]:
         """Process a query using the appropriate assistant.
 
@@ -203,7 +220,7 @@ def main():
 
     # config_without_id = AssistantConfig(
     #     user_id="efbfba82-eb0e-4019-b9c5-370b24a7f9c1",
-    #     # ass_id="dadade36-540a-4263-8906-b08219ca6c85",
+    #     
     #     assistant_name='Pythonic',
     #     subject='Python Basics and Advance Level',
     #     teacher_instructions='Provide detailed explanations according to the knowledge_base documents provided.',

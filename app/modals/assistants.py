@@ -80,10 +80,12 @@ class TeachingAssistant:
         Args:
             pdf_paths (List[str]): List of paths to PDF documents.
         """
+        logger.info(f"The file we get: {pdf_paths}")
         try:
             for pdf_path in pdf_paths:
                 
                 store_embedding_vectors_in_supabase(pdf_path, self.config.user_id, self.config.ass_id)
+                os.remove(pdf_path)
                 
         except Exception as e:
             logger.error(f"Error initializing knowledge base: {e}")
