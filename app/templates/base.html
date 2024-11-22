@@ -2,6 +2,7 @@
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -12,10 +13,54 @@
 
 
     <!-- HTMX -->
-    <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"
+        integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
+        crossorigin="anonymous"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/hyperscript.org@0.9.6"></script>
+ 
+    <!-- <script src="https://unpkg.com/hyperscript.org@0.9.6"></script> -->
+    <!-- particles.js -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <!-- particles-init.js -->
+    <!-- Favicon -->
+    <link rel="icon" href="{% static 'assets/images/fav-icon/logo.svg' %}">
+
+    <!-- Bootstrap CSS -->
+    <!-- <link rel="stylesheet" href="{% static 'css/vendors/bootstrap.min.css' %}">
+            <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"> -->
+
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="{% static 'css/vendors/animate.css' %}">
+
+    <!-- Swiper -->
+    <link rel="stylesheet" href="{% static 'css/vendors/swiper-bundle.min.css' %}">
+
+    <!-- Flaticon -->
+    <link rel="stylesheet" href="{% static 'css/vendors/flaticon/flaticon.css' %}">
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="{% static 'css/vendors/all.min.css' %}">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="{% static 'css/vendors/bootstrap-icons-1.9.1/bootstrap-icons.css' %}">
+
+    <!-- Fancybox -->
+    <link rel="stylesheet" href="{% static 'css/vendors/jquery.fancybox.min.css' %}">
+
+    <!-- Google Fonts Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Font Family -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800&display=swap">
+
+    <!-- Main LTR CSS -->
+    <link rel="stylesheet" href="{% static 'css/main-LTR.css' %}">
+
+    <!-- Additional Home Stylesheet -->
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
 
     <!-- Custom files -->
     <!-- <link href="{% static 'css/styles.css' %}" rel="stylesheet" /> -->
@@ -38,11 +83,66 @@
     </style>
 
 </head>
-<body>
+
+<body class="dark-theme landing-page-demo">
 
     {% block content %}
     {% endblock %}
 
-    
+    <!-- Tailwind CSS Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    screens: {
+                        sm: '576px',
+                        md: '768px',
+                        lg: '992px',
+                        xl: '1200px',
+                    },
+                    maxWidth: {
+                        'container-sm': '540px',
+                        'container-md': '720px',
+                        'container-lg': '960px',
+                        'container-xl': '1140px',
+                    },
+                }
+            }
+        }
+    </script>
+
+    <!--     JQuery     -->
+    <script src="{% static 'js/vendors/jquery-3.6.1.min.js' %}"></script>
+    <!--     appear     -->
+    <script src="{% static 'js/vendors/appear.min.js' %}"></script>
+    <!--     countTo     -->
+    <script src="{% static 'js/vendors/jquery.countTo.js' %}"></script>
+    <!--     wow     -->
+    <script src="{% static 'js/vendors/wow.min.js' %}"></script>
+    <!--     swiper     -->
+    <script src="{% static 'js/vendors/swiper-bundle.min.js' %}"></script>
+    <!--     particles     -->
+    <script src="{% static 'js/vendors/particles.min.js' %}"></script>
+    <!--     Vanilla-tilt     -->
+    <script src="{% static 'js/vendors/vanilla-tilt.min.js' %}"></script>
+    <!--     isotope     -->
+    <script src="{% static 'js/vendors/isotope-min.js' %}"></script>
+    <!--     fancybox     -->
+    <script src="{% static 'js/vendors/jquery.fancybox.min.js' %}  "></script>
+    <!--     main     -->
+    <script src="{% static 'js/main.js' %}"></script>
+    <!-- for js testing codes -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- add chart js -->
+    <script src="{% static 'js/app.js' %}"></script>
+    <!--for chatbot -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="{% static 'js/askMe.js' %}"></script>
+    <!-- For img gen -->
+    <script src="{% static 'js/Teacher.js' %}"></script>
+    <script src="{% static 'js/GenImage.js' %}"></script>
+    <script src="{% static 'js/sendText.js' %}"></script>
+
 </body>
+
 </html>
