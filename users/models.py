@@ -90,24 +90,6 @@ class Assistant(models.Model):
         return self.assistan_name
     
 
-class Conversation(models.Model):
-    convo_id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True)
-    ass_id = models.ForeignKey(Assistant, on_delete=models.CASCADE)
-    user_id = models.ForeignKey(
-        SupabaseUser,
-        on_delete=models.CASCADE,
-        db_column='user_id',
-        to_field='id',
-        null=False,
-        blank=False,
-        default=uuid.uuid4,
-        db_constraint=True
-        )
-    prompt = models.TextField(default="Hello")
-    content = models.TextField(default="How are you?")
-    content_type = models.CharField(max_length=255, default="text")
-    created_at = models.DateTimeField(auto_now_add=True, null=True)
-
 
 
 class AnonConvo(models.Model):

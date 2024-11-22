@@ -30,6 +30,7 @@ urlpatterns = [
 
     # users app route
     path('users/', include('users.urls')),
+    path('assistantchat/', include('assistantchat.urls')),
     path('create_assistant/', create_assistant_view, name='create_assistant'),
     path('login/', custom_login, name='login'),
     path('logout/', logout, name='logout'),
