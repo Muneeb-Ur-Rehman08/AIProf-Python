@@ -156,19 +156,21 @@ def create_assistant(request):
                 )
                 result = assistant_manager.create_assistant(config)
                 success_message = "Assistant created successfully"
+                
 
             # Prepare response data based on the result structure
-            response_data = {
-                "ass_id": str(result.config.ass_id),
-                "user_id": str(result.config.user_id),
-                "assistant_name": result.config.assistant_name,
-                "subject": result.config.subject,
-                "teacher_instructions": result.config.teacher_instructions,
-                "message": success_message
-            }
-            
-            request.session['assistant'] = response_data
-            return format_response(data=response_data)
+                response_data = {
+                    "ass_id": str(result.config.ass_id),
+                    "user_id": str(result.config.user_id),
+                    "assistant_name": result.config.assistant_name,
+                    "subject": result.config.subject,
+                    "teacher_instructions": result.config.teacher_instructions,
+                    "message": success_message
+                }
+                print("assistant id when user created:", response_data["ass_id"])
+                request.session['assistant'] = response_data
+                print("Session", request.session.get("assistant"))
+                return format_response(data=response_data)
 
         except AttributeError as e:
             logger.error(f"Error accessing assistant data: {str(e)}")

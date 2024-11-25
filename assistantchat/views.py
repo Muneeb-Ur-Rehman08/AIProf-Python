@@ -43,6 +43,9 @@ def chat_query(request, ass_id: Optional[str] = None):
         - conversation_id (str): The conversation ID
         - error (Optional[str]): Error message if request failed
     """
+    logger.info(f"DATA we get from request in chat: {request.body }")
+    logger.info(f"DATA we get from session in chat: {request.session.get("assistant") }")
+    assistant_data = request.session.get("assistant")  
     try:
         assistant_manager = AssistantManager()
         
@@ -50,9 +53,11 @@ def chat_query(request, ass_id: Optional[str] = None):
         try:
             data = json.loads(request.body)
             prompt = data.get('prompt')
+            prompt
             conversation_id = data.get('conversation_id')
-            ass_id = data.get('ass_id')
-            
+            # ass_id = data.get('ass_id')
+            ass_id = assistant_data["ass_id"]  
+            print(f"assistant id in chat: {ass_id}")          
             if not prompt:
                 return format_response(error='Prompt is required', status=400)
                 
@@ -66,18 +71,20 @@ def chat_query(request, ass_id: Optional[str] = None):
         try:
             user = SupabaseUser.objects.get(email=request.user)
             user_id = str(user.id)  # Convert UUID to string
+            print(f"user id from chat: {user_id}")
             # uuid.UUID(user_id)  # Validate UUID format
         except (SupabaseUser.DoesNotExist, ValueError):
             return format_response(error="Invalid user authentication", status=400)
         
         # Now we can use assistant_manager
-        if not ass_id:
+        if not assistant_data["ass_id"]:
             return format_response(error='Assistant ID is required', status=400)
             
         try:
             # Convert string ass_id to UUID
-            assistant_uuid = uuid.UUID(str(ass_id))
+            assistant_uuid = uuid.UUID(str(assistant_data["ass_id"]))
             assistant = assistant_manager.get_assistant(ass_id=assistant_uuid)
+            print(f"assistant get for chat: {assistant}")
         except (ValueError, TypeError):
             return format_response(error='Invalid assistant ID format', status=400)
         except Assistant.DoesNotExist:
@@ -90,11 +97,9 @@ def chat_query(request, ass_id: Optional[str] = None):
                 conv_id = uuid.UUID(conversation_id)
             except ValueError:
                 return format_response(error='Invalid conversation ID format', status=400)
-            
-        # Initialize assistant
-        assistant_manager = AssistantManager()
-        
-        
+        else:
+            conv_id = uuid.uuid4()  # Generate new conversation ID if not provided
+         
         assistant_config = {
             "subject": assistant.config.subject,
             "teacher_instructions": assistant.config.teacher_instructions,
@@ -102,7 +107,7 @@ def chat_query(request, ass_id: Optional[str] = None):
             "prompt": prompt,
             # Add any other configuration fields from your Assistant model
         }
-        
+        print(f"assistant_chat_config: {assistant_config}")
         # Initialize chat module and assistant
         chat_module = ChatModule()
         
@@ -110,7 +115,7 @@ def chat_query(request, ass_id: Optional[str] = None):
         # Process message and get response
         response = chat_module.process_message(
             prompt=prompt,
-            ass_id=assistant.config.ass_id,
+            ass_id=ass_id,
             user_id=user_id,
             assistant_config=assistant_config,
             conversation_id=conv_id
@@ -120,7 +125,6 @@ def chat_query(request, ass_id: Optional[str] = None):
         latest_conversation = chat_module.get_chat_history(
             ass_id=assistant.config.ass_id,
             user_id=user_id,
-            
         )
         
         current_conversation_id = str(latest_conversation[0]['conversation_id']) if latest_conversation else None

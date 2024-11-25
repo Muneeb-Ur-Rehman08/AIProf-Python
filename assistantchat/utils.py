@@ -122,15 +122,24 @@ class ChatModule:
                        user_id: str, assistant_config: dict,
                        conversation_id: Optional[uuid.UUID] = None) -> str:
         """Process a chat message and generate a response."""
+        print(f"Processing message with arguments:")
+        print(f"prompt: {prompt}")
+        print(f"ass_id: {ass_id}")
+        print(f"user_id: {user_id}")
+        print(f"assistant_config: {assistant_config}")
+        print(f"conversation_id: {conversation_id}")
+        
         try:
             # Get relevant context
             context = self.get_relevant_context(prompt, ass_id)
+            print(f"\n\nGet context: {context}\n")
             
             # Create prompt
-            prompt = self._create_prompt(assistant_config)
+            prompt_template = self._create_prompt(assistant_config)
+            print(f"Get Prompt: {prompt}\n")
             
             # Get chat history
-            chat_history = self.get_chat_history(
+            chat_history = self.get_chat_history(   
                 ass_id, 
                 user_id, 
                 conversation_id=conversation_id
@@ -142,12 +151,13 @@ class ChatModule:
 
             # Create chain
             chain = (
-                {"context": lambda _: context,
+                {"context": context,
                  "question": RunnablePassthrough(),
-                 "chat_history": lambda _: chat_history_str,
-                 "subject": lambda: assistant_config["subject"],
-                 "instructions": lambda: assistant_config["teacher_instructions"]}
-                | prompt
+                 "chat_history": lambda x: chat_history_str,
+                 "subject": lambda x: assistant_config["subject"],
+                 "instructions": lambda x: assistant_config["teacher_instructions"]
+                }
+                | prompt_template
                 | self.llm
                 | StrOutputParser()
             )
