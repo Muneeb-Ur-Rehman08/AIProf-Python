@@ -104,7 +104,7 @@ class AssistantManager:
             logger.error(f"Error listing assistants: {e}")
             return []
 
-    def process_query(self, ass_id, user_id, query: str) -> Tuple[str, List[str]]:
+    def process_query(self, ass_id, query: str) -> Tuple[str, List[str]]:
         """Process a query using the appropriate assistant.
 
         Args:
@@ -116,12 +116,12 @@ class AssistantManager:
             Tuple[str, List[str]]: The explanation and any examples generated.
         """
         try:
-            assistant = self.get_assistant(ass_id, user_id)
+            assistant = self.get_assistant(ass_id)
             logger.info(f"get assistant in process query: {assistant.config.ass_id}\n")
             if not assistant:
                 return "Assistant not found.", []
             
-            context = assistant.get_relevant_context_in_chunks(query, user_id, ass_id)
+            context = assistant.get_relevant_context_in_chunks(query, ass_id)
             text_context = context.replace('\t', ' ')
 
             complete_context = self.supabase_manager.get_documents(assistant.config.ass_id, assistant.config.user_id)
@@ -251,14 +251,14 @@ def main():
     
 
     # # Process a query
-    explanation = assistant_manager.process_query(
-        "4e3e58e8-620a-4a3b-b143-1097f4ce613f",
-        "efbfba82-eb0e-4019-b9c5-370b24a7f9c1",
-        "Write a factorial program in python."
-    )
+    # explanation = assistant_manager.process_query(
+    #     "4e3e58e8-620a-4a3b-b143-1097f4ce613f",
+    #     "efbfba82-eb0e-4019-b9c5-370b24a7f9c1",
+    #     "Write a factorial program in python."
+    # )
     
     # for response in explanation:
-    print("Streaming response:", explanation)
+    # print("Streaming response:", explanation)
     # print("Rationale:", rationale)
 
 if __name__ == "__main__":

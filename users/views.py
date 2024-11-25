@@ -183,12 +183,12 @@ def create_assistant(request):
 
 
 @csrf_exempt
-@require_http_methods(["DELETE", "OPTIONS"])
+@require_http_methods(["DELETE", "OPTIONS", "GET"])
 def delete_assistant(request, ass_id):
     """Delete an existing teaching assistant"""
     if request.method == "OPTIONS":
         response = JsonResponse({})
-        response["Access-Control-Allow-Methods"] = "DELETE, OPTIONS"
+        response["Access-Control-Allow-Methods"] = "DELETE, OPTIONS, GET"
         return response
 
     try:
@@ -199,6 +199,7 @@ def delete_assistant(request, ass_id):
         try:
             user = SupabaseUser.objects.get(email=request.user.email)
             user_id = str(user.id)  # Convert to string to ensure consistency
+            print(user_id)
         except SupabaseUser.DoesNotExist:
             return format_response(error="User not found", status=404)
         

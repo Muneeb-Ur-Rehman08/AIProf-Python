@@ -117,3 +117,27 @@ class SupabaseManager:
         except Exception as e:
             logger.error(f"Error retrieving document from Supabase: {e}")
             raise
+
+    def save_chat_history(self, chat_data: dict) -> None:
+        """Save chat interaction to Supabase."""
+        try:
+            self.supabase_client.table('conversations').insert(chat_data).execute()
+        except Exception as e:
+            logger.error(f"Error saving chat history: {e}")
+            raise
+
+    def get_chat_history(self, ass_id: str, user_id: str, limit: int = 10) -> List[Dict]:
+        """Retrieve chat history from Supabase."""
+        try:
+            response = (self.supabase_client
+                    .table('conversations')
+                    .select('*')
+                    .eq('ass_id', ass_id)
+                    .eq('user_id', user_id)
+                    .order('timestamp', desc=True)
+                    .limit(limit)
+                    .execute())
+            return response.data
+        except Exception as e:
+            logger.error(f"Error retrieving chat history: {e}")
+            return []
