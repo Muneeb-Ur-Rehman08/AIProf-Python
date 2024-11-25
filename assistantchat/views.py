@@ -43,14 +43,18 @@ def chat_query(request, ass_id: Optional[str] = None):
         - conversation_id (str): The conversation ID
         - error (Optional[str]): Error message if request failed
     """
+
+    # Initialize assistant
+    assistant_manager = AssistantManager()
+
     try:
         # Parse request body
         try:
             data = json.loads(request.body)
-            message = data.get('message')
+            prompt = data.get('prompt')
             conversation_id = data.get('conversation_id')
             
-            if not message:
+            if not prompt:
                 return format_response(error='Message is required', status=400)
                 
         except json.JSONDecodeError:
@@ -81,15 +85,12 @@ def chat_query(request, ass_id: Optional[str] = None):
             except ValueError:
                 return format_response(error='Invalid conversation ID format', status=400)
             
-        # Initialize assistant
-        assistant_manager = AssistantManager()
-        
-        
+
         assistant_config = {
             "subject": assistant.config.subject,
             "teacher_instructions": assistant.config.teacher_instructions,
             
-            "question": message,
+            "question": prompt,
             # Add any other configuration fields from your Assistant model
         }
         
@@ -99,7 +100,7 @@ def chat_query(request, ass_id: Optional[str] = None):
         
         # Process message and get response
         response = chat_module.process_message(
-            message=message,
+            message=prompt,
             ass_id=assistant.config.ass_id,
             user_id=user_id,
             assistant_config=assistant_config,
