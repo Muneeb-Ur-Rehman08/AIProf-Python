@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from .views import chat_view, upload_doc, get_rag_answer, create_assistant, custom_login, logout
-from .template_views import create_assistant_view, auth_view, index_view
+from .template_views import create_assistant_view, auth_view, index_view, assistant_chat_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,6 +27,7 @@ urlpatterns = [
     path('api/create_assistant/', create_assistant, name='create_assistant'),
     path('', index_view, name='index'),
     path('auth/', auth_view, name='auth_view'),
+    path('assistantchat/', assistant_chat_view, name='assistant_chat'),
 
     # users app route
     path('users/', include('users.urls')),

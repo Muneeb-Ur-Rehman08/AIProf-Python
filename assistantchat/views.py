@@ -44,11 +44,14 @@ def chat_query(request, ass_id: Optional[str] = None):
         - error (Optional[str]): Error message if request failed
     """
     try:
+        assistant_manager = AssistantManager()
+        
         # Parse request body
         try:
             data = json.loads(request.body)
             message = data.get('message')
             conversation_id = data.get('conversation_id')
+            ass_id = data.get('ass_id')
             
             if not message:
                 return format_response(error='Message is required', status=400)
@@ -67,9 +70,16 @@ def chat_query(request, ass_id: Optional[str] = None):
         except (SupabaseUser.DoesNotExist, ValueError):
             return format_response(error="Invalid user authentication", status=400)
         
-        # Validate assistant exists
+        # Now we can use assistant_manager
+        if not ass_id:
+            return format_response(error='Assistant ID is required', status=400)
+            
         try:
-            assistant = assistant_manager.get_assistant(ass_id=uuid.UUID(ass_id)) 
+            # Convert string ass_id to UUID
+            assistant_uuid = uuid.UUID(str(ass_id))
+            assistant = assistant_manager.get_assistant(ass_id=assistant_uuid)
+        except (ValueError, TypeError):
+            return format_response(error='Invalid assistant ID format', status=400)
         except Assistant.DoesNotExist:
             return format_response(error='Assistant not found', status=404)
             
