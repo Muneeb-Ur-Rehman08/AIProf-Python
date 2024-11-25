@@ -1,4 +1,4 @@
-{% extends 'base.html' %} {% block content %} {% if assistant %}
+{% extends 'base.html' %} {% block content %}
 <div id="assistant-form" class="flex items-center justify-between">
   <form
     hx-post="/users/assistants/manage"
@@ -91,6 +91,6 @@
     </button>
   </form>
   <!-- assistant Chat Form -->
-    {% include 'assistant/assistant_chat.html' with assistant=assistant %}
+  {% include 'assistant/assistant_chat.html' with assistant=assistant %}
 </div>
-{% endif %} {% endblock %}
+{% endblock %}
