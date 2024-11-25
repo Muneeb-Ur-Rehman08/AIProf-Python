@@ -44,7 +44,12 @@ INSTALLED_APPS = [
     'corsheaders',
     'users',
     'assistantchat',
+    'authentication',
     'whitenoise.runserver_nostatic',   
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
 
 MIDDLEWARE = [
@@ -58,6 +63,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'app.middleware.rate_limit_middleware.RateLimitMiddleware',
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
+
 ]
 
 ROOT_URLCONF = 'app.urls'
@@ -73,6 +80,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.request',
             ],
         },
     },
@@ -106,6 +114,11 @@ DATABASES = {
 
 AUTHENTICATION_BACKENDS = [
     'app.utils.auth_backend.SupabaseBackend',
+       # Needed to login by user in admin, regardless of `allauth`
+    'django.contrib.auth.backends.ModelBackend',
+
+    # This one
+    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 
@@ -164,3 +177,41 @@ CORS_ALLOW_ALL_ORIGINS = True
 #     "http://example.com",
 #     "https://example.com",
 # ]
+
+
+# Provider specific settings
+SOCIALACCOUNT_PROVIDERS = {
+   'google': {
+       'APP': {
+           'client_id': '1063279234892-mt9rb6l4tfu73sikkp262fo1g5o980j4.apps.googleusercontent.com',
+           'secret': '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',
+           'key': ''
+       }
+   },
+   'AUTH_PARAMS': {
+       'access_type': 'offline',
+       'prompt': 'select_account',
+   }
+}
+
+
+# AllAuth settings
+SITE_ID = 1
+
+ACCOUNT_LOGIN_REDIRECT_URL ="/"
+ACCOUNT_LOGOUT_REDIRECT_URL ="/"
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = False
+ACCOUNT_PASSWORD_MIN_LENGTH = 8
+ACCOUNT_DEFAULT_HTTP_PROTOCOL='http'
+ACCOUNT_LOGOUT_ON_GET = True
+LOGIN_REDIRECT_URL = '/'
+
+SOCIALACCOUNT_EMAIL_REQUIRED = True
+SOCIALACCOUNT_EMAIL_VERIFICATION = False
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
+SOCIALACCOUNT_LOGIN_ON_GET=True
+SOCIALACCOUNT_AUTO_SIGNUP = False
+
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

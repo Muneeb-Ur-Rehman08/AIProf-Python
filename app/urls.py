@@ -36,4 +36,5 @@ urlpatterns = [
     path('login/', custom_login, name='login'),
     path('logout/', logout, name='logout'),
     # demo app route
+    path('accounts/', include('authentication.urls')),
 ]
