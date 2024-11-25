@@ -15,83 +15,78 @@
 {% load static %}
 
 <header class="header-basic" id="page-header">
-  <div
-    class="max-w-container-sm md:max-w-container-md lg:max-w-container-lg xl:max-w-container-xl mx-auto px-4"
-  >
-    <!--Start navbar-->
-    <nav class="menu-navbar" id="main-nav">
-      <div class="header-logo">
-        <a class="logo-link" href="#page-hero">
-          <img
-            class="logo-img light-logo"
-            loading="lazy"
-            src="{% static 'assets/images/logo/logo.svg' %}"
-            alt="logo"
-          />
-        </a>
-      </div>
-      <div class="links menu-wrapper">
-        <ul class="list-js links-list">
-          <li class="nav-item menu-item has-sub-menu">
-            <a class="nav-link menu-link active" href="#page-hero">home</a>
-          </li>
-          <li class="nav-item menu-item">
-            <a class="nav-link menu-link" href="#services">services </a>
-          </li>
-          <li class="nav-item menu-item">
-            <a class="nav-link menu-link" href="#about">about </a>
-          </li>
-          <li class="nav-item menu-item">
-            <a class="nav-link menu-link" href="#pricing">pricing </a>
-          </li>
-          <li class="nav-item menu-item">
-            <a
-              class="nav-link menu-link"
-              href="https://meetyourai.github.io/AIProf/blog/BlogIndex"
-              >Blog
-            </a>
-          </li>
-          <li class="nav-item menu-item">
-            <a class="nav-link menu-link" href="#faq">FAQ </a>
-          </li>
-          <li class="nav-item menu-item">
-            <a class="nav-link menu-link" href="#contact-us">contact us </a>
-          </li>
-          {% if not request.user.is_authenticated %}
-          <a
-            href="{% url 'auth_view' %}"
-            class="text-white font-bold py-2 px-4 rounded bg-blue-500 hover:bg-blue-700"
-            onclick="showLoading()"
-            >Sign In</a
-          >
-          {% endif %} {% if request.user.is_authenticated %}
-          <a
-            href="{% url 'create_assistant' %}"
-            class="text-white font-bold py-2 px-4 rounded bg-green-500 hover:bg-green-700 ml-4"
-            onclick="showLoading()"
-            >Create Assistant</a
-          >
-          <a
-            hx-post="{% url 'logout' %}"
-            hx-trigger="click"
-            hx-target="body"
-            hx-swap="outerHTML"
-            hx-redirect="{% url 'index' %}"
-            class="text-white font-bold py-2 px-4 rounded bg-red-500 hover:bg-red-700 ml-4"
-            onclick="showLoading()"
-            >Logout</a
-          >
-          {% endif %}
-        </ul>
-      </div>
-      <!-- for mobile navbar menu -->
-      <div class="controls-box">
-        <!--Menu Toggler button-->
-        <div class="control menu-toggler">
-          <span></span><span></span><span></span>
-        </div>
-      </div>
-    </nav>
-  </div>
-  <!--End navbar-->
+    <div class="max-w-container-sm md:max-w-container-md lg:max-w-container-lg xl:max-w-container-xl mx-auto px-4">
+        <!--Start navbar-->
+        <nav class="menu-navbar" id="main-nav">
+            <div class="header-logo">
+                <a class="logo-link" href="#page-hero">
+                    <img class="logo-img light-logo" loading="lazy" src="{% static 'assets/images/logo/logo.svg' %}" alt="logo" />
+                </a>
+            </div>
+            <div class="links menu-wrapper">
+                <ul class="list-js links-list">
+                    <li class="nav-item menu-item has-sub-menu">
+                        <a class="nav-link menu-link active"
+                            href="#page-hero">home</a>
+                    </li>
+                    <li class="nav-item menu-item">
+                        <a class="nav-link menu-link" href="#services">services </a>
+                    </li>
+                    <li class="nav-item menu-item"><a class="nav-link menu-link  " href="#about">about </a></li>
+                    <li class="nav-item menu-item"><a class="nav-link menu-link  " href="#pricing">pricing </a></li>
+                    <li class="nav-item menu-item"><a class="nav-link menu-link  "
+                            href="https://meetyourai.github.io/AIProf/blog/BlogIndex">Blog </a></li>
+                    <li class="nav-item menu-item"><a class="nav-link menu-link  " href="#faq">FAQ </a></li>
+                    <li class="nav-item menu-item"><a class="nav-link menu-link  " href="#contact-us">contact us
+                        </a></li>
+            {% if not request.user.is_authenticated %}
+                <div class="cta-links-area flex justify-center">
+                    <li class="nav-item menu-item">
+                        <a href="{% url 'auth_view' %}" class="btn-outline cta-link cta-link-primary" onclick="showLoading()">Sign In</a>
+                    </li>
+                </div>
+        {% endif %}
+        {% if request.user.is_authenticated %}
+            <div class="cta-links-area flex justify-center">
+               <li class="nav-item menu-item">
+                <a class="btn-outline cta-link cta-link-primary" onclick="showLoading()" href="{% url 'create_assistant' %}">
+                    Create Assistant
+                </a>
+               </li>
+               <li class="nav-item menu-item">
+                <a class="btn-outline cta-link cta-link-primary" hx-post="{% url 'logout' %}" hx-trigger="click" hx-target="body" hx-swap="outerHTML" hx-redirect="{% url 'index' %}" class="" onclick="showLoading()">
+                    Logout
+                    </a>
+               </li>
+            </div>
+        {% endif %}
+                </ul>
+            </div>
+            <!-- for mobile navbar menu -->
+            <div class="controls-box">
+                <!--Menu Toggler button-->
+                <div class="control  menu-toggler"><span></span><span></span><span></span></div>
+            </div>
+        </nav>
+    </div>
+    <script>
+        function showLoading() {
+            // Display a loading indicator
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'loading';
+            loadingDiv.style.position = 'fixed';
+            loadingDiv.style.top = '0';
+            loadingDiv.style.left = '0';
+            loadingDiv.style.width = '100%';
+            loadingDiv.style.height = '100%';
+            loadingDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            loadingDiv.style.display = 'flex';
+            loadingDiv.style.justifyContent = 'center';
+            loadingDiv.style.alignItems = 'center';
+            loadingDiv.style.zIndex = '1000';
+            loadingDiv.innerHTML = '<div class="text-white font-bold">Loading...</div>';
+            document.body.appendChild(loadingDiv);
+        }
+    </script>
+    <!--End navbar-->
 </header>

@@ -3,9 +3,9 @@
 
     <div class="overlay-photo-image-bg" data-bg-img="{% static 'assets/images/sections-bg-images/footer-bg-1.jpg' %}"
         data-bg-opacity=".25"></div>
-    <div class="container max-w-container-sm md:max-w-container-md lg:max-w-container-lg xl:max-w-container-xl">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 footer-cols">
-            <div class="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 footer-col">
+    <div class="max-w-container-sm md:max-w-container-md lg:max-w-container-lg xl:max-w-container-xl mx-auto px-4">
+        <div class="grid grid-cols-12 footer-cols">
+            <div class="col-span-12 md:col-span-8 lg:col-span-4 footer-col">
                 <img class="img-fluid footer-logo" loading="lazy" src="{% static 'assets/images/logo/logo.svg' %}"
                     alt="logo" />
                 <div class="footer-col-content-wrapper">
@@ -14,7 +14,7 @@
                     </p>
                 </div>
             </div>
-            <div class="col-6 col-lg-2  footer-col mt-2 text-center">
+            <div class="col-span-6 lg:col-span-2 footer-col mt-2 text-center">
                 <div class="footer-col-content-wrapper">
                     <ul class="footer-menu ">
                         <li class="footer-menu-item"><i class="bi bi-arrow-right icon "></i><a class="footer-menu-link"
@@ -33,7 +33,7 @@
                     </ul>
                 </div>
             </div>
-            <div class="col-6 col-lg-2 footer-col mt-2 text-center">
+            <div class="col-span-6 lg:col-span-2 footer-col mt-2 text-center">
                 <div class="footer-col-content-wrapper">
                     <ul class="footer-menu">
                         <li class="footer-menu-item"><i class="bi bi-arrow-right icon "></i>
@@ -53,7 +53,7 @@
                     </ul>
                 </div>
             </div>
-            <div class="col-12 col-lg-4 footer-col text-center">
+            <div class="col-span-12 lg:col-span-4 footer-col text-center">
                 <h2 class=" footer-col-title">contact information</h2>
                 <div class="footer-col-content-wrapper">
                     <div class="contact-info-card"><i class="bi bi-envelope icon"></i><a class="text-lowercase  info"
@@ -102,16 +102,16 @@
         </div>
     </div>
     <div class="copyrights">
-        <div class="container max-w-container-sm md:max-w-container-md lg:max-w-container-lg xl:max-w-container-xl">
-            <div class="row">
-                <div class="col-12 col-md-6 d-flex justify-content-start mb-3">
+        <div class="max-w-container-sm md:max-w-container-md lg:max-w-container-lg xl:max-w-container-xl mx-auto px-4">
+            <div class="grid grid-cols-12">
+                <div class="col-span-12 md:col-span-6 flex justify-start mb-3">
                     <p class="credits">
                         &copy; 2023
                         This Project is
                         <a class="LICENSE-link" href="LICENSE.html">MIT Licensed </a>
                     </p>
                 </div>
-                <div class="col-12 col-md-6 d-flex justify-content-end">
+                <div class="col-span-12 md:col-span-6 flex justify-end">
                     <div class="terms-links"><a href="rules.html">Terms of Use </a>
                         | <a href="privacy-policy.html">Privacy Policy</a>
                     </div>
