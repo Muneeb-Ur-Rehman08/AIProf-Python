@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 
-
 {% block content %}
  {% include 'components/header.html' %} 
 {% include 'components/hero.html' %}
@@ -9,7 +8,8 @@
 {% include 'components/about.html' %}
 {% include 'components/pricing_section.html' %}
 {% include 'components/testimonials.html' %}
-{% include 'components/faq.html' %}
+{% include 'components/faq.html' with faqs=faqs %}
 {% include 'components/contact_form.html' %}
 {% include 'components/page_footer.html' %} 
+<div class="back-to-top  show" id="back-to-top"><i class="bi bi-arrow-up icon "></i></div>
 {% endblock content %}
