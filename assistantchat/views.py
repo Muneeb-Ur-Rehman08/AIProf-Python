@@ -49,12 +49,12 @@ def chat_query(request, ass_id: Optional[str] = None):
         # Parse request body
         try:
             data = json.loads(request.body)
-            message = data.get('message')
+            prompt = data.get('prompt')
             conversation_id = data.get('conversation_id')
             ass_id = data.get('ass_id')
             
-            if not message:
-                return format_response(error='Message is required', status=400)
+            if not prompt:
+                return format_response(error='Prompt is required', status=400)
                 
         except json.JSONDecodeError:
             return format_response(error='Invalid JSON body', status=400)
@@ -99,7 +99,7 @@ def chat_query(request, ass_id: Optional[str] = None):
             "subject": assistant.config.subject,
             "teacher_instructions": assistant.config.teacher_instructions,
             
-            "question": message,
+            "prompt": prompt,
             # Add any other configuration fields from your Assistant model
         }
         
@@ -109,7 +109,7 @@ def chat_query(request, ass_id: Optional[str] = None):
         
         # Process message and get response
         response = chat_module.process_message(
-            message=message,
+            prompt=prompt,
             ass_id=assistant.config.ass_id,
             user_id=user_id,
             assistant_config=assistant_config,
@@ -120,7 +120,7 @@ def chat_query(request, ass_id: Optional[str] = None):
         latest_conversation = chat_module.get_chat_history(
             ass_id=assistant.config.ass_id,
             user_id=user_id,
-            limit=1
+            
         )
         
         current_conversation_id = str(latest_conversation[0]['conversation_id']) if latest_conversation else None

@@ -88,8 +88,7 @@ class ChatModule:
             raise
 
     def get_chat_history(self, ass_id: str, user_id: str, 
-                        conversation_id: Optional[uuid.UUID] = None,
-                        limit: int = 10) -> List[Dict]:
+                        conversation_id: Optional[uuid.UUID] = None) -> List[Dict]:
         """Retrieve chat history from Django model."""
         try:
             # Base query
@@ -103,7 +102,7 @@ class ChatModule:
                 query = query.filter(conversation_id=conversation_id)
             
             # Get latest conversations
-            conversations = query.order_by('-created_at')[:limit]
+            conversations = query.order_by('-created_at')[:]
             
             # Convert to list of dicts for consistency with existing code
             return [
@@ -119,13 +118,13 @@ class ChatModule:
             logger.error(f"Error retrieving chat history: {e}")
             return []
 
-    def process_message(self, message: str, ass_id: str, 
+    def process_message(self, prompt: str, ass_id: str, 
                        user_id: str, assistant_config: dict,
                        conversation_id: Optional[uuid.UUID] = None) -> str:
         """Process a chat message and generate a response."""
         try:
             # Get relevant context
-            context = self.get_relevant_context(message, ass_id)
+            context = self.get_relevant_context(prompt, ass_id)
             
             # Create prompt
             prompt = self._create_prompt(assistant_config)
@@ -154,13 +153,13 @@ class ChatModule:
             )
             
             # Generate response
-            response = chain.invoke(message)
+            response = chain.invoke(prompt)
             
             # Save interaction
             self.save_chat_history(
                 user_id=user_id,
                 ass_id=ass_id,
-                prompt=message,
+                prompt=prompt,
                 content=response,
                 conversation_id=conversation_id
             )
@@ -244,11 +243,11 @@ def main():
         print("\n=== Starting ChatModule Test ===\n")
         
         # Process multiple messages in conversation
-        for message in test_messages:
-            print(f"\nUser: {message}\n")
+        for prompt in test_messages:
+            print(f"\nUser: {prompt}\n")
             
             response = chat_module.process_message(
-                message=message,
+                prompt=prompt,
                 ass_id=test_assistant_id,
                 user_id=test_user_id,
                 assistant_config=assistant_config,
