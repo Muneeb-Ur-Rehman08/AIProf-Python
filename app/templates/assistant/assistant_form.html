@@ -1,25 +1,54 @@
-{% extends 'base.html' %}
-
-{% block content %}
-
-<form hx-post="/users/assistants/manage" hx-encoding="multipart/form-data" class="p-8 bg-gray-900 rounded-lg shadow-lg">
-    <a href="{% url 'index' %}" class="text-white font-bold py-2 px-4 rounded bg-blue-500 hover:bg-blue-700 mb-4">Back to Home</a>
+{% extends 'base.html' %} {% block content %} {% if assistant %}
+<div id="assistant-form" class="flex items-center justify-between">
+  <form
+    hx-post="/users/assistants/manage"
+    hx-encoding="multipart/form-data"
+    class="p-8 bg-gray-900 rounded-lg shadow-lg w-1/2 min-h-screen"
+  >
+    <a
+      href="{% url 'index' %}"
+      class="text-white font-bold py-2 px-4 rounded bg-blue-500 hover:bg-blue-700 mb-4"
+      onclick="showLoading()"
+      >Back to Home</a
+    >
     {% csrf_token %}
     <div class="mb-4">
-        <label class="block text-white text-lg font-bold mb-2 mt-4">Name</label>
-        <input type="text" name="assistant_name" placeholder="Name your GPT" class="input input-bordered w-full bg-gray-800 text-white" />
+      <label class="block text-white text-lg font-bold mb-2 mt-4">Name</label>
+      <input
+        type="text"
+        name="assistant_name"
+        placeholder="Name your ASSISTANT"
+        class="input input-bordered w-full bg-gray-800 text-white"
+      />
     </div>
     <div class="mb-4">
-        <label class="block text-white text-lg font-bold mb-2">Description</label>
-        <input type="text" name="subject" placeholder="Add a short description about what this GPT does" class="input input-bordered w-full bg-gray-800 text-white" />
+      <label class="block text-white text-lg font-bold mb-2">Description</label>
+      <input
+        type="text"
+        name="subject"
+        placeholder="Add a short description about what this ASSISTANT does"
+        class="input input-bordered w-full bg-gray-800 text-white"
+      />
     </div>
     <div class="mb-4">
-        <label class="block text-white text-lg font-bold mb-2">Instructions</label>
-        <textarea name="teacher_instructions" placeholder="What does this GPT do? How does it behave? What should it avoid doing?" class="textarea textarea-bordered w-full bg-gray-800 text-white" rows="4"></textarea>
+      <label class="block text-white text-lg font-bold mb-2"
+        >Instructions</label
+      >
+      <textarea
+        name="teacher_instructions"
+        placeholder="What does this ASSISTANT do? How does it behave? What should it avoid doing?"
+        class="textarea textarea-bordered w-full bg-gray-800 text-white"
+        rows="4"
+      ></textarea>
     </div>
     <div class="mb-4">
-        <input type="file" name="knowledge_base" id="fileInput" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-white hover:file:bg-gray-600"
-               _="on change
+      <input
+        type="file"
+        name="knowledge_base"
+        id="fileInput"
+        multiple
+        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-white hover:file:bg-gray-600"
+        _="on change
                   repeat for file in my.files
                   log file
                   set match to file.type in ['image/png', 'image/jpeg', 'image/jpg']
@@ -34,7 +63,7 @@
                       log 'true'
                       set img to document.createElement('img')
                       set img.src to URL.createObjectURL(file)
-                      set img.style.height to '15rem'
+                      set img.style.height to '1rem'
                       set img.style.display to 'block'
                       set img.style.marginRight to '5px'
                       set img.style.marginLeft to '5px'
@@ -48,10 +77,20 @@
                       append '<p>' + file.name + '</p>' to #files-container
                     end
                   end
-                  " />
-        <div class="flex items-center mt-4" id="files-container"></div>
+                  "
+      />
+      <div class="flex items-center mt-4" id="files-container"></div>
     </div>
-    <button type="submit" hx-post="/users/assistants/manage/" class="btn btn-primary">Create GPT</button>
-</form>
-
-{% endblock content %}
+    <button
+      type="submit"
+      hx-post="/users/assistants/manage/"
+      hx-target=""
+      class="btn btn-primary"
+    >
+      Create ASSISTANT
+    </button>
+  </form>
+  <!-- assistant Chat Form -->
+    {% include 'assistant/assistant_chat.html' with assistant=assistant %}
+</div>
+{% endif %} {% endblock %}

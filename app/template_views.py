@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.template import TemplateDoesNotExist
 from django.contrib.auth.decorators import login_required
+import uuid
 
 def index_view(request):
     faqs = [
@@ -35,6 +36,16 @@ def auth_view(request):
 def create_assistant_view(request):
     try:
         print(f"user is authenticated: {request.user}")
-        return render(request, 'assistant/assistant_form.html')
+        
+        assistant_id = uuid.uuid4()
+
+        assistant = request.session.get('assistant', None)
+
+        print(f"assistant: {assistant}")
+
+        return render(request, 'assistant/assistant_form.html', {'assistant': assistant})
     except TemplateDoesNotExist:
         return HttpResponse("Template not found", status=404)
+def assistant_chat_view(request):
+    return render(request, 'assistant/assistant_chat.html')
+

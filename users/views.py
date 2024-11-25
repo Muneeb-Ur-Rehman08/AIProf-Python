@@ -167,7 +167,7 @@ def create_assistant(request):
                 "message": success_message
             }
             
-
+            request.session['assistant'] = response_data
             return format_response(data=response_data)
 
         except AttributeError as e:

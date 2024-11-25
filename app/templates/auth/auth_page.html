@@ -37,6 +37,9 @@
         <div class="sm:flex sm:items-start space-x-4 max-sm:space-y-4 mb-8">
           <button
             type="button"
+            hx-get="{% url 'login' %}"
+            hx-target="body"
+            hx-swap="outerHTML"
             class="w-full py-2.5 px-4 text-sm font-semibold rounded-md text-blue-500 bg-blue-100 hover:bg-blue-200 focus:outline-none"
           >
             <svg

@@ -4,7 +4,6 @@ from app.modals.supabase_auth import login_with_supabase, register_with_supabase
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.contrib.auth import logout as django_logout
-
 class SupabaseBackend(BaseBackend):
     def authenticate(self, request, username=None, password=None, name=None, **kwargs):
         if not username or not password:
