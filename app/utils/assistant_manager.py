@@ -60,7 +60,7 @@ class AssistantManager:
             logger.error(f"Error creating assistant: {e}")
             raise
     
-    def get_assistant(self, ass_id: uuid.UUID) -> Optional[TeachingAssistant]:
+    def get_assistant(self, ass_id: Optional[uuid.UUID], assistant_name: Optional[str]) -> Optional[TeachingAssistant]:
         """Retrieve an assistant by ID with caching"""
         try:
             # Check local cache first
@@ -68,19 +68,26 @@ class AssistantManager:
             if cache_key in self.assistants:
                 logger.info(f"Retrieved assistant from cache: {cache_key}")
                 return self.assistants[cache_key]
-
+            if ass_id:
             # If not found locally, check Supabase
-            assistant_data = self.supabase_manager.get_assistant(ass_id)
-            # logger.info(f"Successfully get Assistant data: {assistant_data} \n")
-            if assistant_data:
-                config = AssistantConfig(**assistant_data)
-                assistant = TeachingAssistant(config)
+                assistant_data = self.supabase_manager.get_assistant(ass_id)
+                # logger.info(f"Successfully get Assistant data: {assistant_data} \n")
+                if assistant_data:
+                    config = AssistantConfig(**assistant_data)
+                    assistant = TeachingAssistant(config)
+                    
+                    # Cache the assistant
+                    self.assistants[cache_key] = assistant
+                    logger.info(f"Retrieved assistant from Supabase: {cache_key}")
+                    return assistant
+            if assistant_name:
+                assistant = self.supabase_manager.get_assistant(assistant_name)
+                if assistant:
+                    config = AssistantConfig(**assistant)
+                    assistants_name = TeachingAssistant(config)
+                    
+                    return assistants_name
                 
-                # Cache the assistant
-                self.assistants[cache_key] = assistant
-                logger.info(f"Retrieved assistant from Supabase: {cache_key}")
-                return assistant
-            
             logger.warning(f"Assistant not found: {ass_id}")
             return None
         except Exception as e:

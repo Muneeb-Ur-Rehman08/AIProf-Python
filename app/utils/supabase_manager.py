@@ -71,15 +71,24 @@ class SupabaseManager:
             logger.error(f"Error saving document to Supabase: {e}")
             raise
 
-    def get_assistant(self, ass_id: uuid.UUID) -> Optional[dict]:
+    def get_assistant(self, ass_id: Optional[uuid.UUID], assistant_name: Optional[str]) -> Optional[dict]:
         """Retrieve assistant data from Supabase"""
-        try:
-            response = self.client.table('assistants').select("*").eq('ass_id', str(ass_id)).execute()
-            logger.info(f"After Get Assistant data from supabase: {response}\n")
-            return response.data[0] if response.data else None
-        except Exception as e:
-            logger.error(f"Error retrieving assistant from Supabase: {e}")
-            raise
+        if ass_id:
+            try:
+                response = self.client.table('assistants').select("*").eq('ass_id', str(ass_id)).execute()
+                logger.info(f"After Get Assistant data from supabase: {response}\n")
+                return response.data[0] if response.data else None
+            except Exception as e:
+                logger.error(f"Error retrieving assistant from Supabase: {e}")
+                raise
+        if assistant_name:
+            try:
+                response = self.client.table('assistants').select("*").eq('assistant_name', assistant_name).execute()
+                logger.info(f"After Get Assistant data from supabase: {response}\n")
+                return response.data[0] if response.data else None
+            except Exception as e:
+                logger.error(f"Error retrieving assistant from Supabase: {e}")
+                raise
     
     def list_assistants(self) -> List[Dict[str, Any]]:
         """Retrieve all assistants for a given user from Supabase."""
