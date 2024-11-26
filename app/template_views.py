@@ -38,17 +38,14 @@ def create_assistant_view(request):
         print(f"user is authenticated: {request.user}")
         
         assistant_id = uuid.uuid4()
-        if "assistant" in request.session:
-            del request.session["assistant"]
-        
 
-        return render(request, 'assistant/assistant_form.html')
+        assistant = request.session.get('assistant', None)
+
+        print(f"assistant: {assistant}")
+
+        return render(request, 'assistant/assistant_form.html', {'assistant': assistant})
     except TemplateDoesNotExist:
         return HttpResponse("Template not found", status=404)
-
-        
 def assistant_chat_view(request):
-    assistant = request.session.get('assistant', None)
-    print(f"assistant id when chat is started: {assistant["ass_id"]}")
-    return render(request, 'assistant/assistant_chat.html', {'assistant': assistant})
+    return render(request, 'assistant/assistant_chat.html')
 

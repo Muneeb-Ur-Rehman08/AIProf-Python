@@ -42,14 +42,12 @@
 <script>
     function sendPayload() {
         const promptValue = document.getElementById('prompt-input').value;
-        
         const payload = {
             conversation_id: '{{ assistant.ass_id }}',
-            prompt: promptValue,
+            message: promptValue,
             ass_id: '{{ assistant.ass_id }}'
         };
-        console.log(payload,"ass_id")
-        fetch('/assistant_chat/chat/', {
+        fetch('/assistantchat/chat/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
