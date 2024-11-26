@@ -16,7 +16,8 @@ class Conversation(models.Model):
         default=uuid.uuid4,
         db_constraint=True
     )
-    ass_id = models.ForeignKey(Assistant, on_delete=models.CASCADE)
+    # ass_id = models.ForeignKey(Assistant, on_delete=models.CASCADE)
+    assistant_id = models.UUIDField(unique=True, default=uuid.uuid4)
     prompt = models.TextField()
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True, null=True)

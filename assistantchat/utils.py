@@ -11,7 +11,7 @@ import uuid
 from app.utils.vector_store import vector_store
 from app.modals.chat import get_llm
 from .models import Conversation
-from users.models import Assistant, SupabaseUser
+from users.models import SupabaseUser
 from app.utils.assistant_manager import AssistantManager, AssistantConfig
 
 # Set up logging
@@ -31,43 +31,42 @@ class ChatModule:
         """Create a sophisticated chat prompt template based on assistant configuration."""
         template = f"""You are a specialized teaching assistant focusing on {assistant_config.get("subject", "")}.
 
-            Core Response Constraint:
-            - Respond ONLY using the information provided in the given context
-            - DO NOT add any external knowledge or information beyond the context
-            - If no relevant information exists in the context, clearly state: "Insufficient information in the available context to answer this query."
+        Teaching Methodology:
+        {assistant_config.get("teacher_instructions", "General teaching principles:")}
+        - Provide explanations that are clear, structured, and tailored to the learner's level
+        - Break down complex concepts into digestible parts
+        - Encourage critical thinking and deeper understanding
+        - Use analogies, examples, or visual explanations when appropriate
 
-            Teaching Methodology:
-            {assistant_config.get("teacher_instructions", "General teaching principles:")}
-            - Provide explanations using ONLY the available context
-            - Break down information from the context into clear, digestible parts
-            - Maintain strict adherence to the provided contextual information
-            - Cite the exact source or section of context used in your response
+        Subject-Specific Knowledge Domain:
+        {assistant_config.get("subject", "General Academic Subject")} requires a nuanced approach that emphasizes:
+        - Fundamental principles and core concepts
+        - Practical applications and real-world relevance
+        - Interconnections with related fields of study
 
-            Subject-Specific Context Utilization:
-            {assistant_config.get("subject", "General Academic Subject")} response guidelines:
-            - Extract and present information directly from the given context
-            - Focus on the precise details available
-            - Do not infer or expand beyond the provided information
+        Contextual Knowledge Base:
+        The following context is provided to support and enrich the response:
+        {{context}}
 
-            Contextual Knowledge Base:
-            The following context is the SOLE source of information for your response:
-            {{context}}
+        Conversation History:
+        {{chat_history}}
+        If the chat history reveals previous discussions or learning progress, incorporate that knowledge to:
+        - Build upon prior explanations
+        - Reference previous learning points
+        - Maintain continuity in the learning journey
 
-            Conversation History:
-            {{chat_history}}
-            Use the chat history ONLY to understand the context of the current query, 
-            without introducing information not present in the current context.
+        Human Query: {assistant_config.get("prompt", "")}
 
-            Incoming Query: {assistant_config.get("prompt", "")}
+        Response Guidelines:
+        1. Directly address the specific question or learning objective
+        2. Leverage the provided context to construct a comprehensive answer
+        3. If the context is insufficient, clearly communicate what additional information would be helpful
+        4. Maintain an engaging, supportive, and educational tone
+        5. Adapt the complexity of the explanation to the implied or known learner's level
 
-            Response Requirements:
-            1. Address the query using ONLY the information from the context
-            2. If no direct answer exists, explicitly state the lack of information
-            3. Maintain clarity and precision
-            4. Use the context verbatim when possible
-            5. If partial information is available, clearly indicate the limitations
+        Your goal is to facilitate understanding, spark curiosity, and support the learner's educational growth in {assistant_config.get("subject", "this subject area")}.
 
-            Your sole objective is to accurately relay the information present in the given context."""
+        Provide a detailed, structured, and insightful response that illuminates the topic."""
         
         prompt = ChatPromptTemplate.from_template(template)
         return prompt
@@ -86,31 +85,32 @@ class ChatModule:
             return ""
 
     def save_chat_history(self, user_id: str, ass_id, 
-                         prompt: str, content: str, 
-                         conversation_id: Optional[uuid.UUID] = None) -> None:
+                     prompt: str, content: str, 
+                     conversation_id: Optional[uuid.UUID] = None) -> None:
         """Save chat interaction to Django model."""
         try:
-            assistant_manager = AssistantManager()
+            # Ensure we're working with the correct types
+            print(f"Saving chat history with args:")
+            print(f"user_id: {user_id}")
+            print(f"ass_id: {ass_id}")
+            print(f"prompt: {prompt}")
+            print(f"content: {content}")
+            print(f"conversation_id: {conversation_id}")
+
             # Get the related models instances
             user = SupabaseUser.objects.get(id=user_id)
-            assistant = assistant_manager.get_assistant(ass_id=uuid.UUID(ass_id))
             
             # If no conversation_id provided, create a new one
             if not conversation_id:
                 conversation_id = uuid.uuid4()
             
-            assistant_data = AssistantConfig(
-                ass_id=assistant.config.assistant_name,
-                user_id=uuid.UUID(user_id),
-                assistant_name=assistant.config.assistant_name,
-                subject=assistant.config.subject,
-                teacher_instructions=assistant.config.teacher_instructions
-            )
+            # Ensure ass_id is a string representation of the UUID
+            ass_id_str = str(ass_id.config.ass_id) if hasattr(ass_id, 'config') else str(ass_id)
             
             # Create new conversation entry
             Conversation.objects.create(
                 users_id=user,
-                ass_id=assistant_data,
+                assistant_id=ass_id_str,
                 prompt=prompt,
                 content=content,
                 conversation_id=conversation_id
@@ -153,28 +153,21 @@ class ChatModule:
             return []
 
     def process_message(self, prompt: str, ass_id, 
-                   user_id: str, assistant_config: dict,
-                   conversation_id: Optional[uuid.UUID] = None) -> Generator[Any, Any, Any]:
+               user_id: str, assistant_config: dict,
+               conversation_id: Optional[uuid.UUID] = None) -> Generator[Any, Any, Any]:
         """Process a chat message and generate a response."""
-        print(f"prompt: {prompt}")
-        print(f"ass_id: {ass_id.config.ass_id}")
-        print(f"user_id: {user_id}")
-        print(f"assistant_config: {assistant_config}")
-        print(f"conversation_id: {conversation_id}")
         try:
             # Get relevant context
             context = self.get_relevant_context(prompt, str(ass_id.config.ass_id))
-            print(context)
             
             # Create prompt
             prompt_template = self._create_prompt(assistant_config)
-            print(prompt_template)
             
             # Get chat history
             chat_history = self.get_chat_history(   
                 ass_id.config.ass_id, 
                 user_id, 
-                
+                conversation_id
             )
             chat_history_str = "\n".join([
                 f"Human: {chat['question']}\nAssistant: {chat['answer']}"
@@ -199,21 +192,19 @@ class ChatModule:
             )
             
             # Generate response
-            response = chain.stream(prompt)
+            full_response = ""
+            for chunk in chain.stream(prompt):
+                full_response += chunk
+                yield chunk
             
-            # Save interaction
-            # self.save_chat_history(
-            #     user_id=user_id,
-            #     ass_id=ass_id,
-            #     prompt=prompt,
-            #     content=response,
-            #     conversation_id=conversation_id
-            # )
-            print(response)
-            
-            for chunk in response:
-                if chunk:
-                    yield chunk
+            # Save interaction with full response
+            self.save_chat_history(
+                user_id=user_id,
+                assistant_id=ass_id.config.ass_id,
+                prompt=prompt,
+                content=full_response,
+                conversation_id=conversation_id
+            )
             
         except Exception as e:
             logger.error(f"Error processing message: {e}")
@@ -224,8 +215,8 @@ class ChatModule:
         """Clear chat history for a specific assistant and user."""
         try:
             query = Conversation.objects.filter(
-                ass_id__ass_id=ass_id,
-                users_id__id=user_id
+                assistant_id=ass_id,
+                users_id=user_id
             )
             
             if conversation_id:
