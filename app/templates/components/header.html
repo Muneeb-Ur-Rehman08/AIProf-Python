@@ -42,7 +42,7 @@
             {% if not request.user.is_authenticated %}
                 <div class="cta-links-area flex justify-center">
                     <li class="nav-item menu-item">
-                        <a href="{% url 'auth_view' %}" class="btn-outline cta-link cta-link-primary" onclick="showLoading()">Sign In</a>
+                        <a href="{% url 'account_login' %}" class="btn-outline cta-link cta-link-primary" onclick="showLoading()">Sign In</a>
                     </li>
                 </div>
         {% endif %}
@@ -54,9 +54,17 @@
                 </a>
                </li>
                <li class="nav-item menu-item">
-                <a class="btn-outline cta-link cta-link-primary" hx-post="{% url 'logout' %}" hx-trigger="click" hx-target="body" hx-swap="outerHTML" hx-redirect="{% url 'index' %}" class="" onclick="showLoading()">
+                {% csrf_token %}
+                <a class="btn-outline cta-link cta-link-primary" 
+                   hx-post="{% url 'account_logout' %}" 
+                   hx-trigger="click" 
+                   hx-target="body" 
+                   hx-swap="outerHTML" 
+                   hx-redirect="{% url 'index' %}"
+                   hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                   onclick="showLoading()">
                     Logout
-                    </a>
+                </a>
                </li>
             </div>
         {% endif %}
