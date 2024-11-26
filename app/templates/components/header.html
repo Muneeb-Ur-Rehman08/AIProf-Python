@@ -54,6 +54,7 @@
                 </a>
                </li>
                <li class="nav-item menu-item">
+                {% csrf_token %}
                 <a class="btn-outline cta-link cta-link-primary" 
                    hx-post="{% url 'account_logout' %}" 
                    hx-trigger="click" 
