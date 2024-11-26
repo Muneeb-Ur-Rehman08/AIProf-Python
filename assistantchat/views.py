@@ -1,135 +1,125 @@
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.http import JsonResponse
-from typing import Optional, Any
+from django.http import StreamingHttpResponse
+from typing import Optional, Dict
 import json
 import logging
 import uuid
+
 from users.models import Assistant, SupabaseUser
 from .utils import ChatModule
 from app.utils.assistant_manager import AssistantManager
 
 logger = logging.getLogger(__name__)
 
-def format_response(data: Any = None, error: str = None, status: int = 200) -> JsonResponse:
-    """Helper function to format consistent API responses"""
-    response = {
+def format_response(
+    data: Optional[Dict] = None, 
+    error: Optional[str] = None, 
+    status: int = 200
+) -> Dict:
+    """
+    Standardize API response formatting.
+    
+    :param data: Response payload
+    :param error: Error message
+    :param status: HTTP status code
+    :return: Formatted response dictionary
+    """
+    return {
         "success": error is None,
-        "data": data if data is not None else {},
-        "error": error
+        "data": data or {},
+        "error": error,
+        "status": status
     }
-    return JsonResponse(response, status=status)
 
 @csrf_exempt
 @require_http_methods(["POST", "OPTIONS", "GET"])
 def chat_query(request, ass_id: Optional[str] = None):
     """
-    Endpoint to process chat queries and save conversations.
+    Endpoint to process streaming chat queries with robust error handling.
     
-    Args:
-        request: HTTP request object
-        ass_id (Optional[str]): Assistant ID to interact with
-        
-    Request Body:
-        {
-            "message": str,            # The user's message
-            "conversation_id": str,    # Optional - existing conversation ID
-        }
-        
-    Returns:
-        JsonResponse containing:
-        - success (bool): Whether the request was successful
-        - response (str): The assistant's response
-        - conversation_id (str): The conversation ID
-        - error (Optional[str]): Error message if request failed
+    :param request: HTTP request object
+    :param ass_id: Optional assistant identifier
+    :return: Streaming HTTP response
     """
-    try:
-        assistant_manager = AssistantManager()
-        
-        # Parse request body
+    def generate_response():
         try:
-            data = json.loads(request.body)
-            message = data.get('message')
-            conversation_id = data.get('conversation_id')
-            ass_id = data.get('ass_id')
+            # Extract assistant data from session
+            assistant_data = request.session.get("assistant", {})
             
-            if not message:
-                return format_response(error='Message is required', status=400)
-                
-        except json.JSONDecodeError:
-            return format_response(error='Invalid JSON body', status=400)
-            
-        # Get user ID from request (adjust based on your auth implementation)
-        if not request.user.is_authenticated:
-            return format_response(error="User not authenticated", status=400)
-
-        try:
-            user = SupabaseUser.objects.get(email=request.user)
-            user_id = str(user.id)  # Convert UUID to string
-            # uuid.UUID(user_id)  # Validate UUID format
-        except (SupabaseUser.DoesNotExist, ValueError):
-            return format_response(error="Invalid user authentication", status=400)
-        
-        # Now we can use assistant_manager
-        if not ass_id:
-            return format_response(error='Assistant ID is required', status=400)
-            
-        try:
-            # Convert string ass_id to UUID
-            assistant_uuid = uuid.UUID(str(ass_id))
-            assistant = assistant_manager.get_assistant(ass_id=assistant_uuid)
-        except (ValueError, TypeError):
-            return format_response(error='Invalid assistant ID format', status=400)
-        except Assistant.DoesNotExist:
-            return format_response(error='Assistant not found', status=404)
-            
-        # Convert conversation_id to UUID if provided
-        conv_id = None
-        if conversation_id:
+            # Parse request body
             try:
-                conv_id = uuid.UUID(conversation_id)
-            except ValueError:
-                return format_response(error='Invalid conversation ID format', status=400)
+                data = json.loads(request.body)
+                prompt = data.get('prompt')
+                conversation_id = data.get('conversation_id')
+                ass_id = assistant_data.get("ass_id")
+                
+                if not prompt:
+                    yield json.dumps(format_response(error='Prompt is required', status=400))
+                    return
+                    
+            except json.JSONDecodeError:
+                yield json.dumps(format_response(error='Invalid JSON body', status=400))
+                return
+                
+            # Authentication checks
+            if not request.user.is_authenticated:
+                yield json.dumps(format_response(error="User not authenticated", status=401))
+                return
+
+            try:
+                user = SupabaseUser.objects.get(email=request.user)
+                user_id = str(user.id)
+            except (SupabaseUser.DoesNotExist, ValueError):
+                yield json.dumps(format_response(error="Invalid user authentication", status=401))
+                return
             
-        # Initialize assistant
-        assistant_manager = AssistantManager()
-        
-        
-        assistant_config = {
-            "subject": assistant.config.subject,
-            "teacher_instructions": assistant.config.teacher_instructions,
+            # Validate assistant
+            if not ass_id:
+                yield json.dumps(format_response(error='Assistant ID is required', status=400))
+                return
+                
+            try:
+                assistant_uuid = uuid.UUID(str(ass_id))
+                assistant_manager = AssistantManager()
+                assistant = assistant_manager.get_assistant(ass_id=assistant_uuid)
+            except (ValueError, TypeError):
+                yield json.dumps(format_response(error='Invalid assistant ID format', status=400))
+                return
+            except Assistant.DoesNotExist:
+                yield json.dumps(format_response(error='Assistant not found', status=404))
+                return
+                
+            # Generate conversation ID
+            conv_id = uuid.UUID(conversation_id) if conversation_id else uuid.uuid4()
+             
+            # Prepare assistant configuration
+            assistant_config = {
+                "subject": assistant.config.subject,
+                "teacher_instructions": assistant.config.teacher_instructions,
+                "prompt": prompt,
+            }
             
-            "question": message,
-            # Add any other configuration fields from your Assistant model
-        }
+            # Process message
+            chat_module = ChatModule()
+            response_generator = chat_module.process_message(
+                prompt=prompt,
+                ass_id=assistant,
+                user_id=user_id,
+                assistant_config=assistant_config,
+                conversation_id=conv_id
+            )
+            
+            # Stream response
+            for chunk in response_generator:
+                yield chunk
         
-        # Initialize chat module and assistant
-        chat_module = ChatModule()
-        
-        
-        # Process message and get response
-        response = chat_module.process_message(
-            message=message,
-            ass_id=assistant.config.ass_id,
-            user_id=user_id,
-            assistant_config=assistant_config,
-            conversation_id=conv_id
-        )
-        
-        # Get the conversation ID (either existing or new one created by process_message)
-        latest_conversation = chat_module.get_chat_history(
-            ass_id=assistant.config.ass_id,
-            user_id=user_id,
-            limit=1
-        )
-        
-        current_conversation_id = str(latest_conversation[0]['conversation_id']) if latest_conversation else None
-        
-        return format_response(data={
-            'response': response,
-            'conversation_id': current_conversation_id
-        })
-        
-    except Exception as e:
-        logger.error(f"Error in chat query endpoint: {e}")
-        return format_response(error='Failed to process chat query', status=500)
+        except Exception as e:
+            logger.error(f"Unexpected error in chat query: {e}")
+            yield json.dumps(format_response(error='Server error', status=500))
+
+    # Return streaming response
+    return StreamingHttpResponse(
+        generate_response(), 
+        content_type='text/event-stream'
+    )

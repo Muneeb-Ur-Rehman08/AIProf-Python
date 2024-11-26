@@ -32,13 +32,15 @@ vector_store = SupabaseVectorStore(
 #         self.metadata = metadata or {}
 
 def get_split_documents(file_path, user_id, ass_id):
+    # Extract just the filename from the full path
+    filename = os.path.basename(file_path)
     # Use PyPDFLoader to extract text from the PDF
     loader = PyPDFLoader(file_path)
     pages = loader.load_and_split()
     
     # Wrap each page in a Document object with metadata
     docs = [Document(page_content=page.page_content, metadata={
-        "source": file_path,
+        "source": filename,
         "id": str(uuid.uuid4()),
         "user_id": str(user_id),
         "ass_id": str(ass_id),
