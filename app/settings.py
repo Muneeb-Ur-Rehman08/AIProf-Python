@@ -220,3 +220,5 @@ SOCIALACCOUNT_AUTO_SIGNUP = False
 
 # Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app', 'https://*.up.railway.app']
