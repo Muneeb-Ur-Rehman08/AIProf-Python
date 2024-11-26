@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- {% block search %}
+<p hx-get="{% url 'list_assistants' %}" class="mb-4" hx-target="#assistants-list">
+</p>
+{% endblock %} -->
+
+<div id="assistants-list" class="h-full max-w-container-sm md:max-w-container-md lg:max-w-container-lg xl:max-w-container-xl mx-auto px-4 pb-10" 
+    style="min-height: 100vh;" 
+    hx-get="{% url 'list_assistant_partial' %}" 
+    hx-trigger="load">
+</div>
+{% endblock %}
