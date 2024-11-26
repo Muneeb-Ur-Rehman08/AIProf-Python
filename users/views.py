@@ -37,26 +37,29 @@ def get_assistant(request, ass_id: Optional[str] = None):
         
         # Initialize assistant manager
         assistant_manager = AssistantManager()
+        if  request.user.is_authenticated:
 
-        if ass_id:
-            # Get specific assistant
-            try:
-                uuid_ass_id = uuid.UUID(ass_id)  # Validate UUID format
-            except ValueError:
-                return format_response(error="Invalid assistant ID format", status=400)
+            if ass_id:
+                # Get specific assistant
+                try:
+                    uuid_ass_id = uuid.UUID(ass_id)  # Validate UUID format
+                except ValueError:
+                    return format_response(error="Invalid assistant ID format", status=400)
 
-            assistant = assistant_manager.get_assistant(uuid_ass_id)
-            if not assistant:
-                return format_response(error="Assistant not found", status=404)
-            
-            # Return single assistant data
-            return format_response(data=assistant.config.__dict__)
+                assistant = assistant_manager.get_assistant(uuid_ass_id)
+                if not assistant:
+                    return format_response(error="Assistant not found", status=404)
+                
+                # Return single assistant data
+                return format_response(data=assistant.config.__dict__)
+            else:
+                # List all assistants
+                assistants = assistant_manager.list_assistants()
+                logger.info(f"Get all assistants: {assistants}")
+                assistants_data = [assistant.config.__dict__ for assistant in assistants]
+                return format_response(data=assistants_data)
         else:
-            # List all assistants
-            assistants = assistant_manager.list_assistants()
-            logger.info(f"Get all assistants: {assistants}")
-            assistants_data = [assistant.config.__dict__ for assistant in assistants]
-            return format_response(data=assistants_data)
+            return format_response(error="User not authenticated", status=400)
 
     except Exception as e:
         logger.error(f"Error retrieving assistant(s): {str(e)}")
@@ -75,6 +78,9 @@ def create_assistant(request):
         - GET: Retrieve assistant data
         - OPTIONS: Get allowed methods
     """
+    # Initialize assistant manager
+    assistant_manager = AssistantManager()
+
     # Handle OPTIONS request
     if request.method == "OPTIONS":
         response = JsonResponse({})
@@ -99,80 +105,106 @@ def create_assistant(request):
 
         logger.info(f"Processing request for user_id: {user_id}")
 
-        # Prepare assistant data
-        assistant_data = {
-            "user_id": user_id,  # Using string version of UUID
-            "assistant_name": data.get('assistant_name'),
-            "subject": data.get('subject'),
-            "teacher_instructions": data.get('teacher_instructions'),
-        }
 
-        
-
-        # Handle file uploads if present
-        if files := request.FILES.getlist('knowledge_base'):
-            temp_dir = os.path.join('temp')
-            os.makedirs(temp_dir, exist_ok=True)
-            file_paths = []
+        if data.get('assistant_name') and not data.get('ass_id'):
             
-            for file in files:
-                temp_file_path = os.path.join(temp_dir, file.name)
-                with open(temp_file_path, 'wb+') as destination:
-                    for chunk in file.chunks():
-                        destination.write(chunk)
-                file_paths.append(temp_file_path)
-            
-            assistant_data["knowledge_base"] = file_paths
-            
-        print(f"Assistant Data: {assistant_data}")
-        # Initialize assistant manager
-        assistant_manager = AssistantManager()
-
-        try:
-            # Handle update or creation based on ass_id presence
-            if ass_id := data.get('ass_id'):
-                try:
-                    # Convert ass_id to string if it's a UUID
-                    assistant_data["ass_id"] = str(uuid.UUID(ass_id))
-                except ValueError:
-                    return format_response(error="Invalid ass_id format", status=400)
-
-                # Update existing assistant
-                result = assistant_manager.update_assistant(assistant_data)
-                
-                if not result:
-                    return format_response(error="Assistant not found", status=404)
-                
-                success_message = "Assistant updated successfully"
-                
-            else:
-                # Create new assistant
+            try:
                 config = AssistantConfig(
-                    user_id=user_id,
-                    assistant_name=assistant_data['assistant_name'],
-                    subject=assistant_data['subject'],
-                    teacher_instructions=assistant_data['teacher_instructions'],
-                    knowledge_base=assistant_data['knowledge_base']
-                )
+                        user_id=user_id,
+                        assistant_name=data.get('assistant_name'),
+                    )
                 result = assistant_manager.create_assistant(config)
                 success_message = "Assistant created successfully"
 
-            # Prepare response data based on the result structure
-            response_data = {
-                "ass_id": str(result.config.ass_id),
-                "user_id": str(result.config.user_id),
-                "assistant_name": result.config.assistant_name,
-                "subject": result.config.subject,
-                "teacher_instructions": result.config.teacher_instructions,
-                "message": success_message
-            }
-            
-            request.session['assistant'] = response_data
-            return format_response(data=response_data)
+                assistant = assistant_manager.get_assistant(ass_id=result.config.ass_id)
 
-        except AttributeError as e:
-            logger.error(f"Error accessing assistant data: {str(e)}")
-            return format_response(error="Error processing assistant data", status=500)
+                # Prepare response
+                response_data = {
+                    'id': str(assistant.config.ass_id),
+                    'assistant_name': assistant.config.assistant_name,
+                    'message': 'Initial assistant profile created. Complete your profile to finish.'
+                }
+
+                return format_response(data=response_data)
+
+            except Exception as e:
+                return format_response(error=f"Error creating initial assistant: {str(e)}", status=500)
+        
+        else:
+            
+            
+            # Prepare assistant data
+            # Validate required fields
+            required_fields = ['ass_id','assistant_name', 'subject', 'teacher_instructions']
+            missing_fields = [field for field in required_fields if not data.get(field)]
+            
+            if missing_fields:
+                return format_response(
+                    error=f"Missing required fields: {', '.join(missing_fields)}", 
+                    status=400
+                )
+                
+            assistant_data = {
+                "user_id": user_id,  # Using string version of UUID
+                "assistant_name": data.get('assistant_name'),
+                "subject": data.get('subject'),
+                "teacher_instructions": data.get('teacher_instructions'),
+            }
+
+            
+
+            # Handle file uploads if present
+            if files := request.FILES.getlist('knowledge_base'):
+                temp_dir = os.path.join('temp')
+                os.makedirs(temp_dir, exist_ok=True)
+                file_paths = []
+                
+                for file in files:
+                    temp_file_path = os.path.join(temp_dir, file.name)
+                    with open(temp_file_path, 'wb+') as destination:
+                        for chunk in file.chunks():
+                            destination.write(chunk)
+                    file_paths.append(temp_file_path)
+                
+                assistant_data["knowledge_base"] = file_paths
+                
+            print(f"Assistant Data: {assistant_data}")
+            
+            try:
+            
+                # Handle update or creation based on ass_id presence
+                if ass_id := data.get('ass_id'):
+                    try:
+                        # Convert ass_id to string if it's a UUID
+                        assistant_data["ass_id"] = str(uuid.UUID(ass_id))
+                    except ValueError:
+                        return format_response(error="Invalid ass_id format", status=400)
+
+                    # Update existing assistant
+                    result = assistant_manager.update_assistant(assistant_data)
+                    
+                    if not result:
+                        return format_response(error="Assistant not found", status=404)
+                    
+                    success_message = "Assistant updated successfully"
+                    
+                # Prepare response data based on the result structure
+                    response_data = {
+                        "ass_id": str(result.config.ass_id),
+                        "user_id": str(result.config.user_id),
+                        "assistant_name": result.config.assistant_name,
+                        "subject": result.config.subject,
+                        "teacher_instructions": result.config.teacher_instructions,
+                        "message": success_message
+                    }
+                    print("assistant id when user created", response_data["ass_id"])
+                    request.session['assistant'] = response_data
+                    print("Session", request.session.get("assistant"))
+                    return format_response(data=response_data)
+
+            except AttributeError as e:
+                logger.error(f"Error accessing assistant data: {str(e)}")
+                return format_response(error="Error processing assistant data", status=500)
 
     except json.JSONDecodeError:
         return format_response(error="Invalid JSON data", status=400)

@@ -26,11 +26,11 @@ logger = logging.getLogger(__name__)
 class AssistantConfig(BaseModel):
     """Pydantic model for assistant configuration with validation"""
     user_id: uuid.UUID
-    ass_id: Optional[uuid.UUID] = None
-    assistant_name: str
-    subject: str
-    teacher_instructions: str
-    knowledge_base: Optional[List[str]] = None
+    ass_id: uuid.UUID | None = None 
+    assistant_name: str | None = ""
+    subject: str | None = ""
+    teacher_instructions: str | None = ""
+    knowledge_base: List[str] | None = []
     
     class Config:
         arbitrary_types_allowed = True
