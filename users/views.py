@@ -116,7 +116,7 @@ def create_assistant(request):
                 result = assistant_manager.create_assistant(config)
                 success_message = "Assistant created successfully"
 
-                assistant = assistant_manager.get_assistant(data.get('assistant_name'))
+                assistant = assistant_manager.get_assistant(ass_id=result.config.ass_id)
 
                 # Prepare response
                 response_data = {
