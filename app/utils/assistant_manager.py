@@ -64,7 +64,7 @@ class AssistantManager:
         """Retrieve an assistant by ID with caching"""
         try:
             # Check local cache first
-            cache_key = f"G-{ass_id}_jk"
+            cache_key = f"{ass_id}"
             if cache_key in self.assistants:
                 logger.info(f"Retrieved assistant from cache: {cache_key}")
                 return self.assistants[cache_key]

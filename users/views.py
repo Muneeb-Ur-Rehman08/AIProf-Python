@@ -37,26 +37,29 @@ def get_assistant(request, ass_id: Optional[str] = None):
         
         # Initialize assistant manager
         assistant_manager = AssistantManager()
+        if  request.user.is_authenticated:
 
-        if ass_id:
-            # Get specific assistant
-            try:
-                uuid_ass_id = uuid.UUID(ass_id)  # Validate UUID format
-            except ValueError:
-                return format_response(error="Invalid assistant ID format", status=400)
+            if ass_id:
+                # Get specific assistant
+                try:
+                    uuid_ass_id = uuid.UUID(ass_id)  # Validate UUID format
+                except ValueError:
+                    return format_response(error="Invalid assistant ID format", status=400)
 
-            assistant = assistant_manager.get_assistant(uuid_ass_id)
-            if not assistant:
-                return format_response(error="Assistant not found", status=404)
-            
-            # Return single assistant data
-            return format_response(data=assistant.config.__dict__)
+                assistant = assistant_manager.get_assistant(uuid_ass_id)
+                if not assistant:
+                    return format_response(error="Assistant not found", status=404)
+                
+                # Return single assistant data
+                return format_response(data=assistant.config.__dict__)
+            else:
+                # List all assistants
+                assistants = assistant_manager.list_assistants()
+                logger.info(f"Get all assistants: {assistants}")
+                assistants_data = [assistant.config.__dict__ for assistant in assistants]
+                return format_response(data=assistants_data)
         else:
-            # List all assistants
-            assistants = assistant_manager.list_assistants()
-            logger.info(f"Get all assistants: {assistants}")
-            assistants_data = [assistant.config.__dict__ for assistant in assistants]
-            return format_response(data=assistants_data)
+            return format_response(error="User not authenticated", status=400)
 
     except Exception as e:
         logger.error(f"Error retrieving assistant(s): {str(e)}")
@@ -167,7 +170,7 @@ def create_assistant(request):
                     "teacher_instructions": result.config.teacher_instructions,
                     "message": success_message
                 }
-                print("assistant id when user created:", response_data["ass_id"])
+                print("assistant id when user created", response_data["ass_id"])
                 request.session['assistant'] = response_data
                 print("Session", request.session.get("assistant"))
                 return format_response(data=response_data)

@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any, Generator
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -12,7 +12,7 @@ from app.utils.vector_store import vector_store
 from app.modals.chat import get_llm
 from .models import Conversation
 from users.models import Assistant, SupabaseUser
-from app.utils.assistant_manager import AssistantManager
+from app.utils.assistant_manager import AssistantManager, AssistantConfig
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -28,20 +28,46 @@ class ChatModule:
         )
         
     def _create_prompt(self, assistant_config) -> ChatPromptTemplate:
-        """Create a chat prompt template based on assistant configuration."""
-        template = f"""You are a teaching assistant specialized in {assistant_config.get("subject", "")}.
-        
-        Instructions: {assistant_config.get("teacher_instructions", "")}
-        
-        Context from knowledge base:
-        {{context}}
-        
-        Chat History:
-        {{chat_history}}
-        
-        Human Question: {{question}}
-        
-        Provide a clear, detailed response based on the context and your expertise. If the question cannot be fully answered using the provided context, state that clearly but provide the best possible answer from what is available."""
+        """Create a sophisticated chat prompt template based on assistant configuration."""
+        template = f"""You are a specialized teaching assistant focusing on {assistant_config.get("subject", "")}.
+
+            Core Response Constraint:
+            - Respond ONLY using the information provided in the given context
+            - DO NOT add any external knowledge or information beyond the context
+            - If no relevant information exists in the context, clearly state: "Insufficient information in the available context to answer this query."
+
+            Teaching Methodology:
+            {assistant_config.get("teacher_instructions", "General teaching principles:")}
+            - Provide explanations using ONLY the available context
+            - Break down information from the context into clear, digestible parts
+            - Maintain strict adherence to the provided contextual information
+            - Cite the exact source or section of context used in your response
+
+            Subject-Specific Context Utilization:
+            {assistant_config.get("subject", "General Academic Subject")} response guidelines:
+            - Extract and present information directly from the given context
+            - Focus on the precise details available
+            - Do not infer or expand beyond the provided information
+
+            Contextual Knowledge Base:
+            The following context is the SOLE source of information for your response:
+            {{context}}
+
+            Conversation History:
+            {{chat_history}}
+            Use the chat history ONLY to understand the context of the current query, 
+            without introducing information not present in the current context.
+
+            Incoming Query: {assistant_config.get("prompt", "")}
+
+            Response Requirements:
+            1. Address the query using ONLY the information from the context
+            2. If no direct answer exists, explicitly state the lack of information
+            3. Maintain clarity and precision
+            4. Use the context verbatim when possible
+            5. If partial information is available, clearly indicate the limitations
+
+            Your sole objective is to accurately relay the information present in the given context."""
         
         prompt = ChatPromptTemplate.from_template(template)
         return prompt
@@ -59,24 +85,32 @@ class ChatModule:
             logger.error(f"Error retrieving context: {e}")
             return ""
 
-    def save_chat_history(self, user_id: str, ass_id: str, 
+    def save_chat_history(self, user_id: str, ass_id, 
                          prompt: str, content: str, 
                          conversation_id: Optional[uuid.UUID] = None) -> None:
         """Save chat interaction to Django model."""
         try:
-            
+            assistant_manager = AssistantManager()
             # Get the related models instances
             user = SupabaseUser.objects.get(id=user_id)
-            # assistant = Assistant.objects.get(ass_id=ass_id)
+            assistant = assistant_manager.get_assistant(ass_id=uuid.UUID(ass_id))
             
             # If no conversation_id provided, create a new one
             if not conversation_id:
                 conversation_id = uuid.uuid4()
             
+            assistant_data = AssistantConfig(
+                ass_id=assistant.config.assistant_name,
+                user_id=uuid.UUID(user_id),
+                assistant_name=assistant.config.assistant_name,
+                subject=assistant.config.subject,
+                teacher_instructions=assistant.config.teacher_instructions
+            )
+            
             # Create new conversation entry
             Conversation.objects.create(
                 users_id=user,
-                ass_id=ass_id,
+                ass_id=assistant_data,
                 prompt=prompt,
                 content=content,
                 conversation_id=conversation_id
@@ -118,67 +152,72 @@ class ChatModule:
             logger.error(f"Error retrieving chat history: {e}")
             return []
 
-    def process_message(self, prompt: str, ass_id: str, 
-                       user_id: str, assistant_config: dict,
-                       conversation_id: Optional[uuid.UUID] = None) -> str:
+    def process_message(self, prompt: str, ass_id, 
+                   user_id: str, assistant_config: dict,
+                   conversation_id: Optional[uuid.UUID] = None) -> Generator[Any, Any, Any]:
         """Process a chat message and generate a response."""
-        print(f"Processing message with arguments:")
         print(f"prompt: {prompt}")
-        print(f"ass_id: {ass_id}")
+        print(f"ass_id: {ass_id.config.ass_id}")
         print(f"user_id: {user_id}")
         print(f"assistant_config: {assistant_config}")
         print(f"conversation_id: {conversation_id}")
-        
         try:
             # Get relevant context
-            context = self.get_relevant_context(prompt, ass_id)
-            print(f"\n\nGet context: {context}\n")
+            context = self.get_relevant_context(prompt, str(ass_id.config.ass_id))
+            print(context)
             
             # Create prompt
             prompt_template = self._create_prompt(assistant_config)
-            print(f"Get Prompt: {prompt}\n")
+            print(prompt_template)
             
             # Get chat history
             chat_history = self.get_chat_history(   
-                ass_id, 
+                ass_id.config.ass_id, 
                 user_id, 
-                conversation_id=conversation_id
+                
             )
             chat_history_str = "\n".join([
                 f"Human: {chat['question']}\nAssistant: {chat['answer']}"
                 for chat in chat_history
             ])
 
-            # Create chain
-            chain = (
-                {"context": context,
-                 "question": RunnablePassthrough(),
-                 "chat_history": lambda x: chat_history_str,
-                 "subject": lambda x: assistant_config["subject"],
-                 "instructions": lambda x: assistant_config["teacher_instructions"]
+            # Create chain with a more explicit dictionary construction
+            def prepare_input(input_prompt):
+                return {
+                    "context": context,
+                    "question": input_prompt,
+                    "chat_history": chat_history_str,
+                    "subject": assistant_config.get("subject", ""),
+                    "instructions": assistant_config.get("teacher_instructions", "")
                 }
+
+            chain = (
+                prepare_input
                 | prompt_template
                 | self.llm
                 | StrOutputParser()
             )
             
             # Generate response
-            response = chain.invoke(prompt)
+            response = chain.stream(prompt)
             
             # Save interaction
-            self.save_chat_history(
-                user_id=user_id,
-                ass_id=ass_id,
-                prompt=prompt,
-                content=response,
-                conversation_id=conversation_id
-            )
+            # self.save_chat_history(
+            #     user_id=user_id,
+            #     ass_id=ass_id,
+            #     prompt=prompt,
+            #     content=response,
+            #     conversation_id=conversation_id
+            # )
+            print(response)
             
-            return response
+            for chunk in response:
+                if chunk:
+                    yield chunk
             
         except Exception as e:
             logger.error(f"Error processing message: {e}")
-            return "I apologize, but I encountered an error processing your message. Please try again."
+            yield "I apologize, but I encountered an error processing your message. Please try again."
 
     def clear_chat_history(self, ass_id: str, user_id: str, 
                           conversation_id: Optional[uuid.UUID] = None) -> bool:
