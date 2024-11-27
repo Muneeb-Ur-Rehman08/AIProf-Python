@@ -7,11 +7,12 @@ import uuid
 from typing import Dict, Any, Optional
 import logging
 from django.conf import settings
+from django.core.files import File
 
 # Ensure these imports match your project structure
 from app.modals.assistants import AssistantConfig
 from app.utils.assistant_manager import AssistantManager
-from .models import SupabaseUser
+from .models import SupabaseUser, Assistant, PDFDocument
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -109,19 +110,28 @@ def create_assistant(request):
         if data.get('assistant_name') and not data.get('ass_id'):
             
             try:
-                config = AssistantConfig(
-                        user_id=user_id,
-                        assistant_name=data.get('assistant_name'),
-                    )
-                result = assistant_manager.create_assistant(config)
-                success_message = "Assistant created successfully"
+                # config = AssistantConfig(
+                #         user_id=user_id,
+                #         assistant_name=data.get('assistant_name'),
+                #     )
+                # result = assistant_manager.create_assistant(config)
+                # success_message = "Assistant created successfully"
 
-                assistant = assistant_manager.get_assistant(ass_id=result.config.ass_id)
+                # assistant = assistant_manager.get_assistant(ass_id=result.config.ass_id)
+
+                name = data.get("assistant_name")
+                print(name)
+                # Create assistant to django models
+                assistant = Assistant.objects.create(
+                    user_id=user,
+                    name=name,
+                )
+                print(f"Created assistant model: {assistant.id}")
 
                 # Prepare response
                 response_data = {
-                    'id': str(assistant.config.ass_id),
-                    'assistant_name': assistant.config.assistant_name,
+                    'id': assistant.id,
+                    'name': assistant.name,
                     'message': 'Initial assistant profile created. Complete your profile to finish.'
                 }
 
@@ -160,11 +170,40 @@ def create_assistant(request):
                 file_paths = []
                 
                 for file in files:
-                    temp_file_path = os.path.join(temp_dir, file.name)
+                    # Create a temporary file path
+                    temp_file_path = os.path.join(temp_dir, f"temp_{uuid.uuid4()}_{file.name}")
+                    
+                    # Save the uploaded file to the temporary location
                     with open(temp_file_path, 'wb+') as destination:
                         for chunk in file.chunks():
                             destination.write(chunk)
-                    file_paths.append(temp_file_path)
+                    
+                    try:
+                        # Create PDFDocument instance using the temporary file
+                        with open(temp_file_path, 'rb') as temp_file:
+                            pdf_document = PDFDocument.objects.create(
+                                user_id=user,  # Use the SupabaseUser instance
+                                ass_id=assistant,  # Use the Assistant instance created earlier
+                                file=File(temp_file, name=file.name)  # Django's FileField will handle saving the file
+                            )
+                        
+                        # Process the PDF
+                        try:
+                            pdf_document.process_pdf()
+                        except Exception as e:
+                            logger.error(f"Error processing PDF {file.name}: {str(e)}")
+                            # Ensure cleanup even if processing fails
+                            pdf_document.delete()
+                        
+                        file_paths.append(pdf_document.file.path)
+                    
+                    finally:
+                        # Always delete the temporary file
+                        try:
+                            if os.path.exists(temp_file_path):
+                                os.remove(temp_file_path)
+                        except Exception as cleanup_error:
+                            logger.error(f"Error removing temporary file {temp_file_path}: {cleanup_error}")
                 
                 assistant_data["knowledge_base"] = file_paths
                 
@@ -182,6 +221,11 @@ def create_assistant(request):
 
                     # Update existing assistant
                     result = assistant_manager.update_assistant(assistant_data)
+
+                    assistants = Assistant.objects.get(id=ass_id)
+                    assistants.subject = assistant_data["subject"]
+                    assistants.teacher_instructions = assistant_data["teacher_instructions"]
+                    assistants.save()
                     
                     if not result:
                         return format_response(error="Assistant not found", status=404)

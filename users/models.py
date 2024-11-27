@@ -10,9 +10,14 @@ from openai import OpenAI
 import json
 import os
 from dotenv import load_dotenv
+import logging
+from PyPDF2 import PdfReader
 
 
 load_dotenv()
+
+# Initialize logger
+logger = logging.getLogger(__name__)
 
 # Create your models here.
 
@@ -65,7 +70,7 @@ class TestModels2(models.Model):
 
 
 class Assistant(models.Model):
-    ass_id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True)
     user_id = models.ForeignKey(
         SupabaseUser,
         on_delete=models.CASCADE,
@@ -76,9 +81,9 @@ class Assistant(models.Model):
         default=uuid.uuid4,
         db_constraint=True
     )
-    assistan_name = models.CharField(max_length=255, default="Assistant")
-    subject = models.CharField(max_length=255, default="Default Subject")
-    teacher_instructions = models.TextField(default="Default instructions")
+    name = models.CharField(max_length=255, default="Assistant", blank=True)
+    subject = models.CharField(max_length=255, default="Default Subject", blank=True)
+    teacher_instructions = models.TextField(default="Default instructions", blank=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
@@ -87,7 +92,7 @@ class Assistant(models.Model):
 
     
     def __str__(self) -> str:
-        return self.assistan_name
+        return self.name
     
 
 
@@ -129,33 +134,65 @@ class PDFDocument(models.Model):
     def _str_(self):
         return self.title
 
-    def process_pdf(self, chunk_size: int = 1000) -> List['PDFChunk']:
-        """Process PDF file into chunks and create vector embeddings."""
-        # Read PDF content
-        pdf_file = default_storage.open(self.file.name)
-        pdf_reader = PdfReader(io.BytesIO(pdf_file.read()))
-        
-        # Extract text from all pages
-        full_text = ""
-        for page in pdf_reader:
-            full_text += page.extract_text() + " "
-        
-        # Create chunks - using words as delimiter
-        words = full_text.split()
-        chunks = []
-        
-        for i in range(0, len(words), chunk_size):
-            chunk_text = " ".join(words[i:i + chunk_size])
-            chunk = PDFChunk.objects.create(
-                document=self,
-                content=chunk_text,
-                chunk_index=i // chunk_size
-            )
-            # Generate embedding immediately after creating chunk
-            chunk.generate_embedding()
-            chunks.append(chunk)
-            
-        return chunks
+    def process_pdf(self):
+        """
+        Process PDF file into chunks with vector embeddings and advanced handling
+        """
+        try:
+            self.status = 'processing'
+            self.save()
+
+            # Extract text from all pages
+            with open(self.file.path, 'rb') as pdf_file:
+                reader = PdfReader(pdf_file)
+                full_text = ""
+                for page in reader.pages:
+                    full_text += page.extract_text() + " "
+
+            # Alternative approach to create chunks
+            words = full_text.split()
+            chunk_size = 1000  # Adjustable chunk size
+            chunks = []
+
+            for i in range(0, len(words), chunk_size):
+                chunk_text = " ".join(words[i:i + chunk_size])
+                
+                chunk = PDFChunk.objects.create(
+                    document=self,
+                    content=chunk_text,
+                    chunk_index=i // chunk_size,
+                    page_number=(i // chunk_size) + 1  # Approximate page number
+                )
+                
+                # Generate embedding for each chunk
+                chunk.generate_embedding()
+                chunks.append(chunk)
+
+            # Attempt to delete the original file
+            try:
+                original_path = self.file.path
+                if os.path.exists(original_path):
+                    os.remove(original_path)
+                    # Clear the file field
+                    self.file.delete(save=False)
+            except Exception as file_deletion_error:
+                logger.error(f"Error deleting file: {file_deletion_error}")
+
+            self.status = 'completed'
+            self.save()
+            return chunks
+
+        except Exception as e:
+            # Attempt to delete file even if processing fails
+            try:
+                if os.path.exists(self.file.path):
+                    os.remove(self.file.path)
+            except Exception as file_deletion_error:
+                logger.error(f"Error deleting file during error handling: {file_deletion_error}")
+
+            self.status = 'failed'
+            self.save()
+            raise RuntimeError(f"PDF Processing Error: {str(e)}")
     
 
 class PDFChunk(models.Model):
@@ -191,3 +228,43 @@ class PDFChunk(models.Model):
         if self.vector_embedding:
             return np.array(self.vector_embedding)
         return None
+
+    @classmethod
+    def similarity_search(cls, query: str, k: int = 5) -> List['PDFChunk']:
+        """Find most similar chunks to the query using cosine similarity.
+        
+        Args:
+            query (str): The search query text
+            k (int): Number of results to return
+            
+        Returns:
+            List[PDFChunk]: List of k most similar chunks
+        """
+        try:
+            # Generate embedding for query
+            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            query_response = client.embeddings.create(
+                model="text-embedding-ada-002",
+                input=query
+            )
+            query_embedding = np.array(query_response.data[0].embedding)
+
+            # Get all chunks with embeddings
+            chunks = cls.objects.exclude(vector_embedding__isnull=True)
+            
+            # Calculate cosine similarity with each chunk
+            similarities = []
+            for chunk in chunks:
+                chunk_embedding = chunk.get_embedding_array()
+                similarity = np.dot(query_embedding, chunk_embedding) / (
+                    np.linalg.norm(query_embedding) * np.linalg.norm(chunk_embedding)
+                )
+                similarities.append((chunk, similarity))
+            
+            # Sort by similarity and return top k
+            similarities.sort(key=lambda x: x[1], reverse=True)
+            return [chunk for chunk, _ in similarities[:k]]
+
+        except Exception as e:
+            print(f"Error in similarity search: {str(e)}")
+            return []
