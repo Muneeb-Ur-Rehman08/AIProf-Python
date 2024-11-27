@@ -126,7 +126,7 @@ class SupabaseManager:
             logger.error(f"Error saving chat history: {e}")
             raise
 
-    def get_chat_history(self, ass_id: str, user_id: str) -> List[Dict]:
+    def get_chat_history(self, ass_id: str, user_id: str, limit: int = 10) -> List[Dict]:
         """Retrieve chat history from Supabase."""
         try:
             response = (self.supabase_client
@@ -135,6 +135,7 @@ class SupabaseManager:
                     .eq('ass_id', ass_id)
                     .eq('user_id', user_id)
                     .order('timestamp', desc=True)
+                    .limit(limit)
                     .execute())
             return response.data
         except Exception as e:

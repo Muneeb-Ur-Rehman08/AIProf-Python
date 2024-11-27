@@ -1,11 +1,13 @@
 # python git ignore
-app/__pycache__/
-app/configs/__pycache__/
-app/utils/__pycache__/
-app/middleware/__pycache__/
-app/modals/__pycache__/
+# app/__pycache__/
+# app/configs/__pycache__/
+# app/utils/__pycache__/
+# app/middleware/__pycache__/
+# app/modals/__pycache__/
 
-app/*.pyc
+# ignore all .pyc files
+__pycache__/
+*.pyc
 
 
 # django git ignore

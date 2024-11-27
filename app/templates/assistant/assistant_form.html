@@ -1,5 +1,5 @@
 {% extends 'base.html' %} {% block content %}
-<div id="assistant-form" class="flex items-center justify-between">
+<div id="assistant-form" class="flex items-center justify-between" hx-replace-url="true">
   <form
     hx-post="/users/assistants/manage"
     hx-encoding="multipart/form-data"
@@ -17,6 +17,7 @@
       <input
         type="text"
         name="assistant_name"
+        value="{{ assistant.assistant_name }}"
         placeholder="Name your ASSISTANT"
         class="input input-bordered w-full bg-gray-800 text-white"
       />

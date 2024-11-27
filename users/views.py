@@ -8,6 +8,7 @@ from typing import Dict, Any, Optional
 import logging
 from django.conf import settings
 from django.core.files import File
+from django.shortcuts import redirect
 
 # Ensure these imports match your project structure
 from app.modals.assistants import AssistantConfig
@@ -134,8 +135,8 @@ def create_assistant(request):
                     'name': assistant.name,
                     'message': 'Initial assistant profile created. Complete your profile to finish.'
                 }
-
-                return format_response(data=response_data)
+                request.session['assistant'] = response_data
+                return redirect(f'/assistant/{str(assistant.config.ass_id)}')
 
             except Exception as e:
                 return format_response(error=f"Error creating initial assistant: {str(e)}", status=500)

@@ -72,7 +72,7 @@ ROOT_URLCONF = 'app.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'app/templates'],
+        'DIRS': [BASE_DIR / 'app/templates', BASE_DIR / 'users/templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -113,7 +113,6 @@ DATABASES = {
 }
 
 AUTHENTICATION_BACKENDS = [
-    'app.utils.auth_backend.SupabaseBackend',
        # Needed to login by user in admin, regardless of `allauth`
     'django.contrib.auth.backends.ModelBackend',
 
