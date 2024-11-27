@@ -4,7 +4,7 @@
         <div class="mt-3">
             <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Create New Assistant</h3>
             
-            <form hx-post="/assistant/create" hx-target="#modal">
+            <form hx-post="/users/assistants/manage/" hx-target="#modal">
                 <div class="mb-4">
                     <label for="assistant_name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
                     <input type="text" 
@@ -21,9 +21,6 @@
                         Cancel
                     </button>
                     <button type="submit"
-                            hx-post="/users/assistants/manage/"
-                            hx-target="#modal"
-                            hx-trigger="click"
                             class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
                         Create
                     </button>
