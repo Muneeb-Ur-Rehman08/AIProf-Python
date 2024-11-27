@@ -3,6 +3,9 @@ from django.http import HttpResponse
 from django.template import TemplateDoesNotExist
 from django.contrib.auth.decorators import login_required
 import uuid
+import logging
+
+logger = logging.getLogger(__name__)
 
 def index_view(request):
     faqs = [
@@ -32,16 +35,17 @@ def auth_view(request):
     except TemplateDoesNotExist:
         return HttpResponse("Template not found", status=404)
 # assistant form is show only if user is logged in
-@login_required(login_url='auth_view')
-def create_assistant_view(request):
+@login_required(login_url='accounts/login/')
+def create_assistant_view(request, ass_id):
     try:
-        print(f"user is authenticated: {request.user}")
-        
-        assistant_id = uuid.uuid4()
+        if not ass_id:
+            return redirect('index')
 
         assistant = request.session.get('assistant', None)
-
-        print(f"assistant: {assistant}")
+        logger.info(f"assistant: {assistant}")
+        if ass_id != assistant.get('id'):
+            return redirect('index')
+        assistant['ass_id'] = str(uuid.UUID(ass_id))
 
         return render(request, 'assistant/assistant_form.html', {'assistant': assistant})
     except TemplateDoesNotExist:

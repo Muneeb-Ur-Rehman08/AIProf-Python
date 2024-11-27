@@ -4,11 +4,8 @@
         Preview
     </div>
     <!-- Chat Container -->
-    <div class="flex-1 flex flex-col justify-center items-center p-6">
-        <!-- <div class="text-center">
-            <h1 class="text-3xl font-bold text-white mb-2">Hello, There</h1>
-            <p class="text-gray-300 italic">How can I help you today?</p>
-        </div> -->
+    <div class="flex-1 flex flex-col justify-center items-center p-6" id="chat-container">
+        <!-- Messages will be dynamically inserted here -->
     </div>
 
     <!-- Message Input Area -->
@@ -40,13 +37,33 @@
     </div>
 </div>
 <script>
+    function appendMessage(text, isUser = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `w-full ${isUser ? 'text-right' : 'text-left'} mb-4`;
+        messageDiv.innerHTML = `
+            <div class="inline-block ${isUser ? 'bg-blue-600' : 'bg-white/10'} rounded-lg p-3 text-white max-w-[80%]">
+                ${text}
+            </div>
+        `;
+        document.getElementById('chat-container').appendChild(messageDiv);
+    }
+
     function sendPayload() {
-        const promptValue = document.getElementById('prompt-input').value;
+        const promptInput = document.getElementById('prompt-input');
+        const promptValue = promptInput.value;
+        
+        // Display user message
+        appendMessage(promptValue, true);
+        
+        // Clear input
+        promptInput.value = '';
+
         const payload = {
             conversation_id: '{{ assistant.ass_id }}',
             message: promptValue,
             ass_id: '{{ assistant.ass_id }}'
         };
+
         fetch('/assistantchat/chat/', {
             method: 'POST',
             headers: {
@@ -55,13 +72,31 @@
             },
             body: JSON.stringify(payload)
         })
-        .then(response => response.json())
-        .then(data => {
-            // Handle the response data
-            console.log(data);
+        .then(response => {
+            const reader = response.body.getReader();
+            let accumulatedResponse = '';
+            
+            function processStream({ done, value }) {
+                if (done) {
+                    return;
+                }
+                
+                // Convert the chunk to text
+                const chunk = new TextDecoder().decode(value);
+                accumulatedResponse += chunk;
+                
+                // Update the assistant's message
+                appendMessage(accumulatedResponse);
+                
+                // Continue reading the stream
+                return reader.read().then(processStream);
+            }
+            
+            return reader.read().then(processStream);
         })
         .catch(error => {
             console.error('Error:', error);
+            appendMessage('Error: Failed to get response', false);
         });
     }
 </script>
