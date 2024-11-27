@@ -113,7 +113,6 @@ DATABASES = {
 }
 
 AUTHENTICATION_BACKENDS = [
-    'app.utils.auth_backend.SupabaseBackend',
        # Needed to login by user in admin, regardless of `allauth`
     'django.contrib.auth.backends.ModelBackend',
 
