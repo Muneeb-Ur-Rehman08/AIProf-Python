@@ -219,5 +219,3 @@ def list_assistant_partial(request):
         assistants_data = [assistant for assistant in assistants_data if keyword in assistant['assistant_name']]
     logger.info(f"Get all assistants: {assistants_data}")
     return render(request, 'assistant/list_partials.html', {"assistants": assistants_data})
-
-

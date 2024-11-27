@@ -1,24 +1,4 @@
-<nav class="flex items-center justify-between p-4 border-b border-gray-800">
-    <h1 class="text-2xl font-bold">Ai Prof</h1>
-    <div class="dropdown dropdown-left">
-        <div tabindex="0" class="flex items-center gap-2 cursor-pointer">
-            <div class="avatar">
-                <div class="ring-primary ring-offset-base-100 w-12 rounded-full ring ring-offset-2">
-                    <img src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
-                </div>
-            </div>
-            <div class="ml-2 hidden md:block">
-                <div class="font-bold">login</div>
-                <div class="text-sm text-gray-400">Your Email</div>
-            </div>
-        </div>
-        <ul tabindex="0" class="dropdown-content menu p-2 shadow z-50 rounded-box w-52 mt-2" style="background-color: var(--clr-dark-blue); color: white;">
-            <li><a href="#" class="hover:bg-gray-700">Profile</a></li>
-            <li><a href="#" class="hover:bg-gray-700">Settings</a></li>
-            <li><a href="#" class="hover:bg-gray-700">Logout</a></li>
-        </ul>
-    </div>
-</nav>
+
 
 <div class="mt-4">
     <!-- Main Content -->
@@ -30,10 +10,10 @@
                 <!-- GraduationCap Icon -->
             </svg>
         </h2>
-        <div class="relative w-[18.7rem]">
+        <!-- <div class="relative w-[18.7rem]">
             <svg class="w-4 h-4 absolute left-3 top-3 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none"
                 viewBox="0 0 24 24" stroke="currentColor">
-                <!-- Search Icon -->
+                 Search Icon
             </svg>
             <input type="text" placeholder="Search"
                 class="input input-bordered input-primary w-full pl-10 bg-gray-900 border-none"
@@ -42,7 +22,26 @@
                 name="keyword"
                 required 
                 value="{{ request.GET.keyword|default:'' }}" />
-        </div>
+        </div> -->
+        <label class="input input-bordered bg-transparent flex items-center gap-2 w-60">
+            <input type="text" class="grow" placeholder="Search" 
+            hx-get="/ist_assistant_partial/" 
+            hx-target="#assistants-list" 
+            name="keyword"
+            required 
+            value="{{ request.GET.keyword|default:'' }}"
+            />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 16 16"
+              fill="currentColor"
+              class="h-4 w-4 opacity-70">
+              <path
+                fill-rule="evenodd"
+                d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
+                clip-rule="evenodd" />
+            </svg>
+          </label>
     </div>
 
 
@@ -116,10 +115,3 @@
 
 
 </div>
-
-<script>
-function toggleDropdown() {
-    const dropdown = document.getElementById('dropdownMenu');
-    dropdown.classList.toggle('hidden');
-}
-</script>
