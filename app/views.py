@@ -1,3 +1,4 @@
+from venv import logger
 from django.http import JsonResponse, StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -197,4 +198,26 @@ def create_assistant(request):
 
         return JsonResponse({'message': 'Assistant created successfully'}, status=200)
     return JsonResponse({'error': 'Only POST requests are allowed'}, status=405)
+
+
+# @login_required
+@csrf_exempt
+@require_http_methods(["GET"])
+def list_assistants(request):
+    return render(request, 'assistant/list.html')
+
+
+# @login_required
+@csrf_exempt
+@require_http_methods(["GET"])
+def list_assistant_partial(request):
+    keyword = request.GET.get('keyword')
+    # Initialize assistant manager
+    assistants = AssistantManager().list_assistants()
+    assistants_data = [assistant.config.__dict__ for assistant in assistants]
+    if keyword and len(keyword) > 2:
+        assistants_data = [assistant for assistant in assistants_data if keyword in assistant['assistant_name']]
+    logger.info(f"Get all assistants: {assistants_data}")
+    return render(request, 'assistant/list_partials.html', {"assistants": assistants_data})
+
 
