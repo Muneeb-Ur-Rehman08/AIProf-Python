@@ -36,7 +36,12 @@
                 <!-- Search Icon -->
             </svg>
             <input type="text" placeholder="Search"
-                class="input input-bordered input-primary w-full pl-10 bg-gray-900 border-none" />
+                class="input input-bordered input-primary w-full pl-10 bg-gray-900 border-none"
+                hx-get="{% url 'list_assistant_partial' %}" 
+                hx-target="#assistants-list" 
+                name="keyword"
+                required 
+                value="{{ request.GET.keyword|default:'' }}" />
         </div>
     </div>
 
