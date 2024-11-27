@@ -49,7 +49,10 @@
         {% if request.user.is_authenticated %}
             <div class="cta-links-area flex justify-center">
                <li class="nav-item menu-item">
-                <a class="btn-outline cta-link cta-link-primary" onclick="showLoading()" href="{% url 'create_assistant' %}">
+                <a class="btn-outline cta-link cta-link-primary" 
+                _="on click remove .hidden from #modal 
+                then remove .close-menu from .menu-toggler 
+                then remove .show from .menu-wrapper">
                     Create Assistant
                 </a>
                </li>
@@ -62,7 +65,9 @@
                    hx-swap="outerHTML" 
                    hx-redirect="{% url 'index' %}"
                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                   onclick="showLoading()">
+                   onclick="showLoading()"
+                   _="on click remove .close-menu from .menu-toggler 
+                   then remove .show from .menu-wrapper">
                     Logout
                 </a>
                </li>
