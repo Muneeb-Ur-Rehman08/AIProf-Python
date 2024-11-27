@@ -200,14 +200,14 @@ def create_assistant(request):
     return JsonResponse({'error': 'Only POST requests are allowed'}, status=405)
 
 
-@login_required
+# @login_required
 @csrf_exempt
 @require_http_methods(["GET"])
 def list_assistants(request):
     return render(request, 'assistant/list.html')
 
 
-@login_required
+# @login_required
 @csrf_exempt
 @require_http_methods(["GET"])
 def list_assistant_partial(request):
