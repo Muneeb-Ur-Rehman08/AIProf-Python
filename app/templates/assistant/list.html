@@ -4,7 +4,7 @@
 <!-- Search Input -->
 <div class="h-full max-w-container-sm md:max-w-container-md lg:max-w-container-lg xl:max-w-container-xl mx-auto px-4 pb-10" style="min-height: 100vh;">
     {% include 'modal/navbar.html' %}
-    <div class="flex items-center justify-end mb-6 mt-6">
+    <div class="flex items-center justify-end my-6">
         <label class="input input-bordered bg-transparent flex items-center gap-2 w-full md:w-60">
             <input 
                 type="text" 
@@ -20,32 +20,129 @@
         </label>
     </div>
     <!-- Filters Section -->
-    <div class="mb-6 space-y-2">
-        <!-- Subject Filter -->
-        <select name="subject" hx-get="{% url 'list_assistant_partial' %}" hx-target="#assistants-list"
-            hx-trigger="change" class="select select-bordered w-40">
-            <option value="">All Subjects</option>
-            <option value="Math">Math</option>
-            <option value="English">English</option>
-            <option value="Science">Science</option>
-            <option value="History">History</option>
-            <option value="Art">Art</option>
-        </select>
+    <div class="flex flex-col md:flex-row gap-8">
+        <div class="w-full md:w-1/4">
+          <div class="collapse collapse-arrow w-full">
+            <!-- Accordion Item for Subjects -->
+            <input type="checkbox" class="peer" />
+            <div class="collapse-title peer-checked:bg-primary peer-checked:text-primary-content">
+              Subjects
+            </div>
+            <div class="collapse-content space-y-4 peer-checked:bg-primary peer-checked:text-primary-content">
+              <div class="relative">
+                <svg class="absolute left-2 top-2.5 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M10 18l6-6m0 0l-6-6m6 6H4"></path>
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search subjects..."
+                  class="input input-bordered w-full pl-8"
+                  hx-get="{% url 'list_assistant_partial' %}"
+                  hx-trigger="keyup changed delay:300ms"
+                />
+              </div>
+              <div class="space-y-2 max-h-48 overflow-y-auto">
+                <div class="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="subject-Math"
+                    class="checkbox checkbox-primary"
+                    name="selected_subjects"
+                    value="Math"
+                  />
+                  <label for="subject-Math" class="label">
+                    Math
+                  </label>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="subject-Science"
+                    class="checkbox checkbox-primary bg-red-600"
+                    name="selected_subjects"
+                    value="Science"
+                  />
+                  <label for="subject-Science" class="label">
+                    Science
+                  </label>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="subject-History"
+                    class="checkbox checkbox-primary bg-red-600"
+                    name="selected_subjects"
+                    value="History"
+                  />
+                  <label for="subject-History" class="label">
+                    History
+                  </label>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="subject-English"
+                    class="checkbox checkbox-primary bg-red-600"
+                    name="selected_subjects"
+                    value="English"
+                  />
+                  <label for="subject-English" class="label">
+                    English
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+      
+          <!-- Accordion Item for Topics -->
+          <div class="collapse collapse-arrow w-full mt-4">
+            <input type="checkbox" class="peer" />
+            <div class="collapse-title peer-checked:bg-primary peer-checked:text-primary-content">
+              Topics
+            </div>
+            <div class="collapse-content space-y-4 peer-checked:bg-primary peer-checked:text-primary-content">
+              <div class="relative">
+                <svg class="absolute left-2 top-2.5 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M10 18l6-6m0 0l-6-6m6 6H4"></path>
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search topics..."
+                  class="input input-bordered w-full pl-8"
+                  hx-get="/filter-topics/"
+                  hx-trigger="keyup changed delay:300ms"
+                />
+              </div>
+              <div class="space-y-2 max-h-48 overflow-y-auto">
+                {% for topic in topics %}
+                <div class="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="topic-{{ topic }}"
+                    class="checkbox"
+                    name="selected_topics"
+                    value="{{ topic }}"
+                    hx-post="/update-topics/"
+                    hx-target="#topic-list"
+                  />
+                  <label for="topic-{{ topic }}" class="label">
+                    {{ topic }}
+                  </label>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
 
-        <!-- Topic Filter -->
-        <select name="topic" hx-get="{% url 'list_assistant_partial' %}" hx-target="#assistants-list"
-            hx-trigger="change" class="select select-bordered w-40">
-            <option value="">All Topics</option>
-            <option value="Algebra">Algebra</option>
-            <option value="Grammar">Grammar</option>
-            <option value="Physics">Physics</option>
-            <option value="World War II">World War II</option>
-            <option value="Painting">Painting</option>
-        </select>
-    </div>
+        <div class="w-full" id="assistants-list" hx-get="{% url 'list_assistant_partial' %}" hx-trigger="load">
+        </div>
+      </div>
 
-    <div id="assistants-list" hx-get="{% url 'list_assistant_partial' %}" hx-trigger="load">
-    </div>
+    
+
+
+    
 
 </div>
 {% endblock %}

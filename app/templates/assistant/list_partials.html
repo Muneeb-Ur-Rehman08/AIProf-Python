@@ -1,8 +1,8 @@
 <!-- list details of assistants -->
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     {% for assistant in assistants %}
-    <div class="card bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="card bg-white text-gray-800 rounded-lg shadow-md overflow-hidden">
         <div class="card-body p-4 rounded-lg" style="border: 1px solid rgba(var(--clr-main-rgb), 0.35)">
             <div class="flex items-center gap-4 mb-4">
                 <div class="avatar">
@@ -30,11 +30,9 @@
                 <input type="radio" name="rating-5" class="mask mask-star-2 bg-orange-400" />
                 <input type="radio" name="rating-5" class="mask mask-star-2 bg-orange-400" />
                 <input type="radio" name="rating-5" class="mask mask-star-2 bg-orange-400" />
+                <span class="ml-2 text-xs font-semibold">4.5</span>
             </div>
-            <div class="flex justify-between text-sm text-gray-600">
-                <span>4.5 reviews</span>
-                <span>100 interactions</span>
-            </div>
+            <p class="text-end">100 interactions</p>
         </div>
     </div>
     {% endfor %}
