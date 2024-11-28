@@ -211,11 +211,29 @@ def list_assistants(request):
 @csrf_exempt
 @require_http_methods(["GET"])
 def list_assistant_partial(request):
-    keyword = request.GET.get('keyword')
+    search = request.GET.get('search')
+    subject_filter = request.GET.get('subject', '').strip()
+    topic_filter = request.GET.get('topic', '').strip()
+
     # Initialize assistant manager
     assistants = AssistantManager().list_assistants()
-    assistants_data = [assistant.config.__dict__ for assistant in assistants]
-    if keyword and len(keyword) > 2:
-        assistants_data = [assistant for assistant in assistants_data if keyword in assistant['assistant_name']]
-    logger.info(f"Get all assistants: {assistants_data}")
-    return render(request, 'assistant/list_partials.html', {"assistants": assistants_data})
+
+    
+    assistants = [assistant.config.__dict__ for assistant in assistants]
+    if search and len(search) > 2:
+        assistants = [
+            assistant for assistant in assistants
+            if assistant.get('assistant_name') and search in assistant['assistant_name']
+        ]
+
+    # Apply subject filter
+    if subject_filter:
+        assistants = [a for a in assistants if a['subject'].lower() == subject_filter.lower()]
+
+    # Apply topic filter
+    if topic_filter:
+        assistants = [a for a in assistants if 'topic' in a and a['topic'].lower() == topic_filter.lower()]  # Check if 'topic' exists
+
+
+    logger.info(f"Get all assistants: {assistants}")
+    return render(request, 'assistant/list_partials.html', {"assistants": assistants})
