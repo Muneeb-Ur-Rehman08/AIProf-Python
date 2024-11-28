@@ -1,6 +1,7 @@
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
+from django.contrib.auth.models import User
 from typing import Optional, Any
 import json
 import logging
@@ -11,7 +12,7 @@ from app.utils.assistant_manager import AssistantManager
 
 logger = logging.getLogger(__name__)
 
-def format_response(data: Any = None, error: str = None, status: int = 200) -> JsonResponse:
+def format_response(data: Any = None, error: str = None, status: int = 200) -> Any:
     """Helper function to format consistent API responses"""
     response = {
         "success": error is None,
@@ -64,10 +65,10 @@ def chat_query(request, ass_id: Optional[str] = None):
             return format_response(error="User not authenticated", status=400)
 
         try:
-            user = SupabaseUser.objects.get(email=request.user)
+            user = User.objects.get(id=request.user.id)
             user_id = str(user.id)  # Convert UUID to string
             # uuid.UUID(user_id)  # Validate UUID format
-        except (SupabaseUser.DoesNotExist, ValueError):
+        except (User.DoesNotExist, ValueError):
             return format_response(error="Invalid user authentication", status=400)
         
         # Now we can use assistant_manager

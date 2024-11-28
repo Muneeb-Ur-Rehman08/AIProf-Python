@@ -4,15 +4,17 @@ from django.core.files.storage import default_storage
 from django.conf import settings
 import numpy as np
 from pypdf import PdfReader
-import io
 from typing import List
-from openai import OpenAI
 import json
 import os
 from dotenv import load_dotenv
 import logging
-from PyPDF2 import PdfReader
+from django.contrib.auth.models import User 
+from django.contrib.postgres.fields import ArrayField
 
+from langchain.document_loaders import PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from openai import OpenAI
 
 load_dotenv()
 
@@ -49,37 +51,17 @@ class SupabaseUser(models.Model):
 
 
 
-class TestModels(models.Model):
-    test_user = models.ForeignKey(
-        SupabaseUser,
-        on_delete=models.CASCADE,
-        db_column='user_id',
-        to_field='id',
-        null=False,
-        blank=False,
-        default=uuid.uuid4,
-        db_constraint=True
-    )
-    name = models.TextField()
-    password = models.TextField()
-
-
-class TestModels2(models.Model):
-    text = models.CharField(max_length=100)
-    description = models.CharField(max_length=100)
-
-
 class Assistant(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True)
     user_id = models.ForeignKey(
-        SupabaseUser,
+        User,  # Changed to Django User model
         on_delete=models.CASCADE,
-        db_column='user_id',
-        to_field='id',
         null=False,
         blank=False,
         default=uuid.uuid4,
-        db_constraint=True
+        db_constraint=True,
+        to_field='id',  # Explicitly use the primary key of User model
+        db_column='user_id'  # This ensures the column name is 'user_id'
     )
     name = models.CharField(max_length=255, default="Assistant", blank=True)
     subject = models.CharField(max_length=255, default="Default Subject", blank=True)
@@ -96,149 +78,164 @@ class Assistant(models.Model):
     
 
 
-
-class AnonConvo(models.Model):
-    anonconvo_id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True)
-    user_id = models.ForeignKey(
-        SupabaseUser,
-        on_delete=models.CASCADE,
-        db_column='user_id',
-        to_field='id',
-        null=False,
-        blank=False,
-        default=uuid.uuid4,
-        db_constraint=True
-        )
-    content = models.JSONField(null=True)
-    convo_id = models.UUIDField(default=uuid.uuid4)
-    parent_msg_id = models.UUIDField(default=uuid.uuid4)
-    role = models.CharField(max_length=255, default="User")
-    created_at = models.DateTimeField(auto_now_add=True, null=True)
-    updated_at = models.DateTimeField(auto_now=True, null=True)
+# class AnonConvo(models.Model):
+#     anonconvo_id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True)
+#     user_id = models.ForeignKey(
+#         User,  # Changed to Django User model
+#         on_delete=models.CASCADE,
+#         null=False,
+#         blank=False,
+#         default=uuid.uuid4,
+#         to_field='id',  # Explicitly use the primary key of User model
+#         db_column='user_id',  # This ensures the column name is 'user_id'
+#         db_constraint=True
+#         )
+#     content = models.JSONField(null=True)
+#     convo_id = models.UUIDField(default=uuid.uuid4)
+#     parent_msg_id = models.UUIDField(default=uuid.uuid4)
+#     role = models.CharField(max_length=255, default="User")
+#     created_at = models.DateTimeField(auto_now_add=True, null=True)
+#     updated_at = models.DateTimeField(auto_now=True, null=True)
 
 
 class PDFDocument(models.Model):
+    PROCESSING_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed')
+    ]
+
     doc_id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4)
     file = models.FileField(upload_to='pdfs/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    
     user_id = models.ForeignKey(
-        SupabaseUser,
+        User,
         on_delete=models.CASCADE,
-        db_column="user_id",
-        to_field="id",
-        default=uuid.uuid4,
-        db_constraint=True
+        default=None,
+        null=True,
+        related_name='pdf_documents',
+        to_field='id',
+        db_column='user_id'
     )
-    ass_id = models.ForeignKey(Assistant, default=uuid.uuid4, on_delete=models.CASCADE)
-
-    def _str_(self):
-        return self.title
+    
+    assostant_id = models.ForeignKey(
+        Assistant, 
+        on_delete=models.CASCADE, 
+        null=True,
+        related_name='pdf_documents',
+        to_field='id',
+        db_column='assistant_id'
+    )
+    
+    title = models.CharField(max_length=255, null=True, blank=True)
+    status = models.CharField(
+        max_length=20, 
+        choices=PROCESSING_STATUS_CHOICES, 
+        default='pending'
+    )
+    chunk_content = models.TextField(null=True, blank=True)
+    metadata = models.JSONField(null=True, blank=True)
+    vector_embedding = ArrayField(
+        models.FloatField(), 
+        null=True, 
+        blank=True
+    )
+    
+    def __str__(self):
+        return self.title or str(self.doc_id)
 
     def process_pdf(self):
-        """
-        Process PDF file into chunks with vector embeddings and advanced handling
-        """
+        temp_dir = os.path.join('temp')
+        os.makedirs(temp_dir, exist_ok=True)
+        temp_file_path = None
+        
         try:
+            # Create temporary file path
+            temp_file_path = os.path.join(temp_dir, self.file.name)
+            
+            # Save uploaded file to temporary location
+            with open(temp_file_path, 'wb+') as destination:
+                for chunk in self.file.chunks():
+                    destination.write(chunk)
+            
+            # Set status to processing
             self.status = 'processing'
             self.save()
 
-            # Extract text from all pages
-            with open(self.file.path, 'rb') as pdf_file:
-                reader = PdfReader(pdf_file)
-                full_text = ""
-                for page in reader.pages:
-                    full_text += page.extract_text() + " "
+            # Load PDF using PyPDFLoader
+            loader = PyPDFLoader(temp_file_path)
+            pages = loader.load_and_split()
 
-            # Alternative approach to create chunks
-            words = full_text.split()
-            chunk_size = 1000  # Adjustable chunk size
-            chunks = []
+            # Text splitting for creating chunks
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=1000,
+                chunk_overlap=200,
+                length_function=len
+            )
+            chunks = text_splitter.split_documents(pages)
 
-            for i in range(0, len(words), chunk_size):
-                chunk_text = " ".join(words[i:i + chunk_size])
-                
-                chunk = PDFChunk.objects.create(
-                    document=self,
-                    content=chunk_text,
-                    chunk_index=i // chunk_size,
-                    page_number=(i // chunk_size) + 1  # Approximate page number
+            # Store chunk contents
+            self.chunk_content = json.dumps([
+                chunk.page_content for chunk in chunks
+            ])
+
+            # Initialize OpenAI client
+            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+            # Prepare metadata
+            self.metadata = {
+                'filename': os.path.basename(temp_file_path),
+                'user_id': str(self.user_id.id) if self.user_id else None,
+                'ass_id': str(self.ass_id.id) if self.ass_id else None,
+                'chunks': [
+                    {
+                        'id': chunk.metadata.get('id'),
+                        'page_number': chunk.metadata.get('page_number')
+                    } for chunk in chunks
+                ]
+            }
+
+            # Generate embeddings
+            embeddings = []
+            for chunk in chunks:
+                response = client.embeddings.create(
+                    model="text-embedding-ada-002",
+                    input=chunk.page_content
                 )
-                
-                # Generate embedding for each chunk
-                chunk.generate_embedding()
-                chunks.append(chunk)
+                embeddings.extend(response.data[0].embedding)
 
-            # Attempt to delete the original file
-            try:
-                original_path = self.file.path
-                if os.path.exists(original_path):
-                    os.remove(original_path)
-                    # Clear the file field
-                    self.file.delete(save=False)
-            except Exception as file_deletion_error:
-                logger.error(f"Error deleting file: {file_deletion_error}")
+            # Store vector embeddings
+            self.vector_embedding = embeddings
 
+            # Set status to completed
             self.status = 'completed'
             self.save()
-            return chunks
+
+            return self
 
         except Exception as e:
-            # Attempt to delete file even if processing fails
-            try:
-                if os.path.exists(self.file.path):
-                    os.remove(self.file.path)
-            except Exception as file_deletion_error:
-                logger.error(f"Error deleting file during error handling: {file_deletion_error}")
-
+            # Set status to failed
             self.status = 'failed'
             self.save()
+            
             raise RuntimeError(f"PDF Processing Error: {str(e)}")
-    
-
-class PDFChunk(models.Model):
-    document = models.ForeignKey(PDFDocument, on_delete=models.CASCADE, related_name='chunks')
-    content = models.TextField()
-    chunk_index = models.IntegerField()
-    vector_embedding = models.JSONField(null=True)  # Store as JSON for better compatibility
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def _str_(self):
-        return f"Chunk {self.chunk_index} of {self.document.title}"
-
-    def generate_embedding(self) -> None:
-        """Generate and save vector embedding using OpenAI API."""
-        try:
-            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-            
-            # Get embeddings from OpenAI
-            response = client.embeddings.create(
-                model="text-embedding-ada-002",
-                input=self.content
-            )
-            
-            # Store embedding as JSON
-            self.vector_embedding = response.data[0].embedding
-            self.save()
-        except Exception as e:
-            print(f"Error generating embedding: {str(e)}")
-            raise
-
-    def get_embedding_array(self) -> np.ndarray:
-        """Retrieve the vector embedding as a numpy array."""
-        if self.vector_embedding:
-            return np.array(self.vector_embedding)
-        return None
+        
+        finally:
+            # Cleanup temporary files
+            try:
+                if temp_file_path and os.path.exists(temp_file_path):
+                    os.remove(temp_file_path)
+                if os.path.exists(temp_dir):
+                    os.rmdir(temp_dir)
+            except Exception as cleanup_error:
+                logger.error(f"Error during cleanup: {cleanup_error}")
 
     @classmethod
-    def similarity_search(cls, query: str, k: int = 5) -> List['PDFChunk']:
-        """Find most similar chunks to the query using cosine similarity.
-        
-        Args:
-            query (str): The search query text
-            k (int): Number of results to return
-            
-        Returns:
-            List[PDFChunk]: List of k most similar chunks
+    def similarity_search(cls, query: str, k: int = 5):
+        """
+        Find most similar documents to the query using cosine similarity.
         """
         try:
             # Generate embedding for query
@@ -249,22 +246,23 @@ class PDFChunk(models.Model):
             )
             query_embedding = np.array(query_response.data[0].embedding)
 
-            # Get all chunks with embeddings
-            chunks = cls.objects.exclude(vector_embedding__isnull=True)
+            # Get all documents with embeddings
+            documents = cls.objects.exclude(vector_embedding__isnull=True)
             
-            # Calculate cosine similarity with each chunk
+            # Calculate cosine similarity
             similarities = []
-            for chunk in chunks:
-                chunk_embedding = chunk.get_embedding_array()
-                similarity = np.dot(query_embedding, chunk_embedding) / (
-                    np.linalg.norm(query_embedding) * np.linalg.norm(chunk_embedding)
+            
+            for doc in documents:
+                doc_embedding = np.array(doc.vector_embedding)
+                similarity = np.dot(query_embedding, doc_embedding) / (
+                    np.linalg.norm(query_embedding) * np.linalg.norm(doc_embedding)
                 )
-                similarities.append((chunk, similarity))
+                similarities.append((doc, similarity))
             
             # Sort by similarity and return top k
             similarities.sort(key=lambda x: x[1], reverse=True)
-            return [chunk for chunk, _ in similarities[:k]]
+            return similarities[:k]
 
         except Exception as e:
-            print(f"Error in similarity search: {str(e)}")
+            logger.error(f"Error in similarity search: {str(e)}")
             return []
