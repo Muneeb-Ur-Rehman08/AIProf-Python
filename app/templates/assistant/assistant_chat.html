@@ -1,17 +1,15 @@
-<div class="min-h-screen w-1/2 bg-gradient-to-br from-gray-900 to-purple-900 flex flex-col">
-    <p>{{ assistant.name }}</p>
-    <div id="title" class="text-white text-2xl font-bold p-4 text-center">
-        Preview
-    </div>
+<div id="assistantChat" class="hidden w-full md:w-1/2 flex flex-col justify-between"
+_="on load if window.innerWidth > 768 then remove .hidden from me end"
+>
     <!-- Chat Container -->
-    <div class="flex-1 flex flex-col justify-center items-center p-6" id="chat-container">
+    <div class="flex-1 flex flex-col p-4 md:p-6 overflow-y-auto" id="chat-container">
         <!-- Messages will be dynamically inserted here -->
     </div>
 
     <!-- Message Input Area -->
-    <div class="bg-black/30 p-4 w-full">
+    <div class="bg-black/30 p-3 md:p-4 w-full" style="border-top: 1px solid var(--clr-main)">
         <div class="max-w-4xl mx-auto flex gap-2">
-            <button class="p-3 rounded bg-white/10 hover:bg-white/20 transition-colors text-white">
+            <button class="p-2 md:p-3 rounded bg-white/10 hover:bg-white/20 transition-colors text-white">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                 </svg>
@@ -21,12 +19,15 @@
                 type="text"
                 name="prompt"
                 id="prompt-input"
-                class="flex-1 bg-white/10 rounded px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="flex-1 bg-white/10 rounded px-3 md:px-4 py-2 md:py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
                 placeholder="Type your message here..."
             >
             
             <button 
-                class="p-3 rounded bg-blue-600 hover:bg-blue-700 transition-colors text-white"
+                class="p-2 md:p-3 rounded transition-colors duration-200"
+                style="background: var(--clr-main); border: 1px solid var(--clr-main); color: white;"
+                onmouseover="this.style.backgroundColor='#0890cc'" 
+                onmouseout="this.style.backgroundColor='var(--clr-main)'"
                 onclick="sendPayload()"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -36,7 +37,18 @@
         </div>
     </div>
 </div>
+
 <script>
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 768) {
+            document.getElementById('assistantChat').classList.remove('hidden');
+            document.getElementById('assistantForm').classList.remove('hidden');
+
+        } else {
+            document.getElementById('assistantChat').classList.add('hidden');
+        }
+    });
+
     function appendMessage(text, isUser = false) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `w-full ${isUser ? 'text-right' : 'text-left'} mb-4`;

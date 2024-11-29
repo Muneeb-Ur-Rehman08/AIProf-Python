@@ -111,3 +111,6 @@ zipp==3.21.0
 whitenoise==6.8.2
 PyJWT==2.8.0
 cryptography==43.0.3
+slippers==0.6.2
+django-allauth-ui==1.5.1
+django-widget-tweaks==1.5.0

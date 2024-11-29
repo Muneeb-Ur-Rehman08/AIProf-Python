@@ -50,6 +50,9 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+    'widget_tweaks',
+    'allauth_ui',
+    "slippers",
 ]
 
 MIDDLEWARE = [
@@ -200,7 +203,7 @@ SITE_ID = 1
 ACCOUNT_LOGIN_REDIRECT_URL ="/"
 ACCOUNT_LOGOUT_REDIRECT_URL ="/"
 ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_EMAIL_VERIFICATION = False
+ACCOUNT_EMAIL_VERIFICATION = True
 ACCOUNT_PASSWORD_MIN_LENGTH = 8
 
 if os.getenv('ENVIRONMENT') == 'development':
@@ -215,9 +218,19 @@ SOCIALACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_EMAIL_VERIFICATION = False
 SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
 SOCIALACCOUNT_LOGIN_ON_GET=True
-SOCIALACCOUNT_AUTO_SIGNUP = False
+SOCIALACCOUNT_AUTO_SIGNUP = True
 
-# Email settings
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# AllAuth UI theme
+ALLAUTH_UI_THEME='cupcake'
 
 CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app', 'https://*.up.railway.app']
+
+
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')  # Your Gmail address
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # Your app-specific password
