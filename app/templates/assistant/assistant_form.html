@@ -1,97 +1,352 @@
 {% extends 'base.html' %} {% block content %}
-<div id="assistant-form" class="flex items-center justify-between" hx-replace-url="true">
-  <form
-    hx-post="/users/assistants/manage"
-    hx-encoding="multipart/form-data"
-    class="p-8 bg-gray-900 rounded-lg shadow-lg w-1/2 min-h-screen"
-  >
-    <a
-      href="{% url 'index' %}"
-      class="text-white font-bold py-2 px-4 rounded bg-blue-500 hover:bg-blue-700 mb-4"
-      onclick="showLoading()"
-      >Back to Home</a
-    >
-    {% csrf_token %}
-    <div class="mb-4">
-      <label class="block text-white text-lg font-bold mb-2 mt-4">Name</label>
-      <input
-        type="text"
-        name="assistant_name"
-        value="{{ assistant.assistant_name }}"
-        placeholder="Name your ASSISTANT"
-        class="input input-bordered w-full bg-gray-800 text-white"
-      />
-    </div>
-    <div class="mb-4">
-      <label class="block text-white text-lg font-bold mb-2">Description</label>
-      <input
-        type="text"
-        name="subject"
-        placeholder="Add a short description about what this ASSISTANT does"
-        class="input input-bordered w-full bg-gray-800 text-white"
-      />
-    </div>
-    <div class="mb-4">
-      <label class="block text-white text-lg font-bold mb-2"
-        >Instructions</label
+<div class="min-h-screen">
+  <nav class="flex items-center justify-between p-4 border-b border-gray-800">
+    <h1 class="text-2xl font-bold">Ai Prof</h1>
+    <div class="dropdown dropdown-left">
+      <div tabindex="0" class="flex items-center gap-2 cursor-pointer">
+        <div class="avatar">
+          <div
+            class="ring-primary ring-offset-base-100 w-12 rounded-full ring ring-offset-2"
+          >
+            <img
+              src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"
+            />
+          </div>
+        </div>
+        <div class="ml-2 hidden md:block">
+          <div class="font-bold">login</div>
+          <div class="text-sm text-gray-400">Your Email</div>
+        </div>
+      </div>
+      <ul
+        tabindex="0"
+        class="dropdown-content menu p-2 shadow z-50 rounded-box w-52 mt-2"
+        style="background-color: var(--clr-dark-blue); color: white"
       >
-      <textarea
-        name="teacher_instructions"
-        placeholder="What does this ASSISTANT do? How does it behave? What should it avoid doing?"
-        class="textarea textarea-bordered w-full bg-gray-800 text-white"
-        rows="4"
-      ></textarea>
+        <li><a href="#" class="hover:bg-gray-700">Profile</a></li>
+        <li><a href="#" class="hover:bg-gray-700">Settings</a></li>
+        <li><a href="#" class="hover:bg-gray-700">Logout</a></li>
+      </ul>
     </div>
-    <div class="mb-4">
-      <input
-        type="file"
-        name="knowledge_base"
-        id="fileInput"
-        multiple
-        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-white hover:file:bg-gray-600"
-        _="on change
-                  repeat for file in my.files
-                  log file
-                  set match to file.type in ['image/png', 'image/jpeg', 'image/jpg']
+  </nav>
+  <div
+    id="assistant-form"
+    class="flex flex-col md:flex-row justify-between h-[calc(100vh-5.5rem)]"
+    hx-replace-url="true"
+  >
+    <!-- Tab buttons for mobile -->
+    <div class="md:hidden flex border-b border-gray-800">
+      <button 
+        onclick="switchTab('form')" 
+        id="formTab"
+        class="flex-1 py-2 px-4 text-white border-b-2 border-transparent active-tab"
+      >
+        Create Assistant
+      </button>
+      <button 
+        onclick="switchTab('chat')" 
+        id="chatTab"
+        class="flex-1 py-2 px-4 text-white border-b-2 border-transparent"
+      >
+        Chat
+      </button>
+    </div>
 
-                  if match.length > 0
-                      set condition to true
-                  else
-                      set condition to false
-                  end
-                  
-                  if condition
-                      log 'true'
-                      set img to document.createElement('img')
-                      set img.src to URL.createObjectURL(file)
-                      set img.style.height to '1rem'
-                      set img.style.display to 'block'
-                      set img.style.marginRight to '5px'
-                      set img.style.marginLeft to '5px'
-                      set fileInfo to document.createElement('p')
-                      set fileInfo.textContent to 'File Name: ' + file.name + ', Type: ' + file.type + ', Size: ' + file.size + ' bytes'
-                      set fileInfo.style.fontSize to '14px'
-                      set fileInfo.style.marginTop to '0'
-                      set imgHTML to img.outerHTML
-                      append imgHTML to #files-container
-                    else
-                      append '<p>' + file.name + '</p>' to #files-container
-                    end
-                  end
-                  "
-      />
-      <div class="flex items-center mt-4" id="files-container"></div>
-    </div>
-    <button
-      type="submit"
-      hx-post="/users/assistants/manage/"
-      hx-target=""
-      class="btn btn-primary"
+    <!-- Form section -->
+    <form
+      id="assistantForm"
+      hx-post="/users/assistants/manage"
+      hx-encoding="multipart/form-data"
+      class="p-4 md:p-8 rounded-lg shadow-lg w-full md:w-1/2"
     >
-      Create ASSISTANT
-    </button>
-  </form>
-  <!-- assistant Chat Form -->
-  {% include 'assistant/assistant_chat.html' with assistant=assistant %}
+      {% csrf_token %}
+      <div class="mb-4">
+        <label class="block text-white text-lg font-bold mb-2 mt-4">Name</label>
+        <input
+          type="text"
+          name="assistant_name"
+          value="{{ assistant.name }}"
+          placeholder="Name your ASSISTANT"
+          class="input w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
+        />
+      </div>
+      <div class="mb-4">
+        <label class="block text-white text-lg font-bold mb-2">Description</label>
+        <input
+          type="text"
+          name="subject"
+          placeholder="Add a short description about what this ASSISTANT does"
+          class="input w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
+        />
+      </div>
+      <div class="mb-4">
+        <label class="block text-white text-lg font-bold mb-2">Subject</label>
+        <select
+          name="subject"
+          id="subjectSelect"
+          class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
+        >
+          <option value="" disabled selected>Select a subject</option>
+        </select>
+      </div>
+      <div class="mb-4">
+        <label class="block text-white text-lg font-bold mb-2">Topic</label>
+        <select
+          name="topic"
+          id="topicSelect"
+          class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
+        >
+          <option value="" disabled selected>Select a topic</option>
+        </select>
+      </div>
+      <div class="mb-4">
+        <label class="block text-white text-lg font-bold mb-2"
+          >Instructions</label
+        >
+        <textarea
+          name="teacher_instructions"
+          placeholder="What does this ASSISTANT do? How does it behave? What should it avoid doing?"
+          class="textarea w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
+          rows="4"
+        ></textarea>
+      </div>
+      <div class="mb-4">
+        <input
+          type="file"
+          name="knowledge_base"
+          id="fileInput"
+          multiple
+          class="block w-full text-sm text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/20"
+        />
+        <div class="flex items-center mt-4" id="files-container"></div>
+      </div>
+      <button
+        type="submit"
+        hx-post="/users/assistants/manage/"
+        hx-target=""
+        class="btn transition-colors duration-200"
+        style="
+          background: var(--clr-main);
+          border: 1px solid var(--clr-main);
+          color: white;
+        "
+        onmouseover="this.style.backgroundColor='#0890cc'"
+        onmouseout="this.style.backgroundColor='var(--clr-main)'"
+      >
+        Create ASSISTANT
+      </button>
+    </form>
+
+    <div class="hidden md:block w-[1px] bg-gray-800"></div>
+
+    <!-- Chat section -->
+      {% include 'assistant/assistant_chat.html' with assistant=assistant %}
+  </div>
 </div>
+<script>
+  const subjectsData = {
+    "subjects": [
+    {
+      "name": "Mathematics",
+      "topics": [
+        "Arithmetic",
+        "Addition",
+        "Subtraction",
+        "Multiplication",
+        "Division",
+        "Fractions",
+        "Decimals",
+        "Percentages",
+        "Algebra",
+        "Linear Equations",
+        "Quadratic Equations",
+        "Inequalities",
+        "Polynomials",
+        "Geometry",
+        "Shapes",
+        "Angles",
+        "Theorems",
+        "Coordinate Geometry",
+        "Trigonometry",
+        "Sine",
+        "Cosine",
+        "Tangent",
+        "Pythagoras' Theorem",
+        "Calculus",
+        "Limits",
+        "Derivatives",
+        "Integrals",
+        "Differential Equations",
+        "Statistics & Probability",
+        "Mean",
+        "Median",
+        "Mode",
+        "Standard Deviation"
+      ]
+    },
+    {
+      "name": "Science",
+      "topics": [
+        "Physics",
+        "Newton's Laws of Motion",
+        "Electricity",
+        "Magnetism",
+        "Thermodynamics",
+        "Waves",
+        "Quantum Mechanics",
+        "Chemistry",
+        "Periodic Table",
+        "Chemical Reactions",
+        "Molecular Structure",
+        "Acids and Bases",
+        "Organic Chemistry",
+        "Biology",
+        "Cell Structure",
+        "Human Anatomy",
+        "Genetics",
+        "Ecology",
+        "Evolution"
+      ]
+    },
+    {
+      "name": "English",
+      "topics": [
+        "Grammar",
+        "Sentence Structure",
+        "Tenses",
+        "Vocabulary",
+        "Writing Skills",
+        "Essay Writing",
+        "Creative Writing",
+        "Literature",
+        "Poetry Analysis",
+        "Novel Studies",
+        "Drama",
+        "Research and Citation"
+      ]
+    },
+    {
+      "name": "History",
+      "topics": [
+        "Ancient Civilizations",
+        "Greek and Roman History",
+        "Middle Ages",
+        "Renaissance",
+        "World Wars",
+        "American Revolution",
+        "Industrial Revolution",
+        "Modern History",
+        "Cold War",
+        "Civil Rights Movement"
+      ]
+    },
+    {
+      "name": "Geography",
+      "topics": [
+        "Physical Geography",
+        "Landforms",
+        "Weather and Climate",
+        "Ecosystems",
+        "Human Geography",
+        "Population Studies",
+        "Urbanization",
+        "Economic Geography",
+        "Global Trade"
+      ]
+    },
+    {
+      "name": "Computer Science",
+      "topics": [
+        "Programming Basics",
+        "Algorithms",
+        "Data Structures",
+        "Databases",
+        "Web Development",
+        "Networking",
+        "Cybersecurity",
+        "Artificial Intelligence",
+        "Machine Learning"
+      ]
+    },
+    {
+      "name": "Art",
+      "topics": [
+        "Drawing Techniques",
+        "Painting Styles",
+        "Sculpture",
+        "Art History",
+        "Photography",
+        "Digital Art",
+        "Design Principles"
+      ]
+    },
+    {
+      "name": "Physical Education",
+      "topics": [
+        "Fitness Training",
+        "Team Sports",
+        "Individual Sports",
+        "Health and Nutrition",
+        "Mental Well-being",
+        "Exercise Physiology"
+      ]
+    }
+  ]
+  };
+
+  const subjectSelect = document.getElementById('subjectSelect');
+  const topicSelect = document.getElementById('topicSelect');
+
+  // Populate subjects dropdown
+  subjectsData.subjects.forEach(subject => {
+    const option = document.createElement('option');
+    option.value = subject.name;
+    option.textContent = subject.name;
+    subjectSelect.appendChild(option);
+  });
+
+  // Update topics when subject changes
+  subjectSelect.addEventListener('change', (e) => {
+    const selectedSubject = subjectsData.subjects.find(s => s.name === e.target.value);
+    
+    // Clear existing topics
+    topicSelect.innerHTML = '<option value="" disabled selected>Select a topic</option>';
+    
+    // Add new topics
+    if (selectedSubject) {
+      selectedSubject.topics.forEach(topic => {
+        const option = document.createElement('option');
+        option.value = topic;
+        option.textContent = topic;
+        topicSelect.appendChild(option);
+      });
+    }
+  });
+
+  // Tab switching functionality
+  function switchTab(tab) {
+    const formTab = document.getElementById('formTab');
+    const chatTab = document.getElementById('chatTab');
+    const formSection = document.getElementById('assistantForm');
+    const chatSection = document.getElementById('assistantChat');
+
+    if (tab === 'form') {
+      formTab.classList.add('active-tab', 'border-blue-500');
+      chatTab.classList.remove('active-tab', 'border-blue-500');
+      formSection.classList.remove('hidden');
+      chatSection.classList.add('hidden');
+    } else {
+      chatTab.classList.add('active-tab', 'border-blue-500');
+      formTab.classList.remove('active-tab', 'border-blue-500');
+      formSection.classList.add('hidden');
+      chatSection.classList.remove('hidden');
+    }
+  }
+</script>
+
+<style>
+  .active-tab {
+    border-color: var(--clr-main);
+  }
+</style>
 {% endblock %}
