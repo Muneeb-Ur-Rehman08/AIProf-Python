@@ -121,7 +121,7 @@ def create_assistant(request):
             user = User.objects.get(id=request.user.id)
             user_id = str(user.id)  # Convert UUID to string
             
-        except (SupabaseUser.DoesNotExist, ValueError):
+        except (User.DoesNotExist, ValueError):
             return format_response(error="Invalid user authentication", status=400)
         logger.info(f"Processing request for user_id: {user_id}")
 
@@ -182,6 +182,7 @@ def create_assistant(request):
             # Handle file uploads if present
             if files := request.FILES.getlist('knowledge_base'):
                 for file in files:
+                    print(file)
                     try:
                         # Create PDFDocument instance directly
                         pdf_document = PDFDocument.objects.create(
@@ -259,7 +260,7 @@ def delete_assistant(request, ass_id):
             user = User.objects.get(id=request.user.id)
             user_id = str(user.id)  # Convert to string to ensure consistency
             print(user_id)
-        except SupabaseUser.DoesNotExist:
+        except User.DoesNotExist:
             return format_response(error="User not found", status=404)
         
         

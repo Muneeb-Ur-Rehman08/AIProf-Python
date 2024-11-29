@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(blank=True, default='Assistant', max_length=255)),
                 ('subject', models.CharField(blank=True, default='Default Subject', max_length=255)),
                 ('teacher_instructions', models.TextField(blank=True, default='Default instructions')),
-                ('topic', models.CharField(blank=True, default=None, max_length=255)),
+                
                 ('created_at', models.DateTimeField(auto_now_add=True, null=True)),
                 ('updated_at', models.DateTimeField(auto_now=True, null=True)),
                 ('user_id', models.ForeignKey(db_column='user_id', default=uuid.uuid4, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
@@ -44,12 +44,12 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='PDFDocs',
+            name='PDFDocument',
             fields=[
                 ('doc_id', models.UUIDField(default=uuid.uuid4, primary_key=True, serialize=False, unique=True)),
                 ('file', models.FileField(upload_to='pdfs/')),
                 ('uploaded_at', models.DateTimeField(auto_now_add=True)),
-                ('file_title', models.CharField(blank=True, max_length=255, null=True)),
+                ('title', models.CharField(blank=True, max_length=255, null=True)),
                 ('status', models.CharField(choices=[('pending', 'Pending'), ('processing', 'Processing'), ('completed', 'Completed'), ('failed', 'Failed')], default='pending', max_length=20)),
                 ('chunk_content', models.TextField(blank=True, null=True)),
                 ('metadata', models.JSONField(blank=True, null=True)),

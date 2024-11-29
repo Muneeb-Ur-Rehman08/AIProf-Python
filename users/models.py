@@ -1,20 +1,21 @@
 from django.db import models
 import uuid
-from django.core.files.storage import default_storage
-from django.conf import settings
+from typing import Optional
+
 import numpy as np
-from pypdf import PdfReader
-from typing import List
-import json
+from django.core.files.storage import default_storage
+
 import os
 from dotenv import load_dotenv
 import logging
 from django.contrib.auth.models import User 
 from django.contrib.postgres.fields import ArrayField
-
-from langchain.document_loaders import PyPDFLoader
+import tempfile
+from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings
 from openai import OpenAI
+import shutil
 
 load_dotenv()
 
@@ -68,6 +69,8 @@ class Assistant(models.Model):
     teacher_instructions = models.TextField(default="Default instructions", blank=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
+    topic = models.CharField(max_length=255, blank=True, null=True)
+    description = models.TextField(default="Description", blank=True, null=True)
 
     class Meta:
         verbose_name_plural = 'Assistants'
@@ -109,18 +112,17 @@ class PDFDocument(models.Model):
     doc_id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4)
     file = models.FileField(upload_to='pdfs/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    
+
     user_id = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        default=None,
         null=True,
         related_name='pdf_documents',
         to_field='id',
         db_column='user_id'
     )
-    
-    assostant_id = models.ForeignKey(
+
+    assistant_id = models.ForeignKey(
         Assistant, 
         on_delete=models.CASCADE, 
         null=True,
@@ -128,39 +130,26 @@ class PDFDocument(models.Model):
         to_field='id',
         db_column='assistant_id'
     )
-    
+
     title = models.CharField(max_length=255, null=True, blank=True)
-    status = models.CharField(
-        max_length=20, 
-        choices=PROCESSING_STATUS_CHOICES, 
-        default='pending'
-    )
-    chunk_content = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=PROCESSING_STATUS_CHOICES, default='pending')
     metadata = models.JSONField(null=True, blank=True)
-    vector_embedding = ArrayField(
-        models.FloatField(), 
-        null=True, 
-        blank=True
-    )
-    
+
     def __str__(self):
         return self.title or str(self.doc_id)
 
     def process_pdf(self):
-        temp_dir = os.path.join('temp')
-        os.makedirs(temp_dir, exist_ok=True)
-        temp_file_path = None
-        
+        temp_dir = tempfile.mkdtemp(prefix='pdf_processing_')
+        original_file_path = self.file.path
+        temp_file_path = os.path.join(temp_dir, os.path.basename(original_file_path))
+        shutil.copy2(original_file_path, temp_file_path)
+
         try:
-            # Create temporary file path
-            temp_file_path = os.path.join(temp_dir, self.file.name)
-            
-            # Save uploaded file to temporary location
+            # Save the uploaded file to a temporary location
             with open(temp_file_path, 'wb+') as destination:
                 for chunk in self.file.chunks():
                     destination.write(chunk)
-            
-            # Set status to processing
+
             self.status = 'processing'
             self.save()
 
@@ -168,101 +157,116 @@ class PDFDocument(models.Model):
             loader = PyPDFLoader(temp_file_path)
             pages = loader.load_and_split()
 
-            # Text splitting for creating chunks
-            text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=1000,
-                chunk_overlap=200,
-                length_function=len
-            )
-            chunks = text_splitter.split_documents(pages)
+            
+            # Initialize Langchain OpenAIEmbeddings client
+            embeddings_model = OpenAIEmbeddings()
 
-            # Store chunk contents
-            self.chunk_content = json.dumps([
-                chunk.page_content for chunk in chunks
-            ])
+            # Process each chunk and store it in DocumentChunk table
+            for page_number, page in enumerate(pages, start=1):
+                # Page-wise content (each page will be a chunk)
+                page_content = page.page_content
 
-            # Initialize OpenAI client
-            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+                # Generate embedding for the page's content
+                page_embedding = embeddings_model.embed_documents([page_content])[0]
 
-            # Prepare metadata
+                # Store the page content and its embedding in the DocumentChunk model
+                DocumentChunk.objects.create(
+                    document=self,
+                    page_number=page_number,  # Keep track of page number
+                    content=page_content,
+                    vector_embedding=page_embedding  # Store embedding for the entire page
+                )
+
+
+            # Prepare metadata for the document
             self.metadata = {
-                'filename': os.path.basename(temp_file_path),
+                'filename': self.file.name,
                 'user_id': str(self.user_id.id) if self.user_id else None,
-                'ass_id': str(self.ass_id.id) if self.ass_id else None,
-                'chunks': [
-                    {
-                        'id': chunk.metadata.get('id'),
-                        'page_number': chunk.metadata.get('page_number')
-                    } for chunk in chunks
-                ]
+                'assistant_id': str(self.assistant_id.id) if self.assistant_id else None,
+                'total_chunks': len(pages)
             }
 
-            # Generate embeddings
-            embeddings = []
-            for chunk in chunks:
-                response = client.embeddings.create(
-                    model="text-embedding-ada-002",
-                    input=chunk.page_content
-                )
-                embeddings.extend(response.data[0].embedding)
-
-            # Store vector embeddings
-            self.vector_embedding = embeddings
-
-            # Set status to completed
             self.status = 'completed'
             self.save()
 
-            return self
-
         except Exception as e:
-            # Set status to failed
             self.status = 'failed'
             self.save()
-            
             raise RuntimeError(f"PDF Processing Error: {str(e)}")
-        
+
         finally:
-            # Cleanup temporary files
             try:
-                if temp_file_path and os.path.exists(temp_file_path):
-                    os.remove(temp_file_path)
+                # Remove temporary file
+                if os.path.exists(temp_file_path):
+                    os.remove(temp_file_path)  # Delete the temporary file
+
+                # Remove temporary directory
                 if os.path.exists(temp_dir):
-                    os.rmdir(temp_dir)
+                    os.rmdir(temp_dir)  # Remove the temporary directory
+
+                # Remove the original file from the 'pdfs/' directory
+                if os.path.exists(self.file.path):
+                    default_storage.delete(self.file.path)  # Delete the original file from storage after processing
+                    print(f"Trying to delete file at path: {self.file.path}")
+
             except Exception as cleanup_error:
                 logger.error(f"Error during cleanup: {cleanup_error}")
 
+
+class DocumentChunk(models.Model):
+    document = models.ForeignKey(
+        PDFDocument,
+        on_delete=models.CASCADE,
+        related_name='chunks'
+    )
+    page_number = models.IntegerField(null=True, blank=True)
+    content = models.TextField()
+    vector_embedding = ArrayField(
+        models.FloatField(), 
+        null=True, 
+        blank=True
+    )
+
+    def __str__(self):
+        return f"Chunk {self.page_number} of {self.document.title}"
+    
     @classmethod
-    def similarity_search(cls, query: str, k: int = 5):
+    def similarity_search(cls, query: str, k: int = 5, api_key: Optional[str] = None):
         """
-        Find most similar documents to the query using cosine similarity.
+        Find most similar document chunks to the query using cosine similarity.
+        
+        Args:
+            query (str): Search query text
+            k (int, optional): Number of top similar chunks. Defaults to 5.
+            api_key (str, optional): OpenAI API key
+        
+        Returns:
+            List of tuples with chunks and similarity scores
         """
         try:
-            # Generate embedding for query
-            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
+
+            # Generate query embedding
             query_response = client.embeddings.create(
                 model="text-embedding-ada-002",
                 input=query
             )
             query_embedding = np.array(query_response.data[0].embedding)
 
-            # Get all documents with embeddings
-            documents = cls.objects.exclude(vector_embedding__isnull=True)
-            
-            # Calculate cosine similarity
-            similarities = []
-            
-            for doc in documents:
-                doc_embedding = np.array(doc.vector_embedding)
-                similarity = np.dot(query_embedding, doc_embedding) / (
-                    np.linalg.norm(query_embedding) * np.linalg.norm(doc_embedding)
-                )
-                similarities.append((doc, similarity))
-            
-            # Sort by similarity and return top k
-            similarities.sort(key=lambda x: x[1], reverse=True)
-            return similarities[:k]
+            # Fetch document chunks with embeddings
+            chunks = cls.objects.exclude(vector_embedding__isnull=True)
+
+            # Calculate similarities
+            similarities = [
+                (chunk, np.dot(query_embedding, np.array(chunk.vector_embedding)) / (
+                    np.linalg.norm(query_embedding) * np.linalg.norm(chunk.vector_embedding)
+                ))
+                for chunk in chunks
+            ]
+
+            # Sort and return top k results
+            return sorted(similarities, key=lambda x: x[1], reverse=True)[:k]
 
         except Exception as e:
-            logger.error(f"Error in similarity search: {str(e)}")
+            logger.error(f"Similarity search error: {str(e)}")
             return []
