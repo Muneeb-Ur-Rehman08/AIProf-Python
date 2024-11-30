@@ -56,7 +56,7 @@
                     {% if request.user.is_authenticated %}
                     <div class="cta-links-area space-y-2 lg:hidden">
                         <li class="nav-item menu-item">
-                            <a class="btn btn-primary" 
+                            <a class="btn btn-active btn-accent" 
                                _="on click remove .hidden from #modal 
                                then remove .close-menu from .menu-toggler 
                                then remove .show from .menu-wrapper">
@@ -65,7 +65,7 @@
                         </li>
                         <li class="nav-item menu-item">
                             {% csrf_token %}
-                            <a class="btn btn-primary" 
+                            <a class="btn btn-active btn-accent" 
                                hx-post="{% url 'account_logout' %}" 
                                hx-trigger="click" 
                                hx-target="body" 
@@ -77,6 +77,9 @@
                                then remove .show from .menu-wrapper">
                                 Logout
                             </a>
+                        </li>
+                        <li class="nav-item menu-item">
+                            <button class="btn btn-active btn-accent" hx-get="{% url 'list_assistants' %}" hx-trigger="click" hx-target="body" hx-swap="outerHTML">All Assistants</button>
                         </li>
                     </div>
                    
