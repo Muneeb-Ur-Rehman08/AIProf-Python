@@ -46,13 +46,18 @@
                     </li>
                 </div>
         {% endif %}
+        
         {% if request.user.is_authenticated %}
             <div class="cta-links-area flex justify-center">
                <li class="nav-item menu-item">
-                <a class="btn-outline cta-link cta-link-primary" 
-                _="on click remove .hidden from #modal 
-                then remove .close-menu from .menu-toggler 
-                then remove .show from .menu-wrapper">
+                <a class="btn-outline cta-link cta-link-primary"
+                    hx-post="{% url 'manage_assistant' %}"
+                    hx-target="body"
+                    hx-swap="outerHTML"
+                    hx-replace-url="/assistant/{{ assistant.id }}"
+                    onclick="showLoading()"
+                    _="on click remove .close-menu from .menu-toggler 
+                    then remove .show from .menu-wrapper">
                     Create Assistant
                 </a>
                </li>

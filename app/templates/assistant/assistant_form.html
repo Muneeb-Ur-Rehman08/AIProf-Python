@@ -55,7 +55,9 @@
     <!-- Form section -->
     <form
       id="assistantForm"
-      hx-post="/users/assistants/manage"
+      hx-post="{% url 'manage_assistant' %}"
+      hx-vals='{"assistant_id": "{{ assistant.id }}"}'
+      hx-include="#subjectSelect, #topicSelect"
       hx-encoding="multipart/form-data"
       class="p-4 md:p-8 rounded-lg shadow-lg w-full md:w-1/2"
     >
@@ -75,6 +77,7 @@
         <input
           type="text"
           name="description"
+          value="{{ assistant.description }}"
           placeholder="Add a short description about what this ASSISTANT does"
           class="input w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
         />
@@ -84,6 +87,7 @@
         <select
           name="subject"
           id="subjectSelect"
+          value="{{ assistant.subject }}"
           class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
         >
           <option value="" disabled selected>Select a subject</option>
@@ -94,6 +98,7 @@
         <select
           name="topic"
           id="topicSelect"
+          value="{{ assistant.topic }}"
           class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
         >
           <option value="" disabled selected>Select a topic</option>
@@ -105,6 +110,7 @@
         >
         <textarea
           name="teacher_instructions"
+          value="{{ assistant.teacher_instructions }}"
           placeholder="What does this ASSISTANT do? How does it behave? What should it avoid doing?"
           class="textarea w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
           rows="4"
@@ -122,7 +128,9 @@
       </div>
       <button
         type="submit"
-        hx-post="/users/assistants/manage/"
+        hx-post="{% url 'manage_assistant' %}"
+        hx-vals='{"assistant_id": "{{ assistant.id }}"}'
+        hx-include="#subjectSelect, #topicSelect"
         hx-target=""
         class="btn transition-colors duration-200"
         style="

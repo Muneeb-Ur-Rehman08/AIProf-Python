@@ -131,25 +131,25 @@ def create_assistant(request):
 
         assistant_id = request.session.get("assistant")
 
-        if data.get('assistant_name') and not data.get("subject"):
+        if not data.get('assistant_id'):
             
             try:
                 
-                name = data.get("assistant_name")
-                print(name)
+                # name = data.get("assistant_name")
+                # print(name)
                 
                 print("Session: ", request.session.get("assistant"))
                 # Create assistant to django models
                 assistant = Assistant.objects.create(
                     user_id=user,
-                    name=name,
+                    # name=name,
                 )
                 print(f"Created assistant model: {assistant.id}")
 
                 # Prepare response
                 response_data = {
                     'id': str(assistant.id),
-                    'name': assistant.name,
+                    # 'name': assistant.name,
                     'message': 'Initial assistant profile created. Complete your profile to finish.'
                 }
                 request.session['assistant'] = response_data
@@ -234,7 +234,7 @@ def create_assistant(request):
                         "message": success_message
                     }
                     print("assistant id when user created", response_data)
-                    # request.session['assistant'] = response_data
+                    request.session['assistant'] = response_data
                     print("Session", request.session.get("assistant"))
                     return format_response(data=response_data)
 
