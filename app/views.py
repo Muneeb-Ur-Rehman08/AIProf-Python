@@ -205,7 +205,94 @@ def create_assistant(request):
 @csrf_exempt
 @require_http_methods(["GET"])
 def list_assistants(request):
-    return render(request, 'assistant/list.html')
+     # Append subjects data to assistants
+    subjects_data = [
+        {
+            "name": "Mathematics",
+            "topics": [
+                "Arithmetic", "Addition", "Subtraction", "Multiplication", "Division",
+                "Fractions", "Decimals", "Percentages", "Algebra", "Linear Equations",
+                "Quadratic Equations", "Inequalities", "Polynomials", "Geometry", "Shapes",
+                "Angles", "Theorems", "Coordinate Geometry", "Trigonometry", "Sine",
+                "Cosine", "Tangent", "Pythagoras' Theorem", "Calculus", "Limits",
+                "Derivatives", "Integrals", "Differential Equations", "Statistics & Probability",
+                "Mean", "Median", "Mode", "Standard Deviation"
+            ]
+        },
+        {
+            "name": "Science",
+            "topics": [
+                "Physics", "Newton's Laws of Motion", "Electricity", "Magnetism",
+                "Thermodynamics", "Waves", "Quantum Mechanics", "Chemistry", "Periodic Table",
+                "Chemical Reactions", "Molecular Structure", "Acids and Bases", "Organic Chemistry",
+                "Biology", "Cell Structure", "Human Anatomy", "Genetics", "Ecology", "Evolution"
+            ]
+        },
+        {
+            "name": "English",
+            "topics": [
+                "Grammar", "Sentence Structure", "Tenses", "Vocabulary", "Writing Skills",
+                "Essay Writing", "Creative Writing", "Literature", "Poetry Analysis",
+                "Novel Studies", "Drama", "Research and Citation"
+            ]
+        },
+        {
+            "name": "History",
+            "topics": [
+                "Ancient Civilizations", "Greek and Roman History", "Middle Ages", "Renaissance",
+                "World Wars", "American Revolution", "Industrial Revolution", "Modern History",
+                "Cold War", "Civil Rights Movement"
+            ]
+        },
+        {
+            "name": "Geography",
+            "topics": [
+                "Physical Geography", "Landforms", "Weather and Climate", "Ecosystems",
+                "Human Geography", "Population Studies", "Urbanization", "Economic Geography",
+                "Global Trade"
+            ]
+        },
+        {
+            "name": "Computer Science",
+            "topics": [
+                "Programming Basics", "Algorithms", "Data Structures", "Databases",
+                "Web Development", "Networking", "Cybersecurity", "Artificial Intelligence",
+                "Machine Learning"
+            ]
+        },
+        {
+            "name": "Art",
+            "topics": [
+                "Drawing Techniques", "Painting Styles", "Sculpture", "Art History",
+                "Photography", "Digital Art", "Design Principles"
+            ]
+        },
+        {
+            "name": "Physical Education",
+            "topics": [
+                "Fitness Training", "Team Sports", "Individual Sports", "Health and Nutrition",
+                "Mental Well-being", "Exercise Physiology"
+            ]
+        }
+    ]
+
+    subjects = request.GET.getlist('subject')  # Retrieve selected subjects from checkboxes
+    topics = request.GET.getlist('topic')      # Retrieve selected topics from checkboxes
+
+    # Filter assistants based on subjects and topics
+    assistants = Assistant.objects.all()
+
+    # If subjects are selected, filter based on subjects
+    if subjects:
+        assistants = assistants.filter(subject__in=subjects)
+
+    # If topics are selected, filter based on topics
+    if topics:
+        assistants = assistants.filter(topic__in=topics)
+
+    # Prepare the data for rendering
+    assistants_data = list(assistants.values('name', 'subject', 'topic', 'description', 'created_at'))
+    return render(request, 'assistant/list.html', {"subjects_data": subjects_data, "filtered_assistants": assistants_data})
 
 
 # @login_required
@@ -237,5 +324,3 @@ def list_assistant_partial(request):
     logger.info(f"Filtered assistants: {assistants_data}")
     
     return render(request, 'assistant/list_partials.html', {"assistants": assistants_data})
-
-

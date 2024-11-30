@@ -1,125 +1,45 @@
-<nav class="flex items-center justify-between p-4 border-b border-gray-800">
-    <h1 class="text-2xl font-bold">Ai Prof</h1>
-    <div class="dropdown dropdown-left">
-        <div tabindex="0" class="flex items-center gap-2 cursor-pointer">
-            <div class="avatar">
-                <div class="ring-primary ring-offset-base-100 w-12 rounded-full ring ring-offset-2">
-                    <img src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
-                </div>
-            </div>
-            <div class="ml-2 hidden md:block">
-                <div class="font-bold">login</div>
-                <div class="text-sm text-gray-400">Your Email</div>
-            </div>
-        </div>
-        <ul tabindex="0" class="dropdown-content menu p-2 shadow z-50 rounded-box w-52 mt-2" style="background-color: var(--clr-dark-blue); color: white;">
-            <li><a href="#" class="hover:bg-gray-700">Profile</a></li>
-            <li><a href="#" class="hover:bg-gray-700">Settings</a></li>
-            <li><a href="#" class="hover:bg-gray-700">Logout</a></li>
-        </ul>
-    </div>
-</nav>
+<!-- list details of assistants -->
 
-<div class="mt-4">
-    <!-- Main Content -->
-    <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold flex items-center gap-2">
-            My Peers
-            <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <!-- GraduationCap Icon -->
-            </svg>
-        </h2>
-        <div class="relative w-[18.7rem]">
-            <svg class="w-4 h-4 absolute left-3 top-3 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none"
-                viewBox="0 0 24 24" stroke="currentColor">
-                <!-- Search Icon -->
-            </svg>
-            <input type="text" placeholder="Search"
-                class="input input-bordered input-primary w-full pl-10 bg-gray-900 border-none"
-                hx-get="{% url 'list_assistant_partial' %}" 
-                hx-target="#assistants-list" 
-                name="keyword"
-                required 
-                value="{{ request.GET.keyword|default:'' }}" />
-        </div>
-    </div>
-
-
-    <div class="flex flex-col md:flex-row justify-between gap-8">
-        <div class="w-full md:w-1/3 space-y-4">
-            {% for assistant in assistants %}
-            <div
-                class="flex items-center gap-3 p-3 rounded-lg" style="border: 1px solid rgba(var(--clr-main-rgb), 0.35)">
-                {% if forloop.first %}
-                <svg class="w-5 h-5 text-yellow-500 absolute -translate-y-6" xmlns="http://www.w3.org/2000/svg"
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <!-- Crown Icon -->
-                </svg>
-                {% endif %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    {% if assistants %}
+    {% for assistant in assistants %}
+    <div class="card bg-white text-gray-800 rounded-lg shadow-md overflow-hidden">
+        <div class="card-body p-4 rounded-lg" style="border: 1px solid rgba(var(--clr-main-rgb), 0.35)">
+            <div class="flex items-center gap-4 mb-4">
                 <div class="avatar">
-                    <div class="w-10 rounded-full">
-                        <img src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
+                    <div class="w-16 rounded-full">
+                        <img src="https://i.pravatar.cc/150?img=1" />
                     </div>
                 </div>
-                <div class="flex-1">
-                    <div class="font-medium text-sm">{{ assistant.assistant_name }}</div>
-                    <div class="rating rating-xs">
-                        <input type="radio" name="rating-5" class="mask mask-star-2 bg-orange-400" />
-                        <input type="radio" name="rating-5" class="mask mask-star-2 bg-orange-400" checked="checked" />
-                        <input type="radio" name="rating-5" class="mask mask-star-2 bg-orange-400" />
-                        <input type="radio" name="rating-5" class="mask mask-star-2 bg-orange-400" />
-                        <input type="radio" name="rating-5" class="mask mask-star-2 bg-orange-400" />
-                    </div>
+                <div>
+                    <h3 class="font-semibold text-lg text-black">{{assistant.name}}</h3>
+                    <p class="text-sm text-gray-600">{{assistant.subject}} - {{assistant.topic}}</p>
                 </div>
-                <div class="badge badge-outline">{{ assistant.subject }}</div>
             </div>
-            {% endfor %}
-        </div>
 
-        <div class="w-full md:w-3/4">
-            <div class="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                {% for assistant in assistants %}
-                <div class="card shadow-lg">
-                <div class="card-body rounded-lg" style="border: 1px solid rgba(var(--clr-main-rgb), 0.35)">
-                    <div class="flex justify-between items-center gap-1 mb-4">
-                        
-                            <div class="text-base font-bold text-ellipsis overflow-hidden">{{ assistant.assistant_name }}</div>
-                            <div class="text-gray-400">{{ assistant.assistant_description }}</div>
-                        
-                        <div class="avatar">
-                            <div
-                                class="ring-primary ring-offset-base-100 w-16 rounded-full ring ring-offset-2 overflow-hidden">
-                                <img src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
-                            </div>
-                        </div>
-                    </div>
-                    <h3 class="font-bold mb-1 truncate">{{ assistant.assistant_name }}</h3>
-                    <p class="text-sm text-gray-400 mb-4">{{ assistant.subject }}</p>
-                    <div class="flex items-center justify-between rounded-lg">
-                        <div>
-                            <h2 class="font-medium">{{ assistant.assistant_description | safe }}</h2>
-                            <p class="text-sm text-gray-400">
-                                {{ assistant.assistant_description | truncatechars:10 }}
-                            </p>
-                        </div>
-                    </div>
+            <div class="flex items-center justify-between rounded-lg">
+                <div>
+                    <h2 class="">{{ assistant.description}}</h2>
+                    <p class="text-sm text-gray-400">
+                        {{ assistant.topic | default:"" }}
+                    </p>
                 </div>
             </div>
-            {% endfor %}
+            <div class="rating rating-xs">
+                <input type="radio" name="rating-5" class="mask mask-star-2 bg-orange-400" />
+                <input type="radio" name="rating-5" class="mask mask-star-2 bg-orange-400" checked="checked" />
+                <input type="radio" name="rating-5" class="mask mask-star-2 bg-orange-400" />
+                <input type="radio" name="rating-5" class="mask mask-star-2 bg-orange-400" />
+                <input type="radio" name="rating-5" class="mask mask-star-2 bg-orange-400" />
+                <span class="ml-2 text-xs font-semibold">4.5</span>
             </div>
+            <p class="text-end">100 interactions</p>
         </div>
-
-        
     </div>
-    <!-- Timeline Items -->
-
-
+    {% endfor %}
+    {% else %}
+    <div class="text-center col-span-1 lg:col-span-2">
+        <p class="text-gray-500">No assistants available at the moment.</p>
+    </div>
+    {% endif %}
 </div>
-
-<script>
-function toggleDropdown() {
-    const dropdown = document.getElementById('dropdownMenu');
-    dropdown.classList.toggle('hidden');
-}
-</script>

@@ -23,47 +23,92 @@
                     <img class="logo-img light-logo" loading="lazy" src="{% static 'assets/images/logo/logo.svg' %}" alt="logo" />
                 </a>
             </div>
-            <div class="links menu-wrapper">
+            <nav class="links menu-wrapper">
                 <ul class="list-js links-list">
                     <li class="nav-item menu-item has-sub-menu">
-                        <a class="nav-link menu-link active"
-                            href="#page-hero">home</a>
+                        <a class="nav-link menu-link active" href="#page-hero">Home</a>
                     </li>
                     <li class="nav-item menu-item">
-                        <a class="nav-link menu-link" href="#services">services </a>
+                        <a class="nav-link menu-link" href="#services">Services</a>
                     </li>
-                    <li class="nav-item menu-item"><a class="nav-link menu-link  " href="#about">about </a></li>
-                    <li class="nav-item menu-item"><a class="nav-link menu-link  " href="#pricing">pricing </a></li>
-                    <li class="nav-item menu-item"><a class="nav-link menu-link  "
-                            href="https://meetyourai.github.io/AIProf/blog/BlogIndex">Blog </a></li>
-                    <li class="nav-item menu-item"><a class="nav-link menu-link  " href="#faq">FAQ </a></li>
-                    <li class="nav-item menu-item"><a class="nav-link menu-link  " href="#contact-us">contact us
-                        </a></li>
-            {% if not request.user.is_authenticated %}
-                <div class="cta-links-area flex justify-center">
                     <li class="nav-item menu-item">
-                        <a href="{% url 'account_login' %}" class="btn-outline cta-link cta-link-primary" onclick="showLoading()">Sign In</a>
+                        <a class="nav-link menu-link" href="#about">About</a>
                     </li>
+                    <li class="nav-item menu-item">
+                        <a class="nav-link menu-link" href="#pricing">Pricing</a>
+                    </li>
+                    <li class="nav-item menu-item">
+                        <a class="nav-link menu-link" href="https://meetyourai.github.io/AIProf/blog/BlogIndex">Blog</a>
+                    </li>
+                    <li class="nav-item menu-item">
+                        <a class="nav-link menu-link" href="#faq">FAQ</a>
+                    </li>
+                    <li class="nav-item menu-item">
+                        <a class="nav-link menu-link" href="#contact-us">Contact Us</a>
+                    </li>
+                    {% if not request.user.is_authenticated %}
+                    <div class="cta-links-area flex justify-center">
+                        <li class="nav-item menu-item">
+                            <a href="{% url 'account_login' %}" class="btn btn-outline btn-[var(--clr-dark-blue)] " onclick="showLoading()">Sign In</a>
+                        </li>
+                    </div>
+                    {% endif %}
+                    {% if request.user.is_authenticated %}
+                    <div class="cta-links-area space-y-2 lg:hidden">
+                        <li class="nav-item menu-item">
+                            <a class="btn btn-active btn-accent" 
+                               _="on click remove .hidden from #modal 
+                               then remove .close-menu from .menu-toggler 
+                               then remove .show from .menu-wrapper">
+                                Create Assistant
+                            </a>
+                        </li>
+                        <li class="nav-item menu-item">
+                            {% csrf_token %}
+                            <a class="btn btn-active btn-accent" 
+                               hx-post="{% url 'account_logout' %}" 
+                               hx-trigger="click" 
+                               hx-target="body" 
+                               hx-swap="outerHTML" 
+                               hx-redirect="{% url 'index' %}"
+                               hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                               onclick="showLoading()"
+                               _="on click remove .close-menu from .menu-toggler 
+                               then remove .show from .menu-wrapper">
+                                Logout
+                            </a>
+                        </li>
+                        <li class="nav-item menu-item">
+                            <button class="btn btn-active btn-accent" hx-get="{% url 'list_assistants' %}" hx-trigger="click" hx-target="body" hx-swap="outerHTML">All Assistants</button>
+                        </li>
+                    </div>
+                   
+                    {% endif %}
+                </ul>
+            </nav>
+            {% if request.user.is_authenticated %}
+            <div class="dropdown dropdown-end hidden space-y-2 p-1.5 lg:block">
+                <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar" onclick="toggleDropdown(this)">
+                    <div class="w-10 rounded-full">
+                        <img alt="Tailwind CSS Navbar component" src="https://i.pravatar.cc/150?img=1" />
+                    </div>
                 </div>
-        {% endif %}
-        
-        {% if request.user.is_authenticated %}
-            <div class="cta-links-area flex justify-center">
-               <li class="nav-item menu-item">
-                <a class="btn-outline cta-link cta-link-primary"
-                    hx-post="{% url 'manage_assistant' %}"
-                    hx-target="body"
-                    hx-swap="outerHTML"
-                    hx-replace-url="/assistant/{{ assistant.id }}"
-                    onclick="showLoading()"
-                    _="on click remove .close-menu from .menu-toggler 
-                    then remove .show from .menu-wrapper">
-                    Create Assistant
-                </a>
-               </li>
-               <li class="nav-item menu-item">
-                {% csrf_token %}
-                <a class="btn-outline cta-link cta-link-primary" 
+                <ul tabindex="0" class="dropdown-content menu p-2 space-y-2 shadow bg-base-100 rounded-box w-52" style="background-color: var(--clr-dark-blue);color: white;">
+                    <li>
+                        <a class=""
+                        hx-post="{% url 'manage_assistant' %}"
+                        hx-target="body"
+                        hx-swap="outerHTML"
+                        hx-replace-url="/assistant/{{ assistant.id }}"
+                        onclick="showLoading()"
+                        _="on click remove .close-menu from .menu-toggler 
+                        then remove .show from .menu-wrapper">
+                            Create Assistant
+                        </a>
+                    </li>
+                    <li>
+                        {% csrf_token %}
+                        <a class="" 
                    hx-post="{% url 'account_logout' %}" 
                    hx-trigger="click" 
                    hx-target="body" 
@@ -73,13 +118,15 @@
                    onclick="showLoading()"
                    _="on click remove .close-menu from .menu-toggler 
                    then remove .show from .menu-wrapper">
-                    Logout
-                </a>
-               </li>
-            </div>
-        {% endif %}
+                            Logout
+                        </a>
+                    </li>
+                    <li>
+                        <button hx-get="{% url 'list_assistants' %}" hx-trigger="click" hx-target="body" hx-swap="outerHTML">All Assistants</button>
+                    </li>
                 </ul>
             </div>
+            {% endif %}
             <!-- for mobile navbar menu -->
             <div class="controls-box">
                 <!--Menu Toggler button-->
@@ -105,6 +152,15 @@
             loadingDiv.innerHTML = '<div class="text-white font-bold">Loading...</div>';
             document.body.appendChild(loadingDiv);
         }
+
+        function toggleDropdown(element) {
+            const dropdown = element.nextElementSibling;
+                if (dropdown.style.display === "block") {
+                    dropdown.style.display = "none";
+                } else {
+                    dropdown.style.display = "block";
+                }
+            }
     </script>
     <!--End navbar-->
 </header>
