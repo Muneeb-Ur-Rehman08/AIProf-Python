@@ -22,7 +22,7 @@
     <!-- Filters Section -->
     <div class="flex flex-col md:flex-row gap-8">
         <div class="w-full md:w-5/12">
-          <div class="collapse collapse-arrow w-full">
+          <div class="collapse collapse-arrow w-full border border-gray-300 rounded-md">
             <!-- Accordion Item for Subjects -->
             <input type="checkbox" class="peer" />
             <div class="collapse-title peer-checked:bg-primary peer-checked:text-primary-content">
@@ -30,19 +30,19 @@
             </div>
             <div class="collapse-content space-y-4 peer-checked:bg-primary peer-checked:text-primary-content">
               <div class="relative">
-                <svg class="absolute left-2 top-2.5 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path d="M10 18l6-6m0 0l-6-6m6 6H4"></path>
+                <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-2 top-4 h-4 w-4 text-muted-foreground" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4 opacity-70">
+                  <path fill-rule="evenodd" d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" clip-rule="evenodd" />
                 </svg>
                 <input
                   type="text"
                   placeholder="Search subjects..."
-                  class="input input-bordered w-full pl-8"
+                  class="input input-bordered w-full bg-transparent pl-8"
                   hx-get="{% url 'list_assistant_partial' %}"
                   hx-trigger="keyup changed delay:300ms"
                 />
               </div>
               <div class="space-y-2 max-h-48 overflow-y-auto">
-                {% for topic in subjects_data %}
+                 {% for topic in subjects_data %}
                 <div class="flex items-center space-x-2">
                   <input
                     type="checkbox"
@@ -55,7 +55,6 @@
                   />
                   <label for="topic-{{ topic.name }}" class="label">
                     {{ topic.name }}
-                    eje
                   </label>
                 </div>
                 {% endfor %}
@@ -64,15 +63,15 @@
           </div>
       
           <!-- Accordion Item for Topics -->
-          <div class="collapse collapse-arrow w-full mt-4">
+          <div class="collapse collapse-arrow w-full mt-4 border border-gray-300 rounded-md">
             <input type="checkbox" class="peer" />
             <div class="collapse-title peer-checked:bg-primary peer-checked:text-primary-content">
               Topics
             </div>
             <div class="collapse-content space-y-4 peer-checked:bg-primary peer-checked:text-primary-content">
               <div class="relative">
-                <svg class="absolute left-2 top-2.5 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path d="M10 18l6-6m0 0l-6-6m6 6H4"></path>
+                <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-2 top-4 h-4 w-4 text-muted-foreground" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4 opacity-70">
+                  <path fill-rule="evenodd" d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" clip-rule="evenodd" />
                 </svg>
                 <input
                   type="text"
@@ -82,23 +81,24 @@
                   hx-trigger="keyup changed delay:300ms"
                 />
               </div>
-              <div class="space-y-2 max-h-48 overflow-y-auto">
+              <div class="space-y-2 max-h-48 bg-gray-600 p-2 rounded-md overflow-y-auto">
                 {% for topic in subjects_data %}
+                {% for topic in topic.topics %} 
                 <div class="flex items-center space-x-2">
                   <input
                     type="checkbox"
-                    id="topic-{{ topic.name }}"
+                    id="topic-{{ topic }}"
                     class="checkbox"
                     name="selected_topics"
-                    value="{{ topic.name }}"
+                    value="{{ topic }}"
                     hx-post="/update-topics/"
                     hx-target="#topic-list"
                   />
-                  <label for="topic-{{ topic.name }}" class="label">
-                    {{ topic.name }}
-                    eje
+                  <label for="topic-{{ topic }}" class="label">
+                    {{ topic }}
                   </label>
                 </div>
+                {% endfor %}
                 {% endfor %}
               </div>
             </div>
