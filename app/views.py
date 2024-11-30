@@ -204,21 +204,7 @@ def create_assistant(request):
 @csrf_exempt
 @require_http_methods(["GET"])
 def list_assistants(request):
-    return render(request, 'assistant/list.html')
-
-
-# @login_required
-@csrf_exempt
-@require_http_methods(["GET"])
-def list_assistant_partial(request):
-    search = request.GET.get('search')
-
-    # Initialize assistant manager
-    assistants = AssistantManager().list_assistants()
-
-    assistants = [assistant.config.__dict__ for assistant in assistants]
-    
-    # Append subjects data to assistants
+     # Append subjects data to assistants
     subjects_data = [
         {
             "name": "Mathematics",
@@ -289,13 +275,28 @@ def list_assistant_partial(request):
         }
     ]
 
+    return render(request, 'assistant/list.html', {"subjects_data": subjects_data})
+
+
+# @login_required
+@csrf_exempt
+@require_http_methods(["GET"])
+def list_assistant_partial(request):
+    search = request.GET.get('search')
+
+    # Initialize assistant manager
+    assistants = AssistantManager().list_assistants()
+
+    assistants = [assistant.config.__dict__ for assistant in assistants]
+    
+   
     # Add subjects data to each assistant
 
     if search and len(search) > 2:
         assistants = [
-            assistant for assistant in assistants
-            if assistant.get('assistant_name') and search in assistant['assistant_name']
+            name for name in assistants
+            if name.get('assistant_name') and search in name['assistant_name']
         ]
-
+       
     logger.info(f"Get all assistants: {assistants}")
-    return render(request, 'assistant/list_partials.html', {"assistants": assistants, "subjects": subjects_data})
+    return render(request, 'assistant/list_partials.html', {"assistants": assistants})

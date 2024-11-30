@@ -42,54 +42,23 @@
                 />
               </div>
               <div class="space-y-2 max-h-48 overflow-y-auto">
+                {% for topic in subjects_data %}
                 <div class="flex items-center space-x-2">
                   <input
                     type="checkbox"
-                    id="subject-Math"
-                    class="checkbox checkbox-primary"
-                    name="selected_subjects"
-                    value="Math"
+                    id="topic-{{ topic.name }}"
+                    class="checkbox"
+                    name="selected_topics"
+                    value="{{ topic.name }}"
+                    hx-post="/update-topics/"
+                    hx-target="#topic-list"
                   />
-                  <label for="subject-Math" class="label">
-                    Math
+                  <label for="topic-{{ topic.name }}" class="label">
+                    {{ topic.name }}
+                    eje
                   </label>
                 </div>
-                <div class="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="subject-Science"
-                    class="checkbox checkbox-primary bg-red-600"
-                    name="selected_subjects"
-                    value="Science"
-                  />
-                  <label for="subject-Science" class="label">
-                    Science
-                  </label>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="subject-History"
-                    class="checkbox checkbox-primary bg-red-600"
-                    name="selected_subjects"
-                    value="History"
-                  />
-                  <label for="subject-History" class="label">
-                    History
-                  </label>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="subject-English"
-                    class="checkbox checkbox-primary bg-red-600"
-                    name="selected_subjects"
-                    value="English"
-                  />
-                  <label for="subject-English" class="label">
-                    English
-                  </label>
-                </div>
+                {% endfor %}
               </div>
             </div>
           </div>
@@ -114,19 +83,20 @@
                 />
               </div>
               <div class="space-y-2 max-h-48 overflow-y-auto">
-                {% for topic in topics %}
+                {% for topic in subjects_data %}
                 <div class="flex items-center space-x-2">
                   <input
                     type="checkbox"
-                    id="topic-{{ topic }}"
+                    id="topic-{{ topic.name }}"
                     class="checkbox"
                     name="selected_topics"
-                    value="{{ topic }}"
+                    value="{{ topic.name }}"
                     hx-post="/update-topics/"
                     hx-target="#topic-list"
                   />
-                  <label for="topic-{{ topic }}" class="label">
-                    {{ topic }}
+                  <label for="topic-{{ topic.name }}" class="label">
+                    {{ topic.name }}
+                    eje
                   </label>
                 </div>
                 {% endfor %}
@@ -138,11 +108,5 @@
         <div class="w-full" id="assistants-list" hx-get="{% url 'list_assistant_partial' %}" hx-trigger="load">
         </div>
       </div>
-
-    
-
-
-    
-
 </div>
 {% endblock %}
