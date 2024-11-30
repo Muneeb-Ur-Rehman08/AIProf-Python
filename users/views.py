@@ -129,7 +129,7 @@ def create_assistant(request):
 
         # del request.session["assistant"]
 
-        assistant_id = request.session.get("assistant")
+        assistant_id = data.get("assistant_id")
 
         if not data.get('assistant_id'):
             
@@ -163,7 +163,7 @@ def create_assistant(request):
             
             # Prepare assistant data
             # Validate required fields
-            required_fields = ['assistant_name', 'subject', 'description', 'topic' 'teacher_instructions']
+            required_fields = ['assistant_name', 'subject', 'description', 'topic', 'teacher_instructions']
             missing_fields = [field for field in required_fields if not data.get(field)]
             
             if missing_fields:
@@ -181,7 +181,7 @@ def create_assistant(request):
                 "teacher_instructions": data.get('teacher_instructions'),
             }
 
-            assistant = Assistant.objects.get(id=assistant_id["id"])
+            assistant = Assistant.objects.get(id=assistant_id)
 
             # Handle file uploads if present
             if files := request.FILES.getlist('knowledge_base'):
@@ -210,9 +210,9 @@ def create_assistant(request):
             
             try:
                 
-                print("assistant_id", assistant_id["id"])
+                print("assistant_id", assistant_id)
                 # Handle update or creation based on ass_id presence
-                if assistant_id['id']:
+                if assistant_id:
 
                     assistant.subject = assistant_data["subject"]
                     assistant.description = assistant_data['description']

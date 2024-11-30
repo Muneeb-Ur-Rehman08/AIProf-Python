@@ -4,6 +4,7 @@ from django.template import TemplateDoesNotExist
 from django.contrib.auth.decorators import login_required
 import uuid
 import logging
+from users.models import Assistant
 
 logger = logging.getLogger(__name__)
 
@@ -35,19 +36,25 @@ def auth_view(request):
     except TemplateDoesNotExist:
         return HttpResponse("Template not found", status=404)
 # assistant form is show only if user is logged in
+
+from users.models import PDFDocument
 @login_required(login_url='accounts/login/')
 def create_assistant_view(request, ass_id):
     try:
-        if not ass_id:
-            return redirect('index')
-
         assistant = request.session.get('assistant', None)
-        logger.info(f"assistant: {assistant}")
-        if ass_id != assistant.get('id'):
-            return redirect('index')
-        assistant['ass_id'] = str(uuid.UUID(ass_id))
+        assistant_id = ass_id or assistant.get('id')
 
-        return render(request, 'assistant/assistant_form.html', {'assistant': assistant})
+        if not assistant_id:
+            return redirect('index')
+
+        assistant_data = Assistant.objects.get(id=assistant_id)
+
+        return render(request, 'assistant/assistant_form.html', {
+            'assistant': assistant_data,
+            'subject': assistant_data.subject,
+            'topic': assistant_data.topic,
+            'teacher_instructions': assistant_data.teacher_instructions,
+        })
     except TemplateDoesNotExist:
         return HttpResponse("Template not found", status=404)
 def assistant_chat_view(request):
