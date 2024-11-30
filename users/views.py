@@ -75,7 +75,9 @@ def get_assistant(request, ass_id: Optional[str] = None):
                         'id': str(assistant.id),
                         'name': assistant.name,
                         'subject': assistant.subject,
-                        'user_id': str(assistant.user_id.id)
+                        'user_id': str(assistant.user_id.id),
+                        'descriotion': assistant.description,
+                        'topic': assistant.topic
                     } for assistant in assistants
                 ]
                 # assistants_data = [assistant.config.__dict__ for assistant in assistants]
@@ -100,7 +102,7 @@ def create_assistant(request):
         - GET: Retrieve assistant data
         - OPTIONS: Get allowed methods
     """
-
+    logger.info(f"data in request: {request.method}")
     # Handle OPTIONS request
     if request.method == "OPTIONS":
         response = JsonResponse({})
@@ -161,7 +163,7 @@ def create_assistant(request):
             
             # Prepare assistant data
             # Validate required fields
-            required_fields = ['assistant_name', 'subject', 'teacher_instructions']
+            required_fields = ['assistant_name', 'subject', 'description', 'topic' 'teacher_instructions']
             missing_fields = [field for field in required_fields if not data.get(field)]
             
             if missing_fields:
@@ -174,6 +176,8 @@ def create_assistant(request):
                 "user_id": user_id,  # Using string version of UUID
                 "assistant_name": data.get('assistant_name'),
                 "subject": data.get('subject'),
+                "description": data.get('description'),
+                "topic": data.get('topic'),
                 "teacher_instructions": data.get('teacher_instructions'),
             }
 
@@ -211,6 +215,8 @@ def create_assistant(request):
                 if assistant_id['id']:
 
                     assistant.subject = assistant_data["subject"]
+                    assistant.description = assistant_data['description']
+                    assistant.topic = assistant_data['topic']
                     assistant.teacher_instructions = assistant_data["teacher_instructions"]
                     assistant.save()
 
@@ -222,6 +228,8 @@ def create_assistant(request):
                         "user_id": str(assistant.user_id.id),
                         "assistant_name": assistant.name,
                         "subject": assistant.subject,
+                        "description": assistant.description,
+                        "topic": assistant.topic,
                         "teacher_instructions": assistant.teacher_instructions,
                         "message": success_message
                     }
