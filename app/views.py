@@ -18,6 +18,7 @@ from django.contrib.auth.decorators import login_required
 from app.utils.auth_backend import SupabaseBackend
 from app.utils.assistant_manager import AssistantManager
 from app.modals.assistants import AssistantConfig
+from users.models import Assistant
 
 # Ensure the GROQ_API_KEY is loaded from the environment
 api_key = os.getenv('GROQ_API_KEY')
@@ -211,13 +212,30 @@ def list_assistants(request):
 @csrf_exempt
 @require_http_methods(["GET"])
 def list_assistant_partial(request):
-    keyword = request.GET.get('keyword')
-    # Initialize assistant manager
-    assistants = AssistantManager().list_assistants()
-    assistants_data = [assistant.config.__dict__ for assistant in assistants]
+    keyword = request.GET.get('keyword', '')
+    subjects = request.GET.getlist('subject')  # Retrieve selected subjects from checkboxes
+    topics = request.GET.getlist('topic')      # Retrieve selected topics from checkboxes
+
+    # Filter assistants based on subjects and topics
+    assistants = Assistant.objects.all()
+
+    # If keyword is provided, filter based on assistant name
     if keyword and len(keyword) > 2:
-        assistants_data = [assistant for assistant in assistants_data if keyword in assistant['assistant_name']]
-    logger.info(f"Get all assistants: {assistants_data}")
+        assistants = assistants.filter(name__icontains=keyword)
+
+    # If subjects are selected, filter based on subjects
+    if subjects:
+        assistants = assistants.filter(subject__in=subjects)
+
+    # If topics are selected, filter based on topics
+    if topics:
+        assistants = assistants.filter(topic__in=topics)
+
+    # Prepare the data for rendering
+    assistants_data = list(assistants.values('name', 'subject', 'topic', 'description', 'created_at'))
+
+    logger.info(f"Filtered assistants: {assistants_data}")
+    
     return render(request, 'assistant/list_partials.html', {"assistants": assistants_data})
 
 

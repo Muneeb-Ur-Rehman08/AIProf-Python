@@ -71,9 +71,9 @@ _="on load if window.innerWidth > 768 then remove .hidden from me end"
         promptInput.value = '';
 
         const payload = {
-            conversation_id: '{{ assistant.ass_id }}',
+            conversation_id: '{{ assistant.id }}',
             message: promptValue,
-            ass_id: '{{ assistant.ass_id }}'
+            assistant_id: '{{ assistant.id }}'
         };
 
         fetch('/assistantchat/chat/', {

@@ -7,12 +7,14 @@ import uuid
 from typing import Dict, Any, Optional
 import logging
 from django.conf import settings
+from django.core.files import File
 from django.shortcuts import redirect
+from django.contrib.auth.models import User
 
 # Ensure these imports match your project structure
-from app.modals.assistants import AssistantConfig
-from app.utils.assistant_manager import AssistantManager
-from .models import SupabaseUser
+from .models import SupabaseUser, Assistant, PDFDocument
+
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -37,7 +39,7 @@ def get_assistant(request, ass_id: Optional[str] = None):
     try:
         
         # Initialize assistant manager
-        assistant_manager = AssistantManager()
+        
         if  request.user.is_authenticated:
 
             if ass_id:
@@ -47,17 +49,38 @@ def get_assistant(request, ass_id: Optional[str] = None):
                 except ValueError:
                     return format_response(error="Invalid assistant ID format", status=400)
 
-                assistant = assistant_manager.get_assistant(uuid_ass_id)
+                # assistant = assistant_manager.get_assistant(uuid_ass_id)
+                assistant = Assistant.objects.get(id=ass_id)
                 if not assistant:
                     return format_response(error="Assistant not found", status=404)
                 
+                
+                assistant_data = {
+                    'id': str(assistant.id),
+                    'name': assistant.name,
+                    'subject': assistant.subject,
+                    'user_id': str(assistant.user_id.id),
+                    'teacher_instructions': assistant.teacher_instructions
+                }
+                
                 # Return single assistant data
-                return format_response(data=assistant.config.__dict__)
+                return format_response(data=assistant_data)
+                
             else:
                 # List all assistants
-                assistants = assistant_manager.list_assistants()
+                assistants = Assistant.objects.all()  # Fetch all assistants
                 logger.info(f"Get all assistants: {assistants}")
-                assistants_data = [assistant.config.__dict__ for assistant in assistants]
+                assistants_data = [
+                    {
+                        'id': str(assistant.id),
+                        'name': assistant.name,
+                        'subject': assistant.subject,
+                        'user_id': str(assistant.user_id.id),
+                        'descriotion': assistant.description,
+                        'topic': assistant.topic
+                    } for assistant in assistants
+                ]
+                # assistants_data = [assistant.config.__dict__ for assistant in assistants]
                 return format_response(data=assistants_data)
         else:
             return format_response(error="User not authenticated", status=400)
@@ -79,9 +102,7 @@ def create_assistant(request):
         - GET: Retrieve assistant data
         - OPTIONS: Get allowed methods
     """
-    # Initialize assistant manager
-    assistant_manager = AssistantManager()
-
+    logger.info(f"data in request: {request.method}")
     # Handle OPTIONS request
     if request.method == "OPTIONS":
         response = JsonResponse({})
@@ -89,54 +110,60 @@ def create_assistant(request):
         return response
 
     try:
+        
         # Extract request data
         data = request.POST.dict() if request.method in ["POST", "PUT"] else request.GET
         logger.info(f"Received data: {data}")
-
+        logger.info(f"Received data: {request.user}")
         # Validate user and get user_id
         if not request.user.is_authenticated:
             return format_response(error="User not authenticated", status=400)
 
         try:
-            user = SupabaseUser.objects.get(email=request.user)
+            user = User.objects.get(id=request.user.id)
             user_id = str(user.id)  # Convert UUID to string
-            # uuid.UUID(user_id)  # Validate UUID format
-        except (SupabaseUser.DoesNotExist, ValueError):
+            
+        except (User.DoesNotExist, ValueError):
             return format_response(error="Invalid user authentication", status=400)
-
         logger.info(f"Processing request for user_id: {user_id}")
 
+        # del request.session["assistant"]
 
-        if data.get('assistant_name') and not data.get('ass_id'):
+        assistant_id = request.session.get("assistant")
+
+        if data.get('assistant_name') and not data.get("subject"):
             
             try:
-                config = AssistantConfig(
-                        user_id=user_id,
-                        assistant_name=data.get('assistant_name'),
-                    )
-                result = assistant_manager.create_assistant(config)
-                success_message = "Assistant created successfully"
-
-                assistant = assistant_manager.get_assistant(ass_id=result.config.ass_id)
+                
+                name = data.get("assistant_name")
+                print(name)
+                
+                print("Session: ", request.session.get("assistant"))
+                # Create assistant to django models
+                assistant = Assistant.objects.create(
+                    user_id=user,
+                    name=name,
+                )
+                print(f"Created assistant model: {assistant.id}")
 
                 # Prepare response
                 response_data = {
-                    'id': str(assistant.config.ass_id),
-                    'assistant_name': assistant.config.assistant_name,
+                    'id': str(assistant.id),
+                    'name': assistant.name,
                     'message': 'Initial assistant profile created. Complete your profile to finish.'
                 }
                 request.session['assistant'] = response_data
-                return redirect(f'/assistant/{str(assistant.config.ass_id)}')
+                print("After Session: ", request.session.get("assistant"))
+                return redirect(f'/assistant/{str(assistant.id)}')
 
             except Exception as e:
                 return format_response(error=f"Error creating initial assistant: {str(e)}", status=500)
         
         else:
             
-            
             # Prepare assistant data
             # Validate required fields
-            required_fields = ['ass_id','assistant_name', 'subject', 'teacher_instructions']
+            required_fields = ['assistant_name', 'subject', 'description', 'topic' 'teacher_instructions']
             missing_fields = [field for field in required_fields if not data.get(field)]
             
             if missing_fields:
@@ -149,57 +176,65 @@ def create_assistant(request):
                 "user_id": user_id,  # Using string version of UUID
                 "assistant_name": data.get('assistant_name'),
                 "subject": data.get('subject'),
+                "description": data.get('description'),
+                "topic": data.get('topic'),
                 "teacher_instructions": data.get('teacher_instructions'),
             }
 
-            
+            assistant = Assistant.objects.get(id=assistant_id["id"])
 
             # Handle file uploads if present
             if files := request.FILES.getlist('knowledge_base'):
-                temp_dir = os.path.join('temp')
-                os.makedirs(temp_dir, exist_ok=True)
-                file_paths = []
-                
                 for file in files:
-                    temp_file_path = os.path.join(temp_dir, file.name)
-                    with open(temp_file_path, 'wb+') as destination:
-                        for chunk in file.chunks():
-                            destination.write(chunk)
-                    file_paths.append(temp_file_path)
+                    print(file)
+                    try:
+                        # Create PDFDocument instance directly
+                        pdf_document = PDFDocument.objects.create(
+                            user_id=user,
+                            assistant_id=assistant,
+                            file=file,
+                            title=file.name
+                        )
+                        
+                        # Process the PDF (this method will handle temp directory and file processing internally)
+                        pdf_document.process_pdf()
+                    
+                    except Exception as e:
+                        logger.error(f"Error processing PDF {file.name}: {str(e)}")
+                        # Cleanup if processing fails
+                        pdf_document.delete()
                 
-                assistant_data["knowledge_base"] = file_paths
+                # assistant_data["knowledge_base"] = file_paths
                 
             print(f"Assistant Data: {assistant_data}")
             
             try:
-            
+                
+                print("assistant_id", assistant_id["id"])
                 # Handle update or creation based on ass_id presence
-                if ass_id := data.get('ass_id'):
-                    try:
-                        # Convert ass_id to string if it's a UUID
-                        assistant_data["ass_id"] = str(uuid.UUID(ass_id))
-                    except ValueError:
-                        return format_response(error="Invalid ass_id format", status=400)
+                if assistant_id['id']:
 
-                    # Update existing assistant
-                    result = assistant_manager.update_assistant(assistant_data)
-                    
-                    if not result:
-                        return format_response(error="Assistant not found", status=404)
-                    
+                    assistant.subject = assistant_data["subject"]
+                    assistant.description = assistant_data['description']
+                    assistant.topic = assistant_data['topic']
+                    assistant.teacher_instructions = assistant_data["teacher_instructions"]
+                    assistant.save()
+
                     success_message = "Assistant updated successfully"
                     
-                # Prepare response data based on the result structure
+                # # Prepare response data based on the result structure
                     response_data = {
-                        "ass_id": str(result.config.ass_id),
-                        "user_id": str(result.config.user_id),
-                        "assistant_name": result.config.assistant_name,
-                        "subject": result.config.subject,
-                        "teacher_instructions": result.config.teacher_instructions,
+                        "ass_id": str(assistant.id),
+                        "user_id": str(assistant.user_id.id),
+                        "assistant_name": assistant.name,
+                        "subject": assistant.subject,
+                        "description": assistant.description,
+                        "topic": assistant.topic,
+                        "teacher_instructions": assistant.teacher_instructions,
                         "message": success_message
                     }
-                    print("assistant id when user created", response_data["ass_id"])
-                    request.session['assistant'] = response_data
+                    print("assistant id when user created", response_data)
+                    # request.session['assistant'] = response_data
                     print("Session", request.session.get("assistant"))
                     return format_response(data=response_data)
 
@@ -230,26 +265,18 @@ def delete_assistant(request, ass_id):
             return format_response(error="User not authenticated", status=401)
 
         try:
-            user = SupabaseUser.objects.get(email=request.user.email)
+            user = User.objects.get(id=request.user.id)
             user_id = str(user.id)  # Convert to string to ensure consistency
             print(user_id)
-        except SupabaseUser.DoesNotExist:
+        except User.DoesNotExist:
             return format_response(error="User not found", status=404)
         
-        # Convert IDs to UUID
-        try:
-            ass_uuid = uuid.UUID(ass_id)
-            user_uuid = uuid.UUID(user_id)
-        except ValueError:
-            return format_response(error="Invalid ID format", status=400)
-
-        # Initialize AssistantManager
-        assistant_manager = AssistantManager()
         
-        # Delete the assistant
-        success = assistant_manager.delete_assistant(ass_uuid, user_uuid)
+        # Delete the assistant from the model
+        assistant = Assistant.objects.get(id=ass_id, user_id=user.id)
+        assistant.delete()
         
-        if not success:
+        if not assistant:
             return format_response(error="Assistant not found or deletion failed", status=404)
         
         return format_response(data={"message": "Assistant successfully deleted"})
