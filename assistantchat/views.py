@@ -38,7 +38,7 @@ def chat_query(request, ass_id: Optional[str] = None):
                 prompt = data.get('message')
                 
                 conversation_id = data.get('conversation_id')
-                assistant_id = assistant_data["id"]  
+                assistant_id = data.get('id')  
                 print(f"assistant id in chat: {assistant_id}")          
                 if not prompt:
                     yield json.dumps(format_response_dict(error='Prompt is required', status=400))
