@@ -90,29 +90,36 @@
                         <img alt="Tailwind CSS Navbar component" src="https://i.pravatar.cc/150?img=1" />
                     </div>
                 </div>
-                <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52" style="background-color: var(--clr-dark-blue);color: white;">
+                <ul tabindex="0" class="dropdown-content menu p-2 space-y-2 shadow bg-base-100 rounded-box w-52" style="background-color: var(--clr-dark-blue);color: white;">
                     <li>
-                        <a class="" 
-                           _="on click remove .hidden from #modal 
-                           then remove .close-menu from .menu-toggler 
-                           then remove .show from .menu-wrapper">
+                        <a class=""
+                        hx-post="{% url 'manage_assistant' %}"
+                        hx-target="body"
+                        hx-swap="outerHTML"
+                        hx-replace-url="/assistant/{{ assistant.id }}"
+                        onclick="showLoading()"
+                        _="on click remove .close-menu from .menu-toggler 
+                        then remove .show from .menu-wrapper">
                             Create Assistant
                         </a>
                     </li>
                     <li>
                         {% csrf_token %}
-                        <a 
-                           hx-post="{% url 'account_logout' %}" 
-                           hx-trigger="click" 
-                           hx-target="body" 
-                           hx-swap="outerHTML" 
-                           hx-redirect="{% url 'index' %}"
-                           hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                           onclick="showLoading()"
-                           _="on click remove .close-menu from .menu-toggler 
-                           then remove .show from .menu-wrapper">
+                        <a class="" 
+                   hx-post="{% url 'account_logout' %}" 
+                   hx-trigger="click" 
+                   hx-target="body" 
+                   hx-swap="outerHTML" 
+                   hx-redirect="{% url 'index' %}"
+                   hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                   onclick="showLoading()"
+                   _="on click remove .close-menu from .menu-toggler 
+                   then remove .show from .menu-wrapper">
                             Logout
                         </a>
+                    </li>
+                    <li>
+                        <button hx-get="{% url 'list_assistants' %}" hx-trigger="click" hx-target="body" hx-swap="outerHTML">All Assistants</button>
                     </li>
                 </ul>
             </div>

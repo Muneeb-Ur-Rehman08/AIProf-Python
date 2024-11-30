@@ -1,4 +1,4 @@
-<div id="assistantChat" class="hidden w-full md:w-1/2 flex flex-col justify-between"
+<div id="assistantChat" class="hidden w-full md:w-1/2 flex flex-col justify-between self-end h-lvh"
 _="on load if window.innerWidth > 768 then remove .hidden from me end"
 >
     <!-- Chat Container -->
@@ -9,11 +9,11 @@ _="on load if window.innerWidth > 768 then remove .hidden from me end"
     <!-- Message Input Area -->
     <div class="bg-black/30 p-3 md:p-4 w-full" style="border-top: 1px solid var(--clr-main)">
         <div class="max-w-4xl mx-auto flex gap-2">
-            <button class="p-2 md:p-3 rounded bg-white/10 hover:bg-white/20 transition-colors text-white">
+            <!-- <button class="p-2 md:p-3 rounded bg-white/10 hover:bg-white/20 transition-colors text-white">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                 </svg>
-            </button>
+            </button> -->
             
             <input 
                 type="text"
@@ -50,31 +50,56 @@ _="on load if window.innerWidth > 768 then remove .hidden from me end"
     });
 
     function appendMessage(text, isUser = false) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `w-full ${isUser ? 'text-right' : 'text-left'} mb-4`;
-        messageDiv.innerHTML = `
-            <div class="inline-block ${isUser ? 'bg-blue-600' : 'bg-white/10'} rounded-lg p-3 text-white max-w-[80%]">
-                ${text}
-            </div>
-        `;
-        document.getElementById('chat-container').appendChild(messageDiv);
+        if (isUser) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `w-full text-right mb-4`;
+            messageDiv.innerHTML = `
+                <div class="inline-block bg-blue-600 rounded-lg p-3 text-white max-w-[80%]">
+                    ${text}
+                </div>
+            `;
+            document.getElementById('chat-container').appendChild(messageDiv);
+        } else {
+            let assistantMessageDiv = document.querySelector('.assistant-message-pending');
+            if (!assistantMessageDiv) {
+                assistantMessageDiv = document.createElement('div');
+                assistantMessageDiv.className = `w-full text-left mb-4 assistant-message-pending`;
+                assistantMessageDiv.innerHTML = `
+                    <div class="inline-block bg-white/10 rounded-lg p-3 text-white max-w-[80%]">
+                        ${text}
+                    </div>
+                `;
+                document.getElementById('chat-container').appendChild(assistantMessageDiv);
+            } else {
+                const messageContent = assistantMessageDiv.querySelector('div');
+                messageContent.textContent += text;
+            }
+        }
+        
+        const chatContainer = document.getElementById('chat-container');
+        chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
     function sendPayload() {
         const promptInput = document.getElementById('prompt-input');
-        const promptValue = promptInput.value;
+        const promptValue = promptInput.value.trim();
         
-        // Display user message
+        if (!promptValue) return;
+        
         appendMessage(promptValue, true);
         
-        // Clear input
         promptInput.value = '';
 
         const payload = {
-            conversation_id: '{{ assistant.ass_id }}',
+            conversation_id: '{{ assistant.id }}',
             message: promptValue,
-            ass_id: '{{ assistant.ass_id }}'
+            id: '{{ assistant.id }}'
         };
+
+        const existingPending = document.querySelector('.assistant-message-pending');
+        if (existingPending) {
+            existingPending.classList.remove('assistant-message-pending');
+        }
 
         fetch('/assistantchat/chat/', {
             method: 'POST',
@@ -90,17 +115,16 @@ _="on load if window.innerWidth > 768 then remove .hidden from me end"
             
             function processStream({ done, value }) {
                 if (done) {
+                    const pendingMessage = document.querySelector('.assistant-message-pending');
+                    if (pendingMessage) {
+                        pendingMessage.classList.remove('assistant-message-pending');
+                    }
                     return;
                 }
                 
-                // Convert the chunk to text
                 const chunk = new TextDecoder().decode(value);
-                accumulatedResponse += chunk;
+                appendMessage(chunk, false);
                 
-                // Update the assistant's message
-                appendMessage(accumulatedResponse);
-                
-                // Continue reading the stream
                 return reader.read().then(processStream);
             }
             
