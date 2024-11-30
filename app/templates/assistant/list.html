@@ -9,11 +9,12 @@
             <input 
                 type="text" 
                 class="grow" 
+                autocomplete="off"
                 placeholder="Search" 
                 hx-get="{% url 'list_assistant_partial' %}" 
                 hx-target="#assistants-list" 
                 hx-trigger="keyup changed delay:500ms" 
-                name="search" />
+                name="keyword" />
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4 opacity-70">
                 <path fill-rule="evenodd" d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" clip-rule="evenodd" />
             </svg>
@@ -21,11 +22,11 @@
     </div>
     <!-- Filters Section -->
     <div class="flex flex-col md:flex-row gap-8">
-        <div class="w-full md:w-5/12">
+        <form id="filter-form" class="w-full md:w-5/12">
           <div class="collapse collapse-arrow w-full border border-gray-300 rounded-md">
             <!-- Accordion Item for Subjects -->
-            <input type="checkbox" class="peer" />
-            <div class="collapse-title peer-checked:bg-primary peer-checked:text-primary-content">
+            <input type="checkbox" class="peer" checked />
+            <div class="collapse-title peer-checked:bg-primary peer-checked:text-primary-content hover:underline hover:text-">
               Subjects
             </div>
             <div class="collapse-content space-y-4 peer-checked:bg-primary peer-checked:text-primary-content">
@@ -37,34 +38,53 @@
                   type="text"
                   placeholder="Search subjects..."
                   class="input input-bordered w-full bg-transparent pl-8"
-                  hx-get="{% url 'list_assistant_partial' %}"
+                  id="subject-search"
                   hx-trigger="keyup changed delay:300ms"
+                  onkeyup="filterSubjects()"
                 />
               </div>
-              <div class="space-y-2 max-h-48 overflow-y-auto">
-                 {% for topic in subjects_data %}
-                <div class="flex items-center space-x-2">
+              <div class="space-y-2 max-h-48 overflow-y-auto" id="subject-list">
+                 {% for subject in subjects_data %}
+                <div class="flex items-center space-x-2 subject-item">
                   <input
                     type="checkbox"
-                    id="topic-{{ topic.name }}"
+                    id="subject-{{ subject.name }}"
                     class="checkbox"
-                    name="selected_topics"
-                    value="{{ topic.name }}"
-                    hx-post="/update-topics/"
-                    hx-target="#topic-list"
+                    name="subject"
+                    value="{{ subject.name }}"
+                    hx-trigger="change"
+                    hx-get="{% url 'list_assistant_partial' %}"
+                    hx-target="#assistants-list"
+                    hx-include="[name='subject']:checked,[name='topic']:checked"
                   />
-                  <label for="topic-{{ topic.name }}" class="label">
-                    {{ topic.name }}
+                  <label for="subject-{{ subject.name }}" class="label cursor-pointer">
+                    {{ subject.name }}
                   </label>
                 </div>
                 {% endfor %}
               </div>
             </div>
+            <script>
+              function filterSubjects() {
+                const input = document.getElementById('subject-search');
+                const filter = input.value.toLowerCase();
+                const subjectItems = document.querySelectorAll('.subject-item');
+                
+                subjectItems.forEach(item => {
+                  const label = item.querySelector('label').textContent.toLowerCase();
+                  if (label.includes(filter)) {
+                    item.style.display = '';
+                  } else {
+                    item.style.display = 'none';
+                  }
+                });
+              }
+            </script>
           </div>
       
           <!-- Accordion Item for Topics -->
           <div class="collapse collapse-arrow w-full mt-4 border border-gray-300 rounded-md">
-            <input type="checkbox" class="peer" />
+            <input type="checkbox" class="peer" checked />
             <div class="collapse-title peer-checked:bg-primary peer-checked:text-primary-content">
               Topics
             </div>
@@ -76,25 +96,28 @@
                 <input
                   type="text"
                   placeholder="Search topics..."
-                  class="input input-bordered w-full pl-8"
-                  hx-get="/filter-topics/"
+                  class="input input-bordered bg-transparent w-full pl-8"
+                  id="topic-search"
                   hx-trigger="keyup changed delay:300ms"
+                  onkeyup="filterTopics()"
                 />
               </div>
-              <div class="space-y-2 max-h-48 bg-gray-600 p-2 rounded-md overflow-y-auto">
+              <div class="space-y-2 max-h-48 overflow-y-auto" id="topic-list">
                 {% for topic in subjects_data %}
                 {% for topic in topic.topics %} 
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-2 topic-item">
                   <input
                     type="checkbox"
                     id="topic-{{ topic }}"
                     class="checkbox"
-                    name="selected_topics"
+                    name="topic"
                     value="{{ topic }}"
-                    hx-post="/update-topics/"
-                    hx-target="#topic-list"
+                    hx-trigger="change"
+                    hx-get="{% url 'list_assistant_partial' %}"
+                    hx-target="#assistants-list"
+                    hx-include="[name='topic']:checked,[name='subject']:checked"
                   />
-                  <label for="topic-{{ topic }}" class="label">
+                  <label for="topic-{{ topic }}" class="label cursor-pointer">
                     {{ topic }}
                   </label>
                 </div>
@@ -103,10 +126,27 @@
               </div>
             </div>
           </div>
-        </div>
+        </form>
 
         <div class="w-full" id="assistants-list" hx-get="{% url 'list_assistant_partial' %}" hx-trigger="load">
         </div>
       </div>
 </div>
+
+<script>
+  function filterTopics() {
+    const input = document.getElementById('topic-search');
+    const filter = input.value.toLowerCase();
+    const topicItems = document.querySelectorAll('.topic-item');
+    
+    topicItems.forEach(item => {
+      const label = item.querySelector('label').textContent.toLowerCase();
+      if (label.includes(filter)) {
+        item.style.display = '';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  }
+</script>
 {% endblock %}

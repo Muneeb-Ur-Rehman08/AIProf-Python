@@ -276,7 +276,23 @@ def list_assistants(request):
         }
     ]
 
-    return render(request, 'assistant/list.html', {"subjects_data": subjects_data})
+    subjects = request.GET.getlist('subject')  # Retrieve selected subjects from checkboxes
+    topics = request.GET.getlist('topic')      # Retrieve selected topics from checkboxes
+
+    # Filter assistants based on subjects and topics
+    assistants = Assistant.objects.all()
+
+    # If subjects are selected, filter based on subjects
+    if subjects:
+        assistants = assistants.filter(subject__in=subjects)
+
+    # If topics are selected, filter based on topics
+    if topics:
+        assistants = assistants.filter(topic__in=topics)
+
+    # Prepare the data for rendering
+    assistants_data = list(assistants.values('name', 'subject', 'topic', 'description', 'created_at'))
+    return render(request, 'assistant/list.html', {"subjects_data": subjects_data, "filtered_assistants": assistants_data})
 
 
 # @login_required
@@ -308,17 +324,3 @@ def list_assistant_partial(request):
     logger.info(f"Filtered assistants: {assistants_data}")
     
     return render(request, 'assistant/list_partials.html', {"assistants": assistants_data})
-
-    assistants = [assistant.config.__dict__ for assistant in assistants]
-    
-   
-    # Add subjects data to each assistant
-
-    if search and len(search) > 2:
-        assistants = [
-            name for name in assistants
-            if name.get('assistant_name') and search in name['assistant_name']
-        ]
-       
-    logger.info(f"Get all assistants: {assistants}")
-    return render(request, 'assistant/list_partials.html', {"assistants": assistants})
