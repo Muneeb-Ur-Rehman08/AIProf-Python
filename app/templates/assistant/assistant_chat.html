@@ -1,4 +1,4 @@
-<div id="assistantChat" class="hidden w-full md:w-1/2 flex flex-col justify-between"
+<div id="assistantChat" class="hidden w-full md:w-1/2 flex flex-col justify-between self-end h-lvh"
 _="on load if window.innerWidth > 768 then remove .hidden from me end"
 >
     <!-- Chat Container -->
@@ -93,7 +93,7 @@ _="on load if window.innerWidth > 768 then remove .hidden from me end"
         const payload = {
             conversation_id: '{{ assistant.id }}',
             message: promptValue,
-            assistant_id: '{{ assistant.id }}'
+            id: '{{ assistant.id }}'
         };
 
         const existingPending = document.querySelector('.assistant-message-pending');

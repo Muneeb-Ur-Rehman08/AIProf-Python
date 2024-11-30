@@ -1,5 +1,5 @@
 {% extends 'base.html' %} {% block content %}
-<div class="min-h-screen">
+<div class="min-h-screen h-full">
   <nav class="flex items-center justify-between p-4 border-b border-gray-800">
     <h1 class="text-2xl font-bold">Ai Prof</h1>
     <div class="dropdown dropdown-left">
@@ -31,7 +31,7 @@
   </nav>
   <div
     id="assistant-form"
-    class="flex flex-col md:flex-row justify-between h-[calc(100vh-5.5rem)]"
+    class="flex flex-col md:flex-row items-self-start h-[calc(100vh-5.5rem)]"
     hx-replace-url="true"
   >
     <!-- Tab buttons for mobile -->
@@ -59,7 +59,7 @@
       hx-vals='{"assistant_id": "{{ assistant.id }}"}'
       hx-include="#subjectSelect, #topicSelect"
       hx-encoding="multipart/form-data"
-      class="p-4 md:p-8 rounded-lg shadow-lg w-full md:w-1/2"
+      class="p-4 md:p-8 rounded-lg shadow-lg w-full md:w-1/2 items-self-start"
     >
       {% csrf_token %}
       <div class="mb-4">
@@ -87,10 +87,9 @@
         <select
           name="subject"
           id="subjectSelect"
-          value="{{ assistant.subject }}"
           class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
         >
-          <option value="" disabled selected>Select a subject</option>
+          <option value="" disabled>Select a subject</option>
         </select>
       </div>
       <div class="mb-4">
@@ -98,10 +97,9 @@
         <select
           name="topic"
           id="topicSelect"
-          value="{{ assistant.topic }}"
           class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
         >
-          <option value="" disabled selected>Select a topic</option>
+          <option value="" disabled>Select a topic</option>
         </select>
       </div>
       <div class="mb-4">
@@ -110,11 +108,10 @@
         >
         <textarea
           name="teacher_instructions"
-          value="{{ assistant.teacher_instructions }}"
           placeholder="What does this ASSISTANT do? How does it behave? What should it avoid doing?"
           class="textarea w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
           rows="4"
-        ></textarea>
+        >{{ assistant.teacher_instructions }}</textarea>
       </div>
       <div class="mb-4">
         <input
@@ -350,6 +347,27 @@
       chatSection.classList.remove('hidden');
     }
   }
+
+  // Set initial values
+  document.addEventListener('DOMContentLoaded', function() {
+    const savedSubject = "{{ assistant.subject }}";
+    const savedTopic = "{{ assistant.topic }}";
+    
+    // Set subject
+    if (savedSubject) {
+      subjectSelect.value = savedSubject;
+      // Trigger change event to populate topics
+      const event = new Event('change');
+      subjectSelect.dispatchEvent(event);
+      
+      // Set topic after topics are populated
+      setTimeout(() => {
+        if (savedTopic) {
+          topicSelect.value = savedTopic;
+        }
+      }, 0);
+    }
+  });
 </script>
 
 <style>
