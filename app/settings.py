@@ -220,11 +220,14 @@ SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
 SOCIALACCOUNT_LOGIN_ON_GET=True
 SOCIALACCOUNT_AUTO_SIGNUP = True
 
-# Email settings
+
+# AllAuth UI theme
+ALLAUTH_UI_THEME='cupcake'
 
 CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app', 'https://*.up.railway.app']
 
-ALLAUTH_UI_THEME='cupcake'
+
+# Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
