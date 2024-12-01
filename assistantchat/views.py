@@ -108,18 +108,18 @@ def chat_query(request, ass_id: Optional[str] = None):
                 assistant_config=assistant_config,
                 conversation_id=conv_id
             )
-            rating_id = User.objects.get(id="15")
+            # rating_id = User.objects.get(id="15")
             
-            AssistantRating.objects.create(
-                assistant=assistant,
-                user=rating_id,
-                rating=Decimal('3.5'),
-                review='Great helpful assistant!'
-            )
+            # AssistantRating.objects.create(
+            #     assistant=assistant,
+            #     user=rating_id,
+            #     rating=Decimal('3.5'),
+            #     review='Great helpful assistant!'
+            # )
 
-            average_rating = assistant.average_rating
+            # average_rating = assistant.average_rating
             
-            logger.info(f"Assistant Ratings are: {average_rating}")
+            # logger.info(f"Assistant Ratings are: {average_rating}")
             
             # Collect and yield responses
             full_response = ""
