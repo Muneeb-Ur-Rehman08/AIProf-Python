@@ -1,5 +1,5 @@
 import os
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 import json
@@ -154,7 +154,7 @@ def create_assistant(request):
                 }
                 request.session['assistant'] = response_data
                 print("After Session: ", request.session.get("assistant"))
-                return redirect(f'/assistant/{str(assistant.id)}')
+                return HttpResponseRedirect(f'/assistant/{str(assistant.id)}/')
 
             except Exception as e:
                 return format_response(error=f"Error creating initial assistant: {str(e)}", status=500)

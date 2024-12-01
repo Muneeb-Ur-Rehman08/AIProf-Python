@@ -1,4 +1,4 @@
-<div id="assistantChat" class="hidden w-full md:w-1/2 flex flex-col justify-between self-end h-lvh"
+<div id="assistantChat" class="hidden w-full md:w-1/2 flex flex-col justify-between"
 _="on load if window.innerWidth > 768 then remove .hidden from me end"
 >
     <!-- Chat Container -->
@@ -21,6 +21,7 @@ _="on load if window.innerWidth > 768 then remove .hidden from me end"
                 id="prompt-input"
                 class="flex-1 bg-white/10 rounded px-3 md:px-4 py-2 md:py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
                 placeholder="Type your message here..."
+                onkeydown="if (event.key === 'Enter') { event.preventDefault(); sendPayload(); }"
             >
             
             <button 
@@ -79,6 +80,11 @@ _="on load if window.innerWidth > 768 then remove .hidden from me end"
         const chatContainer = document.getElementById('chat-container');
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
+    // default message
+    // appendMessage('Hello! How can I assist you today?', true);
+    // // default response
+    // appendMessage('I am an AI assistant designed to help you with your questions and tasks. How can I assist you today?', false);
+
 
     function sendPayload() {
         const promptInput = document.getElementById('prompt-input');
