@@ -12,7 +12,7 @@ from django.shortcuts import redirect
 from django.contrib.auth.models import User
 
 # Ensure these imports match your project structure
-from .models import SupabaseUser, Assistant, PDFDocument
+from .models import SupabaseUser, Assistant, PDFDocument, AssistantRating
 
 
 # Configure logging
@@ -213,7 +213,7 @@ def create_assistant(request):
                 print("assistant_id", assistant_id)
                 # Handle update or creation based on ass_id presence
                 if assistant_id:
-
+                    assistant.name = assistant_data['assistant_name']
                     assistant.subject = assistant_data["subject"]
                     assistant.description = assistant_data['description']
                     assistant.topic = assistant_data['topic']
@@ -233,7 +233,9 @@ def create_assistant(request):
                         "teacher_instructions": assistant.teacher_instructions,
                         "message": success_message
                     }
+                    
                     print("assistant id when user created", response_data)
+                    
                     request.session['assistant'] = response_data
                     print("Session", request.session.get("assistant"))
                     return format_response(data=response_data)
