@@ -16,6 +16,11 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from openai import OpenAI
 import shutil
+from django.core.validators import MinValueValidator, MaxValueValidator
+from decimal import Decimal
+from django.core.exceptions import ValidationError
+from django.db.models import Avg
+
 
 load_dotenv()
 
@@ -59,18 +64,19 @@ class Assistant(models.Model):
         on_delete=models.CASCADE,
         null=False,
         blank=False,
-        default=uuid.uuid4,
         db_constraint=True,
         to_field='id',  # Explicitly use the primary key of User model
         db_column='user_id'  # This ensures the column name is 'user_id'
     )
-    name = models.CharField(max_length=255, default="Assistant", blank=True)
-    subject = models.CharField(max_length=255, default="Default Subject", blank=True)
-    teacher_instructions = models.TextField(default="Default instructions", blank=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+    subject = models.CharField(max_length=255, null=True, blank=True)
+    teacher_instructions = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
     topic = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(default="Description", blank=True, null=True)
+    average_rating = models.DecimalField(max_digits=3, decimal_places=1, default=Decimal('0.0'))
+
 
     class Meta:
         verbose_name_plural = 'Assistants'
@@ -79,6 +85,59 @@ class Assistant(models.Model):
     def __str__(self) -> str:
         return self.name
     
+
+class AssistantRating(models.Model):
+    """
+    Model to store user ratings for each assistant.
+    Each assistant can have multiple ratings from different users.
+    The rating is an integer from 1 to 5.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True)
+    assistant = models.ForeignKey(
+        'Assistant',
+        on_delete=models.CASCADE,
+        
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        
+    )
+    rating = models.DecimalField(
+        max_digits=3, 
+        decimal_places=1, 
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(5.0)
+        ],
+        null=True,
+        blank=True
+    )
+    review = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('assistant', 'user')  # Ensures a user can rate an assistant only once
+
+    def save(self, *args, **kwargs):
+        """
+        Override the save method to update the average rating of the assistant
+        when a new rating is created without modifying the existing entries.
+        """
+        super().save(*args, **kwargs)  # Save the new rating entry
+
+        # Recalculate the average rating for the assistant after saving the new rating
+        ratings = AssistantRating.objects.filter(assistant=self.assistant).aggregate(average=Avg('rating'))
+        
+        new_average = ratings['average'] or Decimal('0.0')  # Set default to 0.0 if no ratings
+        self.assistant.average_rating = round(Decimal(new_average), 1)  # Round to 1 decimal place
+        
+        self.assistant.save()  # Update the assistant's average rating
+
+    def __str__(self):
+        return f"Rating {self.rating} for {self.assistant.name} by {self.user.username}"
+
 
 
 # class AnonConvo(models.Model):

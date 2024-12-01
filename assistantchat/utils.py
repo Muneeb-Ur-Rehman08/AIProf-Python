@@ -12,7 +12,7 @@ from django.contrib.auth.models import User
 from app.utils.vector_store import vector_store
 from app.modals.chat import get_llm
 from .models import Conversation
-from users.models import Assistant, SupabaseUser, DocumentChunk
+from users.models import Assistant, SupabaseUser, DocumentChunk, PDFDocument
 from app.utils.assistant_manager import AssistantManager
 
 # Set up logging
@@ -27,20 +27,47 @@ class ChatModule:
 
     def _create_prompt(self, assistant_config) -> ChatPromptTemplate:
         """Create a chat prompt template based on assistant configuration."""
-        template = f"""You are a teaching assistant specialized in {assistant_config.get("subject", "")}.
-        
-        Instructions: {assistant_config.get("teacher_instructions", "")}
-        
-        Context from knowledge base:
+        template = f"""
+        You are a specialized teaching assistant focusing on providing precise responses within the bounds of the context.
+
+        Core Response Guidelines:
+        - Strict Contextual Boundaries:
+        Respond ONLY using the information provided in the context.
+        - No External Knowledge:
+        Do not add or infer any knowledge or information beyond what is available.
+        If relevant information is missing, clearly state:
+        "Insufficient information in the available context to answer this query."
+
+        Teaching Methodology:
+        - Break down the information into clear, digestible parts based on the context.
+        - Strictly adhere to the context when providing explanations.
+        - Always cite the specific part of the context used for answering the query.
+
+        Subject-Specific Response Guidelines:
+        - Extract and present details directly from the given context.
+        - Refrain from expanding or inferring anything beyond what’s provided.
+        - Focus on precision and clarity, using verbatim quotes from the context whenever possible.
+
+        Contextual Knowledge Base:
+        The following context serves as the ONLY source of knowledge:
         {{context}}
-        
-        Chat History:
-        {{chat_history}}
-        
-        Human Question: {{question}}
-        
-        Provide a clear, detailed response based on the context and your expertise. If the question cannot be fully answered using the provided context, state that clearly but provide the best possible answer from what is available."""
-        
+
+        Conversation History:
+        Use the chat history solely to understand the background of the current query, without introducing any new or external information.
+
+        Incoming Query:
+        {assistant_config.get("prompt", "")}
+
+        Response Requirements:
+        1. Answer using ONLY the information from the context.
+        2. If no direct answer exists, explicitly state: "Insufficient information in the available context."
+        3. Maintain clarity and precision in responses.
+        4. Use verbatim quotes from the context whenever possible.
+        5. If partial information is available, make sure to highlight the limitations of the context.
+        6. Strict the response only on the answer not use these kind of sentences 'Based on the provided context',
+        7. Start response directly from answer.
+        """
+
         prompt = ChatPromptTemplate.from_template(template)
         return prompt
 
@@ -48,16 +75,33 @@ class ChatModule:
         """Retrieve relevant context from the DocumentChunk model based on similarity search."""
         try:
             # Step 1: Call the similarity_search class method from DocumentChunk
+            # doc_id = PDFDocument.objects.filter(assistant_id=assistant_id)
+            # chunks = DocumentChunk.objects.filter(document=doc_id.doc_id)
+            # logger.info(f"Length of chunks: {len(chunks)}")
             results = DocumentChunk.similarity_search(query=query, k=k, api_key=api_key)
+
+            # logger.info(f"Relevent result: {[x for x in results.document]}")
             
             # Step 2: Filter results by assistant ID (assistant_id)
+            # relevant_chunks = [
+            #     chunk for chunk, _ in results
+            #     if chunk.document == doc_id
+            # ]
             relevant_chunks = [
-                chunk for chunk, _ in results
-                if chunk.document.assistant_id == assistant_id
-            ]
+                    {
+                        'chunk_id': chunk.id,
+                        'page_number': chunk.page_number,
+                        'document': chunk.document,
+                        'chunk_content': chunk.content,
+                        'similarity_score': similarity_score
+                    }
+                    for chunk, similarity_score in results
+                ]
+
+            logger.info(f"Relevant chunks: {[chunk['chunk_content'] for chunk in relevant_chunks]}")
             
             # Step 3: Extract and combine the content of the top-k relevant chunks
-            context = "\n".join([chunk.content for chunk in relevant_chunks])
+            context = "\n".join([chunk['chunk_content'] for chunk in relevant_chunks])
             
             return context if context else "No relevant context found."
         
@@ -127,11 +171,12 @@ class ChatModule:
 
     def process_message(self, prompt: str, assistant_id: str, 
                        user_id: str, assistant_config: dict,
-                       conversation_id: Optional[uuid.UUID] = None) -> Generator[Any, Any, Any]:
+                       conversation_id: Optional[uuid.UUID] = None) -> str:
         """Process a chat message and generate a response."""
         try:
             # Get relevant context
             context = self.get_relevant_context(prompt, assistant_id)
+            logger.info(f"context we get: {context}")
             
             # Create prompt
             prompt_template = self._create_prompt(assistant_config)
@@ -165,23 +210,29 @@ class ChatModule:
             
             # Generate response
             response = chain.stream(prompt)
+
+            full_response = ""
+            for chunk in response:
+                # Convert each chunk to markdown and append it
+                if chunk:
+                    full_response += chunk
             
             # Save interaction
             self.save_chat_history(
                 user_id=user_id,
                 assistant_id=assistant_id,
                 prompt=prompt,
-                content=response,
+                content=full_response,
                 conversation_id=conversation_id
             )
             
-            for chunk in response:
-                if chunk:
-                    yield chunk
-            
+            # for chunk in response:
+            #     if chunk:
+            #         yield chunk
+            return full_response
         except Exception as e:
             logger.error(f"Error processing message: {e}")
-            yield "I apologize, but I encountered an error processing your message. Please try again."
+            return "I apologize, but I encountered an error processing your message. Please try again."
 
     def clear_chat_history(self, assistant_id: str, user_id: str, 
                           conversation_id: Optional[uuid.UUID] = None) -> bool:
