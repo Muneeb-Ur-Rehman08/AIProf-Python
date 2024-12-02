@@ -38,9 +38,6 @@
                         <div class="nav-item menu-item" title="Sign In">
                             <a href="{% url 'account_login' %}" class="bg-white text-[#333333] border border-[#4ecddb] px-4 py-2 rounded hover:bg-[#e6f7f5]" onclick="showLoading()">Sign In</a>
                         </div>
-                        <div class="nav-item menu-item" title="All Assistants">
-                            <button hx-get="{% url 'list_assistants' %}" class="bg-white text-[#333333] border border-[#4ecddb] px-4 py-2 rounded hover:bg-[#e6f7f5]" hx-trigger="click" hx-target="body" hx-swap="outerHTML">All Assistants</button>
-                        </div>
                     </li>
                     {% endif %}
                     {% if request.user.is_authenticated %}
@@ -67,9 +64,6 @@
                                then remove .show from .menu-wrapper">
                                 Logout
                             </a>
-                        </li>
-                        <li class="nav-item menu-item">
-                            <button class="" hx-get="{% url 'list_assistants' %}" hx-trigger="click" hx-target="body" hx-swap="outerHTML">All Assistants</button>
                         </li>
                     </div>
                    
@@ -113,17 +107,13 @@
                                 Logout
                             </a>
                         </li>
-                        <li>
-                            <button hx-get="{% url 'list_assistants' %}" hx-trigger="click" hx-target="body" hx-swap="outerHTML">All Assistants</button>
-                        </li>
                     </ul>
                 </div>
                 {% endif %}
 
                 {% if not request.user.is_authenticated %}
                 <div class="hidden xl:block">
-                    <a href="{% url 'account_login' %}" class="bg-[var(--clr-main)] text-white font-medium tracking-wider py-2 px-4 rounded-md" onclick="showLoading()">Sign In</a>
-                    <button hx-get="{% url 'list_assistants' %}" class="bg-[var(--clr-main)] text-white font-medium tracking-wider py-2 px-4 rounded-md" hx-trigger="click" hx-target="body" hx-swap="outerHTML">All Assistants</button>
+                    <a href="{% url 'account_login' %}" class="hover:bg-[var(--clr-main)] underline underline-offset-4 decoration-2 decoration-sky-600 text-white font-medium tracking-wider py-2 px-4 rounded-lg" onclick="showLoading()">Sign In</a>
                 </div>
                 {% endif %}
             </div>
