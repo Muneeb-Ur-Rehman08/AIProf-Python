@@ -17,6 +17,8 @@
           id="subject-search"
           hx-trigger="keyup changed delay:300ms"
           onkeyup="filterSubjects()"
+          _="on keyup from #subject-search
+              send this.closest('div') to #assistants-list"
         />
       </div>
       <div class="space-y-2 max-h-32 overflow-y-auto" id="subject-list">
@@ -60,6 +62,8 @@
           id="topic-search"
           hx-trigger="keyup changed delay:300ms"
           onkeyup="filterTopics()"
+          _="on keyup from #topic-search
+              send this.closest('div') to #assistants-list"
         />
       </div>
       <div class="space-y-2 max-h-32 overflow-y-auto" id="topic-list">
