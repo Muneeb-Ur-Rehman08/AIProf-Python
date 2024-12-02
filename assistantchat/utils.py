@@ -39,13 +39,13 @@ class ChatModule:
         "Insufficient information in the available context to answer this query."
 
         Teaching Methodology:
-        - {assistant_config.teacher_instructions}
+        - {assistant_config.get('teacher_instructions')} follow these instructions.
         - Break down the information into clear, digestible parts based on the context.
         - Strictly adhere to the context when providing explanations.
         - Always cite the specific part of the context used for answering the query.
 
         Subject-Specific Response Guidelines:
-        - {assistant_config.suject}
+        - {assistant_config.get('subject')}
         - Extract and present details directly from the given context.
         - Refrain from expanding or inferring anything beyond what’s provided.
         - Focus on precision and clarity, using verbatim quotes from the context whenever possible.
@@ -55,6 +55,7 @@ class ChatModule:
         {{context}}
 
         Conversation History:
+        {{chat_history}}
         Use the chat history solely to understand the background of the current query, without introducing any new or external information.
 
         Incoming Query:
