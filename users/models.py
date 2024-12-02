@@ -74,7 +74,7 @@ class Assistant(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
     topic = models.CharField(max_length=255, blank=True, null=True)
-    description = models.TextField(default="Description", blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
     average_rating = models.DecimalField(max_digits=3, decimal_places=1, default=Decimal('0.0'))
 
 

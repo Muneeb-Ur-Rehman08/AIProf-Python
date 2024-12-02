@@ -47,16 +47,19 @@
                         <a class="nav-link menu-link" href="#contact-us">Contact Us</a>
                     </li>
                     {% if not request.user.is_authenticated %}
-                    <div class="cta-links-area flex justify-center">
-                        <li class="nav-item menu-item">
-                            <a href="{% url 'account_login' %}" class="btn btn-outline btn-[var(--clr-dark-blue)] " onclick="showLoading()">Sign In</a>
-                        </li>
-                    </div>
+                    <li class="nav-item menu-item space-y-4 block xl:hidden">
+                        <div class="nav-item menu-item" title="Sign In">
+                            <a href="{% url 'account_login' %}" class="bg-white text-[#333333] border border-[#4ecddb] px-4 py-2 rounded hover:bg-[#e6f7f5]" onclick="showLoading()">Sign In</a>
+                        </div>
+                        <div class="nav-item menu-item" title="All Assistants">
+                            <button hx-get="{% url 'list_assistants' %}" class="bg-white text-[#333333] border border-[#4ecddb] px-4 py-2 rounded hover:bg-[#e6f7f5]" hx-trigger="click" hx-target="body" hx-swap="outerHTML">All Assistants</button>
+                        </div>
+                    </li>
                     {% endif %}
                     {% if request.user.is_authenticated %}
-                    <div class="cta-links-area space-y-2 lg:hidden">
+                    <div class="cta-links-area space-y-2 lg:hidden dark-theme">
                         <li class="nav-item menu-item">
-                            <a class="btn btn-active btn-accent" 
+                            <a class="" 
                                _="on click remove .hidden from #modal 
                                then remove .close-menu from .menu-toggler 
                                then remove .show from .menu-wrapper">
@@ -65,7 +68,7 @@
                         </li>
                         <li class="nav-item menu-item">
                             {% csrf_token %}
-                            <a class="btn btn-active btn-accent" 
+                            <a class="" 
                                hx-post="{% url 'account_logout' %}" 
                                hx-trigger="click" 
                                hx-target="body" 
@@ -79,54 +82,64 @@
                             </a>
                         </li>
                         <li class="nav-item menu-item">
-                            <button class="btn btn-active btn-accent" hx-get="{% url 'list_assistants' %}" hx-trigger="click" hx-target="body" hx-swap="outerHTML">All Assistants</button>
+                            <button class="" hx-get="{% url 'list_assistants' %}" hx-trigger="click" hx-target="body" hx-swap="outerHTML">All Assistants</button>
                         </li>
                     </div>
                    
                     {% endif %}
                 </ul>
             </nav>
-            {% if request.user.is_authenticated %}
-            <div class="dropdown dropdown-end hidden space-y-2 p-1.5 lg:block">
-                <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar" onclick="toggleDropdown(this)">
-                    <div class="w-10 rounded-full">
-                        <img alt="Tailwind CSS Navbar component" src="https://i.pravatar.cc/150?img=1" />
+
+            <div>
+                {% if request.user.is_authenticated %}
+                <div class="dropdown dropdown-end hidden space-y-2 p-1.5 lg:block">
+                    <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar" onclick="toggleDropdown(this)">
+                        <div class="w-10 rounded-full">
+                            <img alt="Tailwind CSS Navbar component" src="https://i.pravatar.cc/150?img=1" />
+                        </div>
                     </div>
+                    <ul tabindex="0" class="dropdown-content menu p-2 space-y-2 shadow bg-base-100 rounded-box w-52" style="background-color: var(--clr-dark-blue);color: white;">
+                        <li>
+                            <a class=""
+                            hx-post="{% url 'manage_assistant' %}"
+                            hx-target="body"
+                            hx-swap="outerHTML"
+                            hx-replace-url="/assistant/{{ assistant.id }}"
+                            onclick="showLoading()"
+                            _="on click remove .close-menu from .menu-toggler 
+                            then remove .show from .menu-wrapper">
+                                Create Assistant
+                            </a>
+                        </li>
+                        <li>
+                            {% csrf_token %}
+                            <a class="" 
+                       hx-post="{% url 'account_logout' %}" 
+                       hx-trigger="click" 
+                       hx-target="body" 
+                       hx-swap="outerHTML" 
+                       hx-redirect="{% url 'index' %}"
+                       hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                       onclick="showLoading()"
+                       _="on click remove .close-menu from .menu-toggler 
+                       then remove .show from .menu-wrapper">
+                                Logout
+                            </a>
+                        </li>
+                        <li>
+                            <button hx-get="{% url 'list_assistants' %}" hx-trigger="click" hx-target="body" hx-swap="outerHTML">All Assistants</button>
+                        </li>
+                    </ul>
                 </div>
-                <ul tabindex="0" class="dropdown-content menu p-2 space-y-2 shadow bg-base-100 rounded-box w-52" style="background-color: var(--clr-dark-blue);color: white;">
-                    <li>
-                        <a class=""
-                        hx-post="{% url 'manage_assistant' %}"
-                        hx-target="body"
-                        hx-swap="outerHTML"
-                        hx-replace-url="/assistant/{{ assistant.id }}"
-                        onclick="showLoading()"
-                        _="on click remove .close-menu from .menu-toggler 
-                        then remove .show from .menu-wrapper">
-                            Create Assistant
-                        </a>
-                    </li>
-                    <li>
-                        {% csrf_token %}
-                        <a class="" 
-                   hx-post="{% url 'account_logout' %}" 
-                   hx-trigger="click" 
-                   hx-target="body" 
-                   hx-swap="outerHTML" 
-                   hx-redirect="{% url 'index' %}"
-                   hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                   onclick="showLoading()"
-                   _="on click remove .close-menu from .menu-toggler 
-                   then remove .show from .menu-wrapper">
-                            Logout
-                        </a>
-                    </li>
-                    <li>
-                        <button hx-get="{% url 'list_assistants' %}" hx-trigger="click" hx-target="body" hx-swap="outerHTML">All Assistants</button>
-                    </li>
-                </ul>
+                {% endif %}
+
+                {% if not request.user.is_authenticated %}
+                <div class="hidden xl:block">
+                    <a href="{% url 'account_login' %}" class="bg-[var(--clr-main)] text-white font-medium tracking-wider py-2 px-4 rounded-md" onclick="showLoading()">Sign In</a>
+                    <button hx-get="{% url 'list_assistants' %}" class="bg-[var(--clr-main)] text-white font-medium tracking-wider py-2 px-4 rounded-md" hx-trigger="click" hx-target="body" hx-swap="outerHTML">All Assistants</button>
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
             <!-- for mobile navbar menu -->
             <div class="controls-box">
                 <!--Menu Toggler button-->
