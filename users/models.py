@@ -201,6 +201,7 @@ class PDFDocument(models.Model):
         temp_dir = tempfile.mkdtemp(prefix='pdf_processing_')
         original_file_path = self.file.path
         temp_file_path = os.path.join(temp_dir, os.path.basename(original_file_path))
+        logger.info(f"The temp file path where temp file stored: {temp_file_path}")
         shutil.copy2(original_file_path, temp_file_path)
 
         try:
@@ -239,7 +240,7 @@ class PDFDocument(models.Model):
 
             # Prepare metadata for the document
             self.metadata = {
-                'filename': self.file.name,
+                'filename': self.title,
                 'user_id': str(self.user_id.id) if self.user_id else None,
                 'assistant_id': str(self.assistant_id.id) if self.assistant_id else None,
                 'total_chunks': len(pages)
