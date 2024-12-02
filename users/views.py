@@ -10,6 +10,7 @@ from django.conf import settings
 from django.core.files import File
 from django.shortcuts import redirect
 from django.contrib.auth.models import User
+from django_htmx.http import HttpResponseClientRedirect
 
 # Ensure these imports match your project structure
 from .models import SupabaseUser, Assistant, PDFDocument, AssistantRating
@@ -156,7 +157,7 @@ def create_assistant(request):
                 }
                 request.session['assistant'] = response_data
                 print("After Session: ", request.session.get("assistant"))
-                return HttpResponseRedirect(f'/assistant/{str(assistant.id)}/')
+                return HttpResponseClientRedirect(f'/assistant/{str(assistant.id)}/')
 
             except Exception as e:
                 return format_response(error=f"Error creating initial assistant: {str(e)}", status=500)
