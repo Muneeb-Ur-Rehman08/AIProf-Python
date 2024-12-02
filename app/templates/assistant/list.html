@@ -2,9 +2,11 @@
 
 {% block content %}
 <!-- Search Input -->
-<div class="h-full max-w-container-sm md:max-w-container-md lg:max-w-container-lg xl:max-w-container-xl mx-auto px-4 pb-10" style="min-height: 100vh;" hx-replace-url="{% url 'list_assistants' %}">
+<div class="h-full max-w-container-sm md:max-w-container-md lg:max-w-container-lg xl:max-w-container-xl mx-auto px-2 pb-10" style="min-height: 100vh;" hx-replace-url="{% url 'list_assistants' %}">
+  {% block navbar %}
     {% include 'modal/navbar.html' %}
-    <div class="flex items-center justify-end my-6">
+  {% endblock %}
+    <div class="flex items-center justify-end mb-6 pt-24">
         <label class="input input-bordered bg-transparent flex items-center gap-2 w-full md:w-60">
             <input 
                 type="text" 
