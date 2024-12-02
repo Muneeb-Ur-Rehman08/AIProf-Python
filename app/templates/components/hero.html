@@ -20,7 +20,14 @@
                             </h1>
                             <div class="hero-social-icons mb-3 mt-2">
                                 <div class="sc-wrapper dir-row sc-flat text-center">
-                                    <h4 class="font-semibold text-xl mb-1">Tell your friends</h4>
+                                    <div class="font-semibold text-lg mb-1" title="All Assistants link">
+                                        <button class="underline underline-offset-4 decoration-pink-500 hover:text-[var(--clr-main)]"  hx-get="{% url 'list_assistants' %}" 
+                                                hx-trigger="click" 
+                                                hx-target="body" 
+                                                hx-swap="outerHTML">
+                                            All Assistants Views
+                                        </button>
+                                    </div>
                                     <ul class="sc-list">
                                         <li class="sc-item " title="Facebook">
                                             <a class="sc-link" id="facebookShareLink" href="#0"
