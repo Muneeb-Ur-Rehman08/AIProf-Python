@@ -1,6 +1,5 @@
 {% load static %}
-<div class="fixed top-0 left-0 w-full z-50 transition-colors duration-300" >
-    <div class="navbar border-b-2 border-gray-900 max-w-container-sm md:max-w-container-md lg:max-w-container-lg xl:max-w-container-xl mx-auto" id="navbar">
+    <div class="navbar border-b-2 border-gray-900" id="navbar">
         <div class="flex-1">
             <a href="{% url 'index' %}">
                 <img class="w-24 font-sans" src="{% static 'assets/images/logo/logo.svg' %}" alt="AIPro Logo" />
@@ -30,19 +29,3 @@
             </div>
         </div>
     </div>
-</div>
-
-<script>
-    var header = document.getElementById('navbar');
-    var oldColor = header.style.backgroundColor;
-
-    document.addEventListener('scroll', () => {
-        let yPosition = window.scrollY;
-        if (yPosition > 27) {
-            header.style.backgroundColor = "var(--clr-dark-blue)";
-        }
-        else {
-            header.style.backgroundColor = oldColor;
-        }
-    });
-</script>
