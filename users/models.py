@@ -76,6 +76,7 @@ class Assistant(models.Model):
     topic = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     average_rating = models.DecimalField(max_digits=3, decimal_places=1, default=Decimal('0.0'))
+    is_published = models.BooleanField(default=False)
 
 
     class Meta:
@@ -258,19 +259,35 @@ class PDFDocument(models.Model):
             try:
                 # Remove temporary file
                 if os.path.exists(temp_file_path):
-                    os.remove(temp_file_path)  # Delete the temporary file
+                    os.remove(temp_file_path)
+                    logger.info(f"Temporary file deleted: {temp_file_path}")
 
                 # Remove temporary directory
                 if os.path.exists(temp_dir):
-                    os.rmdir(temp_dir)  # Remove the temporary directory
+                    os.rmdir(temp_dir)
+                    logger.info(f"Temporary directory removed: {temp_dir}")
 
                 # Remove the original file from the 'pdfs/' directory
-                if os.path.exists(self.file.path):
-                    default_storage.delete(self.file.path)  # Delete the original file from storage after processing
-                    print(f"Trying to delete file at path: {self.file.path}")
+                if self.file and self.file.path and os.path.exists(self.file.path):
+                    try:
+                        # Try default_storage delete first
+                        default_storage.delete(self.file.path)
+                        logger.info(f"File deleted from storage: {self.file.path}")
+                    except Exception as storage_delete_error:
+                        logger.warning(f"Default storage delete failed: {storage_delete_error}")
+                        
+                        # Fallback to OS-level file removal
+                        try:
+                            os.remove(self.file.path)
+                            logger.info(f"File deleted using os.remove: {self.file.path}")
+                        except Exception as os_delete_error:
+                            logger.error(f"Failed to delete file: {os_delete_error}")
+                            logger.error(f"File details - exists: {os.path.exists(self.file.path)}, "
+                                        f"is readable: {os.access(self.file.path, os.R_OK)}, "
+                                        f"is writable: {os.access(self.file.path, os.W_OK)}")
 
             except Exception as cleanup_error:
-                logger.error(f"Error during cleanup: {cleanup_error}")
+                logger.error(f"Unexpected error during cleanup: {cleanup_error}")
 
 
 class DocumentChunk(models.Model):
@@ -291,7 +308,7 @@ class DocumentChunk(models.Model):
         return f"Chunk {self.page_number} of {self.document.title}"
     
     @classmethod
-    def similarity_search(cls, query: str, k: int = 5, api_key: Optional[str] = None):
+    def similarity_search(cls, query: str, assistant_id: str, k: int = 5, api_key: Optional[str] = None):
         """
         Find most similar document chunks to the query using cosine similarity.
         
@@ -313,8 +330,11 @@ class DocumentChunk(models.Model):
             )
             query_embedding = np.array(query_response.data[0].embedding)
 
-            # Fetch document chunks with embeddings
-            chunks = cls.objects.exclude(vector_embedding__isnull=True)
+            # Fetch document chunks with embeddings only for the specified assistant
+            chunks = cls.objects.filter(
+                document__assistant_id=assistant_id,
+                vector_embedding__isnull=False
+            )
 
             # Calculate similarities
             similarities = [

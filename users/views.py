@@ -93,164 +93,132 @@ def get_assistant(request, ass_id: Optional[str] = None):
 @csrf_exempt
 @require_http_methods(["POST", "PUT", "GET", "OPTIONS"])
 def create_assistant(request):
-    """
-    Flexible endpoint for managing assistants.
-    
-    Endpoint: assistants/manage/
-    Methods:
-        - POST: Create new assistant
-        - PUT: Update existing assistant
-        - GET: Retrieve assistant data
-        - OPTIONS: Get allowed methods
-    """
-    logger.info(f"data in request: {request.method}")
-    # Handle OPTIONS request
+    logger.info(f"Incoming request method: {request.method}")
+
+    # Handle OPTIONS request for CORS preflight
     if request.method == "OPTIONS":
         response = JsonResponse({})
         response["Access-Control-Allow-Methods"] = "POST, PUT, GET, OPTIONS"
         return response
 
     try:
-        
-        # Extract request data
+        # Extract request data flexibly
         data = request.POST.dict() if request.method in ["POST", "PUT"] else request.GET
         logger.info(f"Received data: {data}")
-        logger.info(f"Received data: {request.user}")
-        # Validate user and get user_id
+
+        # Authentication check
         if not request.user.is_authenticated:
-            return format_response(error="User not authenticated", status=400)
+            return format_response(error="Authentication required", status=401)
 
         try:
             user = User.objects.get(id=request.user.id)
-            user_id = str(user.id)  # Convert UUID to string
-            
-        except (User.DoesNotExist, ValueError):
-            return format_response(error="Invalid user authentication", status=400)
-        logger.info(f"Processing request for user_id: {user_id}")
+        except User.DoesNotExist:
+            return format_response(error="Invalid user", status=400)
 
-        # del request.session["assistant"]
-
+        # Retrieve or create assistant
         assistant_id = data.get("assistant_id")
 
-        if not data.get('assistant_id'):
-
-            print("No assistant id")
-            
+        if not assistant_id:
+            # Create new assistant
             try:
-                
-                # name = data.get("assistant_name")
-                # print(name)
-                
-                print("Session: ", request.session.get("assistant"))
-                # Create assistant to django models
                 assistant = Assistant.objects.create(
                     user_id=user,
-                    # name=name,
+                    is_published=False
                 )
-                print(f"Created assistant model: {assistant.id}")
-
-                # Prepare response
                 response_data = {
                     'id': str(assistant.id),
-                    # 'name': assistant.name,
-                    'message': 'Initial assistant profile created. Complete your profile to finish.'
+                    'message': 'Initial assistant profile created'
                 }
-                request.session['assistant'] = response_data
-                print("After Session: ", request.session.get("assistant"))
                 return HttpResponseClientRedirect(f'/assistant/{str(assistant.id)}/')
 
             except Exception as e:
-                return format_response(error=f"Error creating initial assistant: {str(e)}", status=500)
+                logger.error(f"Assistant creation error: {e}")
+                return format_response(error=f"Creation failed: {str(e)}", status=500)
         
-        else:
-            
-            # Prepare assistant data
-            # Validate required fields
-            # required_fields = ['assistant_name', 'subject', 'description', 'topic', 'teacher_instructions']
-            # missing_fields = [field for field in required_fields if not data.get(field)]
-            
-            # if missing_fields:
-            #     return format_response(
-            #         error=f"Missing required fields: {', '.join(missing_fields)}", 
-            #         status=400
-            #     )
-                
-            assistant_data = {
-                "user_id": user_id,  # Using string version of UUID
-                "assistant_name": data.get('assistant_name') or "",
-                "subject": data.get('subject') or "",
-                "description": data.get('description') or "",
-                "topic": data.get('topic') or "",
-                "teacher_instructions": data.get('teacher_instructions') or "",
-            }
+        # Existing assistant workflow
+        try:
+            assistant = Assistant.objects.get(id=assistant_id, user_id=user)
+        except Assistant.DoesNotExist:
+            return format_response(error="Assistant not found", status=404)
 
-            assistant = Assistant.objects.get(id=assistant_id)
+        # Field mapping for updating
+        field_mapping = {
+            'assistant_name': 'name',
+            'subject': 'subject',
+            'description': 'description',
+            'topic': 'topic',
+            'teacher_instructions': 'teacher_instructions'
+        }
 
-            # Handle file uploads if present
-            if files := request.FILES.getlist('knowledge_base'):
-                for file in files:
-                    print(file)
-                    try:
-                        # Create PDFDocument instance directly
-                        pdf_document = PDFDocument.objects.create(
-                            user_id=user,
-                            assistant_id=assistant,
-                            file=file,
-                            title=file.name
-                        )
-                        
-                        # Process the PDF (this method will handle temp directory and file processing internally)
-                        pdf_document.process_pdf()
+        changes_made = False
+
+        # Update fields dynamically
+        for request_field, model_field in field_mapping.items():
+            if request_field in data:
+                current_value = getattr(assistant, model_field, '')
+                new_value = data.get(request_field, '').strip()
+
+                if new_value and new_value != current_value:
+                    setattr(assistant, model_field, new_value)
+                    changes_made = True
+
+        # Explicitly set is_published only when save button is clicked
+        if data.get('save_button_clicked') == 'true':
+            assistant.is_published = True
+            changes_made = True
+
+        # Handle file uploads
+        if files := request.FILES.getlist('knowledge_base'):
+            for file in files:
+                try:
+                    pdf_document = PDFDocument.objects.create(
+                        user_id=user,
+                        assistant_id=assistant,
+                        file=file,
+                        title=file.name
+                    )
                     
-                    except Exception as e:
-                        logger.error(f"Error processing PDF {file.name}: {str(e)}")
-                        
+                    # Asynchronous PDF processing recommended
+                    pdf_document.process_pdf()
+                    changes_made = True
                 
-                # assistant_data["knowledge_base"] = file_paths
-                
-            print(f"Assistant Data: {assistant_data}")
-            
+                except Exception as e:
+                    logger.error(f"PDF processing error for {file.name}: {e}")
+
+        
+
+        # Save changes if detected
+        if changes_made:
             try:
-                
-                print("assistant_id", assistant_id)
-                # Handle update or creation based on ass_id presence
-                if assistant_id:
-                    assistant.name = assistant_data['assistant_name']
-                    assistant.subject = assistant_data["subject"]
-                    assistant.description = assistant_data['description']
-                    assistant.topic = assistant_data['topic']
-                    assistant.teacher_instructions = assistant_data["teacher_instructions"]
-                    assistant.save()
-
-                    success_message = "Assistant updated successfully"
-                    
-                # # Prepare response data based on the result structure
-                    response_data = {
-                        "ass_id": str(assistant.id),
-                        "user_id": str(assistant.user_id.id),
-                        "assistant_name": assistant.name,
-                        "subject": assistant.subject,
-                        "description": assistant.description,
-                        "topic": assistant.topic,
-                        "teacher_instructions": assistant.teacher_instructions,
-                        "message": success_message
-                    }
-                    
-                    print("assistant id when user created", response_data)
-                    
-                    request.session['assistant'] = response_data
-                    print("Session", request.session.get("assistant"))
-                    return format_response(data=response_data)
-
-            except AttributeError as e:
-                logger.error(f"Error accessing assistant data: {str(e)}")
-                return format_response(error="Error processing assistant data", status=500)
+                assistant.save()
+                response_data = {
+                    "ass_id": str(assistant.id),
+                    "assistant_name": assistant.name,
+                    "subject": assistant.subject,
+                    "description": assistant.description,
+                    "topic": assistant.topic,
+                    "teacher_instructions": assistant.teacher_instructions,
+                    "is_published": assistant.is_published,
+                    "message": "Assistant updated successfully"
+                }
+                return format_response(data=response_data)
+            
+            except Exception as e:
+                logger.error(f"Save error: {e}")
+                return format_response(error="Update failed", status=500)
+        
+        # No changes scenario
+        return format_response(data={
+            "ass_id": str(assistant.id),
+            "message": "No changes detected"
+        })
 
     except json.JSONDecodeError:
-        return format_response(error="Invalid JSON data", status=400)
+        return format_response(error="Invalid JSON", status=400)
+    
     except Exception as e:
-        logger.error(f"Error managing assistant: {str(e)}")
-        return format_response(error="Internal server error", status=500)
+        logger.error(f"Unhandled error: {e}")
+        return format_response(error="Server error", status=500)
 
 
 

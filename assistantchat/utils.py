@@ -32,13 +32,13 @@ class ChatModule:
         You are a specialized teaching assistant focusing on providing precise responses within the bounds of the context.
 
         Core Response Guidelines:
-        - Strict Contextual Boundaries: Respond ONLY using the information provided in the context.
+        - Strict Contextual Boundaries: Generate response ONLY using the information provided in the context.
         - No External Knowledge: Do not add or infer any knowledge or information beyond what is available.
         If relevant information is missing, clearly state:
         "Insufficient information in the available context to answer this query."
 
         Teaching Methodology:
-        - {assistant_config.get('teacher_instructions', 'Follow the provided instructions.')}
+        - {assistant_config.get('teacher_instructions', '')} Follow the provided instructions.
         - Break down the information into clear, digestible parts based on the context.
         - Strictly adhere to the context when providing explanations.
         - Always cite the specific part of the context used for answering the query.
@@ -52,6 +52,7 @@ class ChatModule:
         Contextual Knowledge Base:
         The following context serves as the ONLY source of knowledge:
         {{context}}
+        - Provide example from the given text according to the prompt.
 
         Conversation History:
         {{chat_history}}
@@ -62,7 +63,7 @@ class ChatModule:
         Incoming Query: {assistant_config.get("prompt", "")}
 
         Response Requirements:
-        1. Answer using ONLY the information from the context.
+        1. Generate response from the given context.
         2. If no direct answer exists, explicitly state: "Insufficient information in the available context."
         3. Maintain clarity and precision in responses.
         4. Use verbatim quotes from the context whenever possible.
@@ -79,14 +80,14 @@ class ChatModule:
 
         return prompt
 
-    def get_relevant_context(self, query: str, assistant_id: str, k: int = 3, api_key: Optional[str] = None) -> str:
+    def get_relevant_context(self, query: str, assistant_id: str, k: int = 5, api_key: Optional[str] = None) -> str:
         """Retrieve relevant context from the DocumentChunk model based on similarity search."""
         try:
             # Step 1: Call the similarity_search class method from DocumentChunk
             # doc_id = PDFDocument.objects.filter(assistant_id=assistant_id)
             # chunks = DocumentChunk.objects.filter(document=doc_id.doc_id)
             # logger.info(f"Length of chunks: {len(chunks)}")
-            results = DocumentChunk.similarity_search(query=query, k=k, api_key=api_key)
+            results = DocumentChunk.similarity_search(query=query, k=k, api_key=api_key, assistant_id=assistant_id)
 
             # logger.info(f"Relevent result: {[x for x in results.document]}")
             
@@ -138,7 +139,7 @@ class ChatModule:
             
             # If no conversation_id provided, create a new one
             else:
-                conversation_id = uuid.UUID(conversation_id)
+                conversation_id = uuid.uuid4()
             
             # Create new conversation entry
             Conversation.objects.create(
@@ -156,7 +157,7 @@ class ChatModule:
 
     def get_chat_history(self, assistant_id: str, user_id: str, 
                         conversation_id: Optional[uuid.UUID] = None,
-                        limit: int = 20) -> List[Dict]:
+                        limit: int = 10) -> List[Dict]:
         """Retrieve chat history from Django model."""
         try:
             # Base query
@@ -164,23 +165,26 @@ class ChatModule:
                 Q(assistant_id=assistant_id) & Q(user_id=user_id)
             ).first()
             
-            # Add conversation_id filter if provided
             if existing_conversation:
+                # If conversation_id is provided, filter based on it
                 query = Conversation.objects.filter(conversation_id=existing_conversation.conversation_id)
-            
-            # Get latest conversations
-            conversations = query.order_by('-created_at')[:limit]
-            
-            # Convert to list of dicts for consistency with existing code
-            return [
-                {
-                    'question': conv.prompt,
-                    'answer': conv.content,
-                    'timestamp': conv.created_at,
-                    'conversation_id': conv.conversation_id
-                }
-                for conv in conversations
-            ]
+                
+                # Order by creation date and limit results
+                conversations = query.order_by('-created_at')[:limit]
+
+                # Convert query result to list of dicts for consistent output
+                return [
+                    {
+                        'question': conv.prompt,
+                        'answer': conv.content,
+                        'timestamp': conv.created_at,
+                        'conversation_id': conv.conversation_id
+                    }
+                    for conv in conversations
+                ]
+            else:
+                # Return an empty list if no conversation is found
+                return []
         except Exception as e:
             logger.error(f"Error retrieving chat history: {e}")
             return []
