@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'allauth_ui',
     "slippers",
+    "django_htmx",
 ]
 
 MIDDLEWARE = [
@@ -67,6 +68,7 @@ MIDDLEWARE = [
     'app.middleware.rate_limit_middleware.RateLimitMiddleware',
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    'django_htmx.middleware.HtmxMiddleware',
 
 ]
 
