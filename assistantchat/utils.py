@@ -1,12 +1,13 @@
 from typing import List, Dict, Optional, Any, Generator
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain.memory import ConversationBufferMemory
 from langchain_core.runnables import RunnablePassthrough
 from datetime import datetime
 import logging
 import uuid
+from django.db.models import Q
 
 from django.contrib.auth.models import User
 from app.utils.vector_store import vector_store
@@ -27,29 +28,27 @@ class ChatModule:
 
     def _create_prompt(self, assistant_config) -> ChatPromptTemplate:
         """Create a chat prompt template based on assistant configuration."""
-        template = f"""
+        system_message = f"""
         You are a specialized teaching assistant focusing on providing precise responses within the bounds of the context.
 
         Core Response Guidelines:
-        - Strict Contextual Boundaries:
-        Respond ONLY using the information provided in the context.
-        - No External Knowledge:
-        Do not add or infer any knowledge or information beyond what is available.
+        - Strict Contextual Boundaries: Respond ONLY using the information provided in the context.
+        - No External Knowledge: Do not add or infer any knowledge or information beyond what is available.
         If relevant information is missing, clearly state:
         "Insufficient information in the available context to answer this query."
 
         Teaching Methodology:
-        - {assistant_config.get('teacher_instructions')} follow these instructions.
+        - {assistant_config.get('teacher_instructions', 'Follow the provided instructions.')}
         - Break down the information into clear, digestible parts based on the context.
         - Strictly adhere to the context when providing explanations.
         - Always cite the specific part of the context used for answering the query.
 
         Subject-Specific Response Guidelines:
-        - {assistant_config.get('subject')}
+        - {assistant_config.get('subject', 'Provide subject-specific details.')}
         - Extract and present details directly from the given context.
         - Refrain from expanding or inferring anything beyond what’s provided.
         - Focus on precision and clarity, using verbatim quotes from the context whenever possible.
-
+        
         Contextual Knowledge Base:
         The following context serves as the ONLY source of knowledge:
         {{context}}
@@ -57,9 +56,10 @@ class ChatModule:
         Conversation History:
         {{chat_history}}
         Use the chat history solely to understand the background of the current query, without introducing any new or external information.
+        """
 
-        Incoming Query:
-        {assistant_config.get("prompt", "")}
+        human_message = f"""
+        Incoming Query: {assistant_config.get("prompt", "")}
 
         Response Requirements:
         1. Answer using ONLY the information from the context.
@@ -67,11 +67,16 @@ class ChatModule:
         3. Maintain clarity and precision in responses.
         4. Use verbatim quotes from the context whenever possible.
         5. If partial information is available, make sure to highlight the limitations of the context.
-        6. Strict the response only on the answer not use these kind of sentences 'Based on the provided context',
-        7. Start response directly from answer.
+        6. Strict the response only on the answer, without using phrases like 'Based on the provided context.'
+        7. Start the response directly from the answer.
         """
 
-        prompt = ChatPromptTemplate.from_template(template)
+        # Create the message-based prompt template
+        prompt = ChatPromptTemplate.from_messages([
+            SystemMessagePromptTemplate.from_template(system_message),
+            HumanMessagePromptTemplate.from_template(human_message)
+        ])
+
         return prompt
 
     def get_relevant_context(self, query: str, assistant_id: str, k: int = 3, api_key: Optional[str] = None) -> str:
@@ -121,10 +126,19 @@ class ChatModule:
             # Get the related models instances
             user = User.objects.get(id=user_id)
             assistant = Assistant.objects.get(id=assistant_id)
+
+            existing_conversation = Conversation.objects.filter(
+                Q(assistant_id=assistant) & Q(user_id=user)
+            ).first()
+
+            if existing_conversation:
+                # Use existing conversation
+                conversation_id = existing_conversation.conversation_id
+                
             
             # If no conversation_id provided, create a new one
-            if not conversation_id:
-                conversation_id = uuid.uuid4()
+            else:
+                conversation_id = uuid.UUID(conversation_id)
             
             # Create new conversation entry
             Conversation.objects.create(
@@ -142,18 +156,17 @@ class ChatModule:
 
     def get_chat_history(self, assistant_id: str, user_id: str, 
                         conversation_id: Optional[uuid.UUID] = None,
-                        limit: int = 10) -> List[Dict]:
+                        limit: int = 20) -> List[Dict]:
         """Retrieve chat history from Django model."""
         try:
             # Base query
-            query = Conversation.objects.filter(
-                assistant_id=assistant_id,
-                user_id=user_id
-            )
+            existing_conversation = Conversation.objects.filter(
+                Q(assistant_id=assistant_id) & Q(user_id=user_id)
+            ).first()
             
             # Add conversation_id filter if provided
-            if conversation_id:
-                query = query.filter(conversation_id=conversation_id)
+            if existing_conversation:
+                query = Conversation.objects.filter(conversation_id=existing_conversation.conversation_id)
             
             # Get latest conversations
             conversations = query.order_by('-created_at')[:limit]

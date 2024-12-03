@@ -6,10 +6,12 @@ import json
 import logging
 import uuid
 from users.models import Assistant, SupabaseUser, AssistantRating
+from .models import Conversation
 from .utils import ChatModule
 from app.utils.assistant_manager import AssistantManager
 from django.contrib.auth.models import User
 from decimal import Decimal
+from django.db.models import Q
 
 
 logger = logging.getLogger(__name__)
@@ -38,8 +40,6 @@ def chat_query(request, ass_id: Optional[str] = None):
             try:
                 data = json.loads(request.body)
                 prompt = data.get('message')
-                
-                conversation_id = data.get('conversation_id')
                 assistant_id = data.get('id')  
                 print(f"assistant id in chat: {assistant_id}")          
                 if not prompt:
@@ -78,24 +78,18 @@ def chat_query(request, ass_id: Optional[str] = None):
             except Assistant.DoesNotExist:
                 yield json.dumps(format_response_dict(error='Assistant not found', status=404))
                 return
-                
-            # Conversation ID handling
-            conv_id = None
-            if conversation_id:
-                try:
-                    conv_id = conversation_id
-                except ValueError:
-                    yield json.dumps(format_response_dict(error='Invalid conversation ID format', status=400))
-                    return
-            else:
-                conv_id = uuid.uuid4()
-             
+            
             assistant_config = {
                 "subject": assistant.subject,
+                "topic": assistant.topic,
                 "teacher_instructions": assistant.teacher_instructions,
                 "prompt": prompt,
             }
             print(f"assistant_chat_config: {assistant_config}")
+
+            
+             
+            
             
             # Initialize chat module and assistant
             chat_module = ChatModule()
@@ -106,7 +100,7 @@ def chat_query(request, ass_id: Optional[str] = None):
                 assistant_id=assistant.id,
                 user_id=user_id,
                 assistant_config=assistant_config,
-                conversation_id=conv_id
+                # conversation_id=conv_id
             )
             # rating_id = User.objects.get(id="15")
             

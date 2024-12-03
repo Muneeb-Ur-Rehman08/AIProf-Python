@@ -201,8 +201,7 @@ def create_assistant(request):
                     
                     except Exception as e:
                         logger.error(f"Error processing PDF {file.name}: {str(e)}")
-                        # Cleanup if processing fails
-                        pdf_document.delete()
+                        
                 
                 # assistant_data["knowledge_base"] = file_paths
                 
