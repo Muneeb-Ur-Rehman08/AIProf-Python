@@ -1,0 +1,89 @@
+<form class="space-y-3" id="filter-form">
+  <!-- Accordion Item for Subjects -->
+  <div class="collapse collapse-arrow w-full border border-gray-300 rounded-md">
+    <input type="checkbox" class="peer" checked />
+    <div class="collapse-title peer-checked:bg-primary peer-checked:text-primary-content hover:underline hover:text-">
+      Subjects
+    </div>
+    <div class="collapse-content space-y-4 peer-checked:bg-primary peer-checked:text-primary-content">
+      <div class="relative">
+        <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-2 top-4 h-4 w-4 text-muted-foreground" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4 opacity-70">
+          <path fill-rule="evenodd" d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" clip-rule="evenodd" />
+        </svg>
+        <input
+          type="text"
+          placeholder="Search subjects..."
+          class="input input-bordered w-full bg-transparent pl-8"
+          id="subject-search"
+          hx-trigger="keyup changed delay:300ms"
+          onkeyup="filterSubjects()"
+        />
+      </div>
+      <div class="space-y-2 max-h-32 overflow-y-auto" id="subject-list">
+        {% for subject in subjects_data %}
+        <div class="flex items-center space-x-2 subject-item">
+          <input
+            type="checkbox"
+            id="subject-{{ subject.name }}"
+            class="checkbox"
+            name="subject"
+            value="{{ subject.name }}"
+            hx-trigger="change"
+            hx-get="{% url 'list_assistant_partial' %}"
+            hx-target="#assistants-list"
+            hx-include="[name='subject']:checked,[name='topic']:checked"
+          />
+          <label for="subject-{{ subject.name }}" class="label cursor-pointer">
+            {{ subject.name }}
+          </label>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Accordion Item for Topics -->
+  <div class="collapse collapse-arrow w-full border border-gray-300 rounded-md">
+    <input type="checkbox" class="peer" checked />
+    <div class="collapse-title peer-checked:bg-primary peer-checked:text-primary-content">
+      Topics
+    </div>
+    <div class="collapse-content space-y-4 peer-checked:bg-primary peer-checked:text-primary-content">
+      <div class="relative">
+        <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-2 top-4 h-4 w-4 text-muted-foreground" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4 opacity-70">
+          <path fill-rule="evenodd" d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" clip-rule="evenodd" />
+        </svg>
+        <input
+          type="text"
+          placeholder="Search topics..."
+          class="input input-bordered bg-transparent w-full pl-8"
+          id="topic-search"
+          hx-trigger="keyup changed delay:300ms"
+          onkeyup="filterTopics()"
+        />
+      </div>
+      <div class="space-y-2 max-h-32 overflow-y-auto" id="topic-list">
+        {% for topic in subjects_data %}
+        {% for topic in topic.topics %}
+        <div class="flex items-center space-x-2 topic-item">
+          <input
+            type="checkbox"
+            id="topic-{{ topic }}"
+            class="checkbox"
+            name="topic"
+            value="{{ topic }}"
+            hx-trigger="change"
+            hx-get="{% url 'list_assistant_partial' %}"
+            hx-target="#assistants-list"
+            hx-include="[name='topic']:checked,[name='subject']:checked"
+          />
+          <label for="topic-{{ topic }}" class="label cursor-pointer">
+            {{ topic }}
+          </label>
+        </div>
+        {% endfor %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</form> 

@@ -1,16 +1,3 @@
-<!-- <header class="bg-gray-800 p-4 flex justify-between items-center">
-    <a href="{% url 'index' %}">
-        <img src="https://readymadeui.com/readymadeui-white.svg" alt="logo" class="w-40" />
-    </a>
-    <div>
-         <a href="{% url 'auth_view' %}" class="text-white font-bold py-2 px-4 rounded bg-blue-500 hover:bg-blue-700">Sign In</a>
-        <a href="{% url 'create_assistant' %}" class="text-white font-bold py-2 px-4 rounded bg-green-500 hover:bg-green-700 ml-4">Create Assistant</a>
-         redirect to auth page 
-        <a href="{% url 'auth_view' %}" class="text-white font-bold py-2 px-4 rounded bg-blue-500 hover:bg-blue-700">Sign In</a>
-        redirect to create assistant page
-        <a href="{% url 'create_assistant' %}" class="text-white font-bold py-2 px-4 rounded bg-green-500 hover:bg-green-700 ml-4">Create Assistant</a>
-    </div>
-</header> -->
 
 {% load static %}
 
@@ -47,16 +34,16 @@
                         <a class="nav-link menu-link" href="#contact-us">Contact Us</a>
                     </li>
                     {% if not request.user.is_authenticated %}
-                    <div class="cta-links-area flex justify-center">
-                        <li class="nav-item menu-item">
-                            <a href="{% url 'account_login' %}" class="btn btn-outline btn-[var(--clr-dark-blue)] " onclick="showLoading()">Sign In</a>
-                        </li>
-                    </div>
+                    <li class="nav-item menu-item space-y-4 block xl:hidden">
+                        <div class="nav-item menu-item" title="Sign In">
+                            <a href="{% url 'account_login' %}" class="bg-white text-[#333333] border border-[#4ecddb] px-4 py-2 rounded hover:bg-[#e6f7f5]" onclick="showLoading()">Sign In</a>
+                        </div>
+                    </li>
                     {% endif %}
                     {% if request.user.is_authenticated %}
-                    <div class="cta-links-area space-y-2 lg:hidden">
+                    <div class="cta-links-area space-y-2 lg:hidden dark-theme">
                         <li class="nav-item menu-item">
-                            <a class="btn btn-active btn-accent" 
+                            <a class="" 
                                _="on click remove .hidden from #modal 
                                then remove .close-menu from .menu-toggler 
                                then remove .show from .menu-wrapper">
@@ -65,7 +52,7 @@
                         </li>
                         <li class="nav-item menu-item">
                             {% csrf_token %}
-                            <a class="btn btn-active btn-accent" 
+                            <a class="" 
                                hx-post="{% url 'account_logout' %}" 
                                hx-trigger="click" 
                                hx-target="body" 
@@ -78,55 +65,55 @@
                                 Logout
                             </a>
                         </li>
-                        <li class="nav-item menu-item">
-                            <button class="btn btn-active btn-accent" hx-get="{% url 'list_assistants' %}" hx-trigger="click" hx-target="body" hx-swap="outerHTML">All Assistants</button>
-                        </li>
                     </div>
                    
                     {% endif %}
                 </ul>
             </nav>
-            {% if request.user.is_authenticated %}
-            <div class="dropdown dropdown-end hidden space-y-2 p-1.5 lg:block">
-                <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar" onclick="toggleDropdown(this)">
-                    <div class="w-10 rounded-full">
-                        <img alt="Tailwind CSS Navbar component" src="https://i.pravatar.cc/150?img=1" />
+
+            <div>
+                {% if request.user.is_authenticated %}
+                <div class="dropdown dropdown-end hidden space-y-2 p-1.5 xl:block">
+                    <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar" _="on click toggle .hidden on #dropdownMenu">
+                        <div class="w-10 rounded-full">
+                            <img alt="Tailwind CSS Navbar component" src="https://i.pravatar.cc/150?img=1" />
+                        </div>
                     </div>
+                    <ul id="dropdownMenu" tabindex="0" class="dropdown-content menu p-2 space-y-2 shadow bg-base-100 rounded-box w-52" style="background-color: var(--clr-dark-blue);color: white;">
+                        <li>
+                            <a class=""
+                            hx-post="{% url 'manage_assistant' %}"
+                            onclick="showLoading()"
+                            _="on click remove .close-menu from .menu-toggler 
+                            then remove .show from .menu-wrapper">
+                                Create Assistant
+                            </a>
+                        </li>
+                        <li>
+                            {% csrf_token %}
+                            <a class="" 
+                       hx-post="{% url 'account_logout' %}" 
+                       hx-trigger="click" 
+                       hx-target="body" 
+                       hx-swap="outerHTML" 
+                       hx-redirect="{% url 'index' %}"
+                       hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                       onclick="showLoading()"
+                       _="on click remove .close-menu from .menu-toggler 
+                       then remove .show from .menu-wrapper">
+                                Logout
+                            </a>
+                        </li>
+                    </ul>
                 </div>
-                <ul tabindex="0" class="dropdown-content menu p-2 space-y-2 shadow bg-base-100 rounded-box w-52" style="background-color: var(--clr-dark-blue);color: white;">
-                    <li>
-                        <a class=""
-                        hx-post="{% url 'manage_assistant' %}"
-                        hx-target="body"
-                        hx-swap="outerHTML"
-                        hx-replace-url="/assistant/{{ assistant.id }}"
-                        onclick="showLoading()"
-                        _="on click remove .close-menu from .menu-toggler 
-                        then remove .show from .menu-wrapper">
-                            Create Assistant
-                        </a>
-                    </li>
-                    <li>
-                        {% csrf_token %}
-                        <a class="" 
-                   hx-post="{% url 'account_logout' %}" 
-                   hx-trigger="click" 
-                   hx-target="body" 
-                   hx-swap="outerHTML" 
-                   hx-redirect="{% url 'index' %}"
-                   hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                   onclick="showLoading()"
-                   _="on click remove .close-menu from .menu-toggler 
-                   then remove .show from .menu-wrapper">
-                            Logout
-                        </a>
-                    </li>
-                    <li>
-                        <button hx-get="{% url 'list_assistants' %}" hx-trigger="click" hx-target="body" hx-swap="outerHTML">All Assistants</button>
-                    </li>
-                </ul>
+                {% endif %}
+
+                {% if not request.user.is_authenticated %}
+                <div class="hidden xl:block">
+                    <a href="{% url 'account_login' %}" class="hover:bg-[var(--clr-main)] underline underline-offset-4 decoration-2 decoration-sky-600 text-white font-medium tracking-wider py-2 px-4 rounded-lg" onclick="showLoading()">Sign In</a>
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
             <!-- for mobile navbar menu -->
             <div class="controls-box">
                 <!--Menu Toggler button-->
@@ -152,15 +139,6 @@
             loadingDiv.innerHTML = '<div class="text-white font-bold">Loading...</div>';
             document.body.appendChild(loadingDiv);
         }
-
-        function toggleDropdown(element) {
-            const dropdown = element.nextElementSibling;
-                if (dropdown.style.display === "block") {
-                    dropdown.style.display = "none";
-                } else {
-                    dropdown.style.display = "block";
-                }
-            }
     </script>
     <!--End navbar-->
 </header>

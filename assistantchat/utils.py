@@ -1,12 +1,13 @@
 from typing import List, Dict, Optional, Any, Generator
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain.memory import ConversationBufferMemory
 from langchain_core.runnables import RunnablePassthrough
 from datetime import datetime
 import logging
 import uuid
+from django.db.models import Q
 
 from django.contrib.auth.models import User
 from app.utils.vector_store import vector_store
@@ -27,58 +28,66 @@ class ChatModule:
 
     def _create_prompt(self, assistant_config) -> ChatPromptTemplate:
         """Create a chat prompt template based on assistant configuration."""
-        template = f"""
+        system_message = f"""
         You are a specialized teaching assistant focusing on providing precise responses within the bounds of the context.
 
         Core Response Guidelines:
-        - Strict Contextual Boundaries:
-        Respond ONLY using the information provided in the context.
-        - No External Knowledge:
-        Do not add or infer any knowledge or information beyond what is available.
+        - Strict Contextual Boundaries: Generate response ONLY using the information provided in the context.
+        - No External Knowledge: Do not add or infer any knowledge or information beyond what is available.
         If relevant information is missing, clearly state:
         "Insufficient information in the available context to answer this query."
 
         Teaching Methodology:
+        - {assistant_config.get('teacher_instructions', '')} Follow the provided instructions.
         - Break down the information into clear, digestible parts based on the context.
         - Strictly adhere to the context when providing explanations.
         - Always cite the specific part of the context used for answering the query.
 
         Subject-Specific Response Guidelines:
+        - {assistant_config.get('subject', 'Provide subject-specific details.')}
         - Extract and present details directly from the given context.
         - Refrain from expanding or inferring anything beyond what’s provided.
         - Focus on precision and clarity, using verbatim quotes from the context whenever possible.
-
+        
         Contextual Knowledge Base:
         The following context serves as the ONLY source of knowledge:
         {{context}}
+        - Provide example from the given text according to the prompt.
 
         Conversation History:
+        {{chat_history}}
         Use the chat history solely to understand the background of the current query, without introducing any new or external information.
+        """
 
-        Incoming Query:
-        {assistant_config.get("prompt", "")}
+        human_message = f"""
+        Incoming Query: {assistant_config.get("prompt", "")}
 
         Response Requirements:
-        1. Answer using ONLY the information from the context.
+        1. Generate response from the given context.
         2. If no direct answer exists, explicitly state: "Insufficient information in the available context."
         3. Maintain clarity and precision in responses.
         4. Use verbatim quotes from the context whenever possible.
         5. If partial information is available, make sure to highlight the limitations of the context.
-        6. Strict the response only on the answer not use these kind of sentences 'Based on the provided context',
-        7. Start response directly from answer.
+        6. Strict the response only on the answer, without using phrases like 'Based on the provided context.'
+        7. Start the response directly from the answer.
         """
 
-        prompt = ChatPromptTemplate.from_template(template)
+        # Create the message-based prompt template
+        prompt = ChatPromptTemplate.from_messages([
+            SystemMessagePromptTemplate.from_template(system_message),
+            HumanMessagePromptTemplate.from_template(human_message)
+        ])
+
         return prompt
 
-    def get_relevant_context(self, query: str, assistant_id: str, k: int = 3, api_key: Optional[str] = None) -> str:
+    def get_relevant_context(self, query: str, assistant_id: str, k: int = 5, api_key: Optional[str] = None) -> str:
         """Retrieve relevant context from the DocumentChunk model based on similarity search."""
         try:
             # Step 1: Call the similarity_search class method from DocumentChunk
             # doc_id = PDFDocument.objects.filter(assistant_id=assistant_id)
             # chunks = DocumentChunk.objects.filter(document=doc_id.doc_id)
             # logger.info(f"Length of chunks: {len(chunks)}")
-            results = DocumentChunk.similarity_search(query=query, k=k, api_key=api_key)
+            results = DocumentChunk.similarity_search(query=query, k=k, api_key=api_key, assistant_id=assistant_id)
 
             # logger.info(f"Relevent result: {[x for x in results.document]}")
             
@@ -118,9 +127,18 @@ class ChatModule:
             # Get the related models instances
             user = User.objects.get(id=user_id)
             assistant = Assistant.objects.get(id=assistant_id)
+
+            existing_conversation = Conversation.objects.filter(
+                Q(assistant_id=assistant) & Q(user_id=user)
+            ).first()
+
+            if existing_conversation:
+                # Use existing conversation
+                conversation_id = existing_conversation.conversation_id
+                
             
             # If no conversation_id provided, create a new one
-            if not conversation_id:
+            else:
                 conversation_id = uuid.uuid4()
             
             # Create new conversation entry
@@ -143,28 +161,30 @@ class ChatModule:
         """Retrieve chat history from Django model."""
         try:
             # Base query
-            query = Conversation.objects.filter(
-                assistant_id=assistant_id,
-                user_id=user_id
-            )
+            existing_conversation = Conversation.objects.filter(
+                Q(assistant_id=assistant_id) & Q(user_id=user_id)
+            ).first()
             
-            # Add conversation_id filter if provided
-            if conversation_id:
-                query = query.filter(conversation_id=conversation_id)
-            
-            # Get latest conversations
-            conversations = query.order_by('-created_at')[:limit]
-            
-            # Convert to list of dicts for consistency with existing code
-            return [
-                {
-                    'question': conv.prompt,
-                    'answer': conv.content,
-                    'timestamp': conv.created_at,
-                    'conversation_id': conv.conversation_id
-                }
-                for conv in conversations
-            ]
+            if existing_conversation:
+                # If conversation_id is provided, filter based on it
+                query = Conversation.objects.filter(conversation_id=existing_conversation.conversation_id)
+                
+                # Order by creation date and limit results
+                conversations = query.order_by('-created_at')[:limit]
+
+                # Convert query result to list of dicts for consistent output
+                return [
+                    {
+                        'question': conv.prompt,
+                        'answer': conv.content,
+                        'timestamp': conv.created_at,
+                        'conversation_id': conv.conversation_id
+                    }
+                    for conv in conversations
+                ]
+            else:
+                # Return an empty list if no conversation is found
+                return []
         except Exception as e:
             logger.error(f"Error retrieving chat history: {e}")
             return []

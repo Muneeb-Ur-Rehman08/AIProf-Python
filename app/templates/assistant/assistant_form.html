@@ -1,6 +1,6 @@
 {% extends 'base.html' %} {% block content %}
-<div class="min-h-screen h-full">
-  <nav class="flex items-center justify-between p-4 border-b border-gray-800">
+<div class="min-h-screen h-full" hx-replace-url="/assistant/{{ assistant.id }}">
+  <!-- <nav class="flex items-center justify-between p-4 border-b border-gray-800" >
     <h1 class="text-2xl font-bold">Ai Prof</h1>
     <div class="dropdown dropdown-left">
       <div tabindex="0" class="flex items-center gap-2 cursor-pointer">
@@ -28,7 +28,8 @@
         <li><a href="#" class="hover:bg-gray-700">Logout</a></li>
       </ul>
     </div>
-  </nav>
+  </nav> -->
+  {% include 'modal/navbar.html' %}
   <div
     id="assistant-form"
     class="flex flex-col md:flex-row items-self-start h-[calc(100vh-5.5rem)]"
@@ -55,10 +56,8 @@
     <!-- Form section -->
     <form
       id="assistantForm"
-      hx-post="{% url 'manage_assistant' %}"
-      hx-vals='{"assistant_id": "{{ assistant.id }}"}'
-      hx-include="#subjectSelect, #topicSelect"
       hx-encoding="multipart/form-data"
+      hx-swap="none"
       class="p-4 md:p-8 rounded-lg shadow-lg w-full md:w-1/2 items-self-start"
     >
       {% csrf_token %}
@@ -67,7 +66,12 @@
         <input
           type="text"
           name="assistant_name"
-          value="{{ assistant.name }}"
+          hx-post="{% url 'manage_assistant' %}"
+          hx-trigger="change"
+          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "assistant_name"}'
+          autocomplete="off"
+          hx-replace-url="false"
+          value="{{ assistant.name|default:'' }}"
           placeholder="Name your ASSISTANT"
           class="input w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
         />
@@ -77,7 +81,12 @@
         <input
           type="text"
           name="description"
-          value="{{ assistant.description }}"
+          hx-post="{% url 'manage_assistant' %}"
+          hx-trigger="change"
+          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "description"}'
+          autocomplete="off"
+          hx-replace-url="false"
+          value="{{ assistant.description|default:'' }}"
           placeholder="Add a short description about what this ASSISTANT does"
           class="input w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
         />
@@ -87,6 +96,10 @@
         <select
           name="subject"
           id="subjectSelect"
+          hx-post="{% url 'manage_assistant' %}"
+          hx-trigger="change"
+          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "subject"}'
+          hx-replace-url="false"
           class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
         >
           <option value="" disabled>Select a subject</option>
@@ -97,6 +110,10 @@
         <select
           name="topic"
           id="topicSelect"
+          hx-trigger="change"
+          hx-post="{% url 'manage_assistant' %}"
+          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "topic"}'
+          hx-replace-url="false"
           class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
         >
           <option value="" disabled>Select a topic</option>
@@ -108,10 +125,15 @@
         >
         <textarea
           name="teacher_instructions"
+          hx-trigger="change"
+          hx-post="{% url 'manage_assistant' %}"
+          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "teacher_instructions"}'
+          autocomplete="off"
+          hx-replace-url="false"
           placeholder="What does this ASSISTANT do? How does it behave? What should it avoid doing?"
           class="textarea w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
           rows="4"
-        >{{ assistant.teacher_instructions }}</textarea>
+        >{{ assistant.teacher_instructions|default:'' }}</textarea>
       </div>
       <div class="mb-4">
         <input
@@ -119,27 +141,14 @@
           name="knowledge_base"
           id="fileInput"
           multiple
+          hx-trigger="change"
+          hx-post="{% url 'manage_assistant' %}"
+          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "knowledge_base"}'
+          hx-replace-url="false"
           class="block w-full text-sm text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/20"
         />
         <div class="flex items-center mt-4" id="files-container"></div>
       </div>
-      <button
-        type="submit"
-        hx-post="{% url 'manage_assistant' %}"
-        hx-vals='{"assistant_id": "{{ assistant.id }}"}'
-        hx-include="#subjectSelect, #topicSelect"
-        hx-target=""
-        class="btn transition-colors duration-200"
-        style="
-          background: var(--clr-main);
-          border: 1px solid var(--clr-main);
-          color: white;
-        "
-        onmouseover="this.style.backgroundColor='#0890cc'"
-        onmouseout="this.style.backgroundColor='var(--clr-main)'"
-      >
-        Create ASSISTANT
-      </button>
     </form>
 
     <div class="hidden md:block w-[1px] bg-gray-800"></div>
@@ -353,19 +362,27 @@
     const savedSubject = "{{ assistant.subject }}";
     const savedTopic = "{{ assistant.topic }}";
     
-    // Set subject
-    if (savedSubject) {
-      subjectSelect.value = savedSubject;
-      // Trigger change event to populate topics
-      const event = new Event('change');
-      subjectSelect.dispatchEvent(event);
-      
-      // Set topic after topics are populated
-      setTimeout(() => {
-        if (savedTopic) {
-          topicSelect.value = savedTopic;
-        }
-      }, 0);
+    // Add default "Select a subject" option
+    const defaultOption = document.createElement('option');
+    defaultOption.value = "";
+    defaultOption.textContent = "Select a subject";
+    defaultOption.selected = true;
+    defaultOption.disabled = true;
+    subjectSelect.insertBefore(defaultOption, subjectSelect.firstChild);
+    
+    // Set subject only if it exists in the available options
+    if (savedSubject && subjectsData.subjects.some(s => s.name === savedSubject)) {
+        subjectSelect.value = savedSubject;
+        // Trigger change event to populate topics
+        const event = new Event('change');
+        subjectSelect.dispatchEvent(event);
+        
+        // Set topic after topics are populated
+        setTimeout(() => {
+            if (savedTopic) {
+                topicSelect.value = savedTopic || '';
+            }
+        }, 0);
     }
   });
 </script>
