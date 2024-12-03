@@ -85,7 +85,8 @@
 
 </head>
 
-<body class="dark-theme landing-page-demo">
+<body class="dark-theme landing-page-demo" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+    
 
     {% block content %}
     {% endblock %}

@@ -73,7 +73,7 @@
 
             <div>
                 {% if request.user.is_authenticated %}
-                <div class="dropdown dropdown-end hidden space-y-2 p-1.5 lg:block">
+                <div class="dropdown dropdown-end hidden space-y-2 p-1.5 xl:block">
                     <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar" _="on click toggle .hidden on #dropdownMenu">
                         <div class="w-10 rounded-full">
                             <img alt="Tailwind CSS Navbar component" src="https://i.pravatar.cc/150?img=1" />
@@ -83,9 +83,6 @@
                         <li>
                             <a class=""
                             hx-post="{% url 'manage_assistant' %}"
-                            hx-target="body"
-                            hx-swap="outerHTML"
-                            hx-replace-url="/assistant/{{ assistant.id }}"
                             onclick="showLoading()"
                             _="on click remove .close-menu from .menu-toggler 
                             then remove .show from .menu-wrapper">

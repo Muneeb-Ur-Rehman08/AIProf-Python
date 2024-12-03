@@ -2,153 +2,53 @@
 
 {% block content %}
 <!-- Search Input -->
-<div class="h-full max-w-container-sm md:max-w-container-md lg:max-w-container-lg xl:max-w-container-xl mx-auto px-2 pb-10" style="min-height: 100vh;" hx-replace-url="{% url 'list_assistants' %}">
+<div class="h-full mx-3" style="min-height: 100vh;" hx-replace-url="{% url 'list_assistants' %}">
   {% block navbar %}
-    {% include 'modal/navbar.html' %}
+  {% include 'modal/navbar.html' %}
   {% endblock %}
-    <div class="flex items-center justify-end mb-6 pt-24">
-        <label class="input input-bordered bg-transparent flex items-center gap-2 w-full md:w-60">
-            <input 
-                type="text" 
-                class="grow" 
-                autocomplete="off"
-                placeholder="Search" 
-                hx-get="{% url 'list_assistant_partial' %}" 
-                hx-target="#assistants-list" 
-                hx-trigger="keyup changed delay:500ms" 
-                name="keyword" />
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4 opacity-70">
-                <path fill-rule="evenodd" d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" clip-rule="evenodd" />
-            </svg>
-        </label>
-    </div>
-    <!-- Filters Section -->
-    <div class="flex flex-col md:flex-row gap-8">
-        <form class="w-full md:w-5/12">
-          <div class="collapse collapse-arrow w-full border border-gray-300 rounded-md">
-            <!-- Accordion Item for Subjects -->
-            <input type="checkbox" class="peer" checked />
-            <div class="collapse-title peer-checked:bg-primary peer-checked:text-primary-content hover:underline hover:text-">
-              Subjects
-            </div>
-            <div class="collapse-content space-y-4 peer-checked:bg-primary peer-checked:text-primary-content">
-              <div class="relative">
-                <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-2 top-4 h-4 w-4 text-muted-foreground" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4 opacity-70">
-                  <path fill-rule="evenodd" d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" clip-rule="evenodd" />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Search subjects..."
-                  class="input input-bordered w-full bg-transparent pl-8"
-                  id="subject-search"
-                  hx-trigger="keyup changed delay:300ms"
-                  onkeyup="filterSubjects()"
-                />
-              </div>
-              <div class="space-y-2 max-h-48 overflow-y-auto" id="subject-list">
-                 {% for subject in subjects_data %}
-                <div class="flex items-center space-x-2 subject-item">
-                  <input
-                    type="checkbox"
-                    id="subject-{{ subject.name }}"
-                    class="checkbox"
-                    name="subject"
-                    value="{{ subject.name }}"
-                    hx-trigger="change"
-                    hx-get="{% url 'list_assistant_partial' %}"
-                    hx-target="#assistants-list"
-                    hx-include="[name='subject']:checked,[name='topic']:checked"
-                  />
-                  <label for="subject-{{ subject.name }}" class="label cursor-pointer">
-                    {{ subject.name }}
-                  </label>
-                </div>
-                {% endfor %}
-              </div>
-            </div>
-            <script>
-              function filterSubjects() {
-                const input = document.getElementById('subject-search');
-                const filter = input.value.toLowerCase();
-                const subjectItems = document.querySelectorAll('.subject-item');
-                
-                subjectItems.forEach(item => {
-                  const label = item.querySelector('label').textContent.toLowerCase();
-                  if (label.includes(filter)) {
-                    item.style.display = '';
-                  } else {
-                    item.style.display = 'none';
-                  }
-                });
-              }
-            </script>
-          </div>
-      
-          <!-- Accordion Item for Topics -->
-          <div class="collapse collapse-arrow w-full mt-4 border border-gray-300 rounded-md">
-            <input type="checkbox" class="peer" checked />
-            <div class="collapse-title peer-checked:bg-primary peer-checked:text-primary-content">
-              Topics
-            </div>
-            <div class="collapse-content space-y-4 peer-checked:bg-primary peer-checked:text-primary-content">
-              <div class="relative">
-                <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-2 top-4 h-4 w-4 text-muted-foreground" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4 opacity-70">
-                  <path fill-rule="evenodd" d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" clip-rule="evenodd" />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Search topics..."
-                  class="input input-bordered bg-transparent w-full pl-8"
-                  id="topic-search"
-                  hx-trigger="keyup changed delay:300ms"
-                  onkeyup="filterTopics()"
-                />
-              </div>
-              <div class="space-y-2 max-h-48 overflow-y-auto" id="topic-list">
-                {% for topic in subjects_data %}
-                {% for topic in topic.topics %} 
-                <div class="flex items-center space-x-2 topic-item">
-                  <input
-                    type="checkbox"
-                    id="topic-{{ topic }}"
-                    class="checkbox"
-                    name="topic"
-                    value="{{ topic }}"
-                    hx-trigger="change"
-                    hx-get="{% url 'list_assistant_partial' %}"
-                    hx-target="#assistants-list"
-                    hx-include="[name='topic']:checked,[name='subject']:checked"
-                  />
-                  <label for="topic-{{ topic }}" class="label cursor-pointer">
-                    {{ topic }}
-                  </label>
-                </div>
-                {% endfor %}
-                {% endfor %}
-              </div>
-            </div>
-          </div>
-        </form>
-
-        <div class="w-full" id="assistants-list" hx-get="{% url 'list_assistant_partial' %}" hx-trigger="load">
+  <div class="flex items-center justify-end my-5">
+    <label class="input input-bordered bg-transparent flex items-center gap-2 w-full md:w-60">
+      <input type="text" class="grow" autocomplete="off" placeholder="Search"
+        hx-get="{% url 'list_assistant_partial' %}" hx-target="#assistants-list" hx-trigger="keyup changed delay:500ms"
+        name="keyword" />
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4 opacity-70">
+        <path fill-rule="evenodd"
+          d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
+          clip-rule="evenodd" />
+      </svg>
+    </label>
+  </div>
+  <!-- Filters Section -->
+  <div class="drawer drawer-mobile">
+    <input id="my-drawer" type="checkbox" class="drawer-toggle" />
+    <div class="drawer-content flex flex-col lg:flex-row">
+      <!-- Main content area -->
+      <div class="flex-1 p-2.5">
+        <!-- Button for smaller screens to toggle the sidebar -->
+        <label for="my-drawer" class="btn text-sky-500 drawer-button lg:hidden mb-4">Show Filters</label>
+        <!-- Sidebar for larger screens -->
+        <div class="hidden lg:block w-full">
+          {% include 'assistant/form_filters.html' %}
         </div>
       </div>
+      <!-- Assistants list content -->
+      <div class="w-full lg:w-8/12 xl:w-9/12" id="assistants-list" hx-get="{% url 'list_assistant_partial' %}"
+        hx-trigger="load">
+        <!-- Content loaded dynamically -->
+      </div>
+    </div>
+
+
+
+    <!-- Drawer for smaller screens -->
+    <div class="drawer-side">
+      <label for="my-drawer" class="drawer-overlay"></label>
+      <div class="menu p-4 w-80 bg-base-100 text-base-content">
+        <!-- Sidebar content here -->
+        {% include 'assistant/form_filters.html' %}
+      </div>
+    </div>
+  </div>
 </div>
 
-<script>
-  function filterTopics() {
-    const input = document.getElementById('topic-search');
-    const filter = input.value.toLowerCase();
-    const topicItems = document.querySelectorAll('.topic-item');
-    
-    topicItems.forEach(item => {
-      const label = item.querySelector('label').textContent.toLowerCase();
-      if (label.includes(filter)) {
-        item.style.display = '';
-      } else {
-        item.style.display = 'none';
-      }
-    });
-  }
-</script>
 {% endblock %}
