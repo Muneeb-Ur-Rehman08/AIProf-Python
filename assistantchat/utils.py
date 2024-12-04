@@ -8,6 +8,7 @@ from datetime import datetime
 import logging
 import uuid
 from django.db.models import Q
+import json
 
 from django.contrib.auth.models import User
 from app.utils.vector_store import vector_store
@@ -24,61 +25,149 @@ class ChatModule:
     def __init__(self):
         """Initialize the chat module with necessary components."""
         self.llm = get_llm()
-        
+        self.user_knowledge_levels = {}  # Store user knowledge assessment
+    
 
-    def _create_prompt(self, assistant_config) -> ChatPromptTemplate:
-        """Create a chat prompt template based on assistant configuration."""
+    def _create_knowledge_assessment_prompt(self, assistant_config) -> ChatPromptTemplate:
+        """Create a prompt for assessing user's knowledge level."""
+        subject = assistant_config.get('subject', 'General Learning')
+        topic = assistant_config.get('topic', 'Comprehensive Understanding')
+        teacher_instructions = assistant_config.get('teacher_instructions', 'Systematic, incremental knowledge probing')
+
         system_message = f"""
-        You are a specialized teaching assistant focusing on providing precise responses within the bounds of the context.
+        You are an expert educational diagnostics specialist focusing on {subject} assessment.
 
-        Core Response Guidelines:
-        - Strict Contextual Boundaries: Generate response ONLY using the information provided in the context.
-        - No External Knowledge: Do not add or infer any knowledge or information beyond what is available.
-        If relevant information is missing, clearly state:
-        "Insufficient information in the available context to answer this query."
+        Your goal is to precisely evaluate the user's current knowledge level through a strategic questioning approach:
+        - Develop 3-5 progressively challenging questions
+        - Questions should systematically probe:
+          1. Basic comprehension
+          2. Intermediate understanding
+          3. Advanced application or conceptual depth
 
-        Teaching Methodology:
-        - {assistant_config.get('teacher_instructions', '')} Follow the provided instructions.
-        - Break down the information into clear, digestible parts based on the context.
-        - Strictly adhere to the context when providing explanations.
-        - Always cite the specific part of the context used for answering the query.
+        Assessment Guidelines:
+        - Subject Focus: {subject}
+        - Topic: {topic}
+        - Pedagogical Approach: {teacher_instructions}
 
-        Subject-Specific Response Guidelines:
-        - {assistant_config.get('subject', 'Provide subject-specific details.')}
-        - Extract and present details directly from the given context.
-        - Refrain from expanding or inferring anything beyond what’s provided.
-        - Focus on precision and clarity, using verbatim quotes from the context whenever possible.
-        
-        Contextual Knowledge Base:
-        The following context serves as the ONLY source of knowledge:
-        {{context}}
-        - Provide example from the given text according to the prompt.
-
-        Conversation History:
-        {{chat_history}}
-        Use the chat history solely to understand the background of the current query, without introducing any new or external information.
+        Output Format (CRITICAL):
+        A JSON array of assessment questions, where each question includes:
+        {{
+            "question": "Specific diagnostic question",
+            "difficulty": "basic/intermediate/advanced",
+            "expected_knowledge_indicators": ["key conceptual markers"]
+        }}
         """
 
         human_message = f"""
-        Incoming Query: {assistant_config.get("prompt", "")}
-
-        Response Requirements:
-        1. Generate response from the given context.
-        2. If no direct answer exists, explicitly state: "Insufficient information in the available context."
-        3. Maintain clarity and precision in responses.
-        4. Use verbatim quotes from the context whenever possible.
-        5. If partial information is available, make sure to highlight the limitations of the context.
-        6. Strict the response only on the answer, without using phrases like 'Based on the provided context.'
-        7. Start the response directly from the answer.
+        Conduct a knowledge assessment for a learner interested in {subject}.
+        Generate diagnostic questions that reveal their current understanding level in {topic}.
         """
 
-        # Create the message-based prompt template
-        prompt = ChatPromptTemplate.from_messages([
+        return ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(system_message),
             HumanMessagePromptTemplate.from_template(human_message)
         ])
 
-        return prompt
+    def _create_contextual_rag_prompt(self, assistant_config) -> ChatPromptTemplate:
+        """Create a context-aware RAG prompt adapting to user's knowledge level."""
+        subject = assistant_config.get('subject', 'General Learning')
+        topic = assistant_config.get('topic', 'Comprehensive Understanding')
+        pedagogical_approach = assistant_config.get('teacher_instructions', 'Systematic, incremental knowledge probing')
+
+        system_message = f"""
+        You are an adaptive teaching assistant specializing in {subject}.
+
+        Teaching Context:
+        - Subject Focus: {subject}
+        - Topic Specifics: {topic}
+        - Pedagogical Approach: {pedagogical_approach}
+
+        Response Customization Rules:
+        - Precisely adapt explanation complexity based on detected knowledge level
+        - Utilize {subject}-specific language and insights
+        - Provide explanations that align with {topic} understanding
+        - Follow {pedagogical_approach} in knowledge delivery
+
+        Knowledge Level Adaptation:
+        - Basic Level: Foundational explanations, simple terminology
+        - Intermediate Level: Technical details, conceptual connections
+        - Advanced Level: Nuanced insights, complex applications specific to {subject}
+
+        Contextual Constraints:
+        Available Context: {{context}}
+
+        Previous Interaction Analysis:
+        Knowledge Level: {{knowledge_level}}
+        Diagnostic Questions: {{diagnostic_questions}}
+
+
+        Response Requirements:
+        1. Answer using ONLY the information from the context.
+        2. If no direct answer exists, explicitly state: "Insufficient information in the available context."
+        3. Maintain clarity and precision in responses.
+        4. Use verbatim quotes from the context whenever possible.
+        5. If partial information is available, make sure to highlight the limitations of the context.
+        6. Start the response directly from the answer, without using phrases like 'Based on the provided context.'.
+        """
+
+        human_message = f"""
+        {subject} Query: {{question}}
+
+        Provide a response that:
+        1. Matches the detected knowledge level in {subject}
+        2. Utilizes available context about {topic}
+        3. Addresses the specific query with appropriate depth and {pedagogical_approach}
+        
+        """
+
+        return ChatPromptTemplate.from_messages([
+            SystemMessagePromptTemplate.from_template(system_message),
+            HumanMessagePromptTemplate.from_template(human_message)
+        ])
+
+    def assess_user_knowledge(self, assistant_config: dict, user_assistant_key: str) -> Dict[str, Any]:
+        """Conduct initial knowledge assessment."""
+        try:
+            # Create knowledge assessment prompt
+            assessment_prompt = self._create_knowledge_assessment_prompt(assistant_config)
+            
+            # Create assessment chain
+            assessment_chain = (
+                assessment_prompt
+                | self.llm
+                | StrOutputParser()
+            )
+
+            # Generate assessment questions
+            assessment_result = assessment_chain.invoke({
+                "subject": assistant_config.get('subject', 'General Learning'),
+                "topic": assistant_config.get('topic', 'Comprehensive Understanding'),
+                "teacher_instructions": assistant_config.get('teacher_instructions', 'Systematic, incremental knowledge probing')
+            })
+            
+            # Parse JSON response
+            try:
+                diagnostic_questions = json.loads(assessment_result)
+            except json.JSONDecodeError:
+                logger.error("Failed to parse assessment questions")
+                diagnostic_questions = []
+
+            # Store assessment with assistant-specific information
+            self.user_knowledge_levels[user_assistant_key] = {
+                'diagnostic_questions': diagnostic_questions,
+                'knowledge_level': 'unassessed',
+                'assistant_id': assistant_config.get('id')  # Store assistant ID
+            }
+
+            return {
+                'diagnostic_questions': diagnostic_questions,
+                'instructions': 'Please answer these diagnostic questions to help us understand your current knowledge level.'
+            }
+
+        except Exception as e:
+            logger.error(f"Knowledge assessment error: {e}")
+            return {'error': 'Assessment failed', 'details': str(e)}
+
 
     def get_relevant_context(self, query: str, assistant_id: str, k: int = 5, api_key: Optional[str] = None) -> str:
         """Retrieve relevant context from the DocumentChunk model based on similarity search."""
@@ -191,52 +280,75 @@ class ChatModule:
 
     def process_message(self, prompt: str, assistant_id: str, 
                        user_id: str, assistant_config: dict,
-                       conversation_id: Optional[uuid.UUID] = None) -> str:
-        """Process a chat message and generate a response."""
+                       conversation_id: Optional[uuid.UUID] = None) -> Generator[Any, Any, Any]:
+        """Enhanced message processing with two-chain approach."""
         try:
-            # Get relevant context
-            context = self.get_relevant_context(prompt, assistant_id)
-            logger.info(f"context we get: {context}")
-            
-            # Create prompt
-            prompt_template = self._create_prompt(assistant_config)
-            
+            # Create a unique key for user-assistant knowledge tracking
+            user_assistant_key = f"{user_id}_{assistant_id}"
+
+            # Check if user's knowledge level is already assessed for this specific assistant
+            user_knowledge = self.user_knowledge_levels.get(user_assistant_key, {})
+
+
             # Get chat history
             chat_history = self.get_chat_history(
                 assistant_id, 
                 user_id, 
-                conversation_id=conversation_id
+                
             )
             chat_history_str = "\n".join([
                 f"Human: {chat['question']}\nAssistant: {chat['answer']}"
                 for chat in chat_history
             ])
+            
+            # If no prior assessment or knowledge level is unassessed
+            if (not user_knowledge or 
+                user_knowledge.get('knowledge_level') == 'unassessed' or 
+                user_knowledge.get('assistant_id') != assistant_id):
+                
+                # Conduct knowledge assessment for this specific assistant
+                assessment_result = self.assess_user_knowledge(assistant_config, user_assistant_key)
+                
+                # If assessment generated questions, return them
+                if 'diagnostic_questions' in assessment_result:
+                    return json.dumps(assessment_result)
 
-            def prepare_input(input_prompt):
+            # Retrieve context
+            context = self.get_relevant_context(prompt, assistant_id)
+            
+            # Create contextual RAG prompt
+            rag_prompt = self._create_contextual_rag_prompt(assistant_config)
+            
+            # Prepare input for RAG chain
+            def prepare_rag_input(input_prompt):
                 return {
                     "context": context,
                     "question": input_prompt,
                     "chat_history": chat_history_str,
                     "subject": assistant_config.get("subject", ""),
-                    "instructions": assistant_config.get("teacher_instructions", "")
+                    "instructions": assistant_config.get("teacher_instructions", ""),
+                    "knowledge_level": user_knowledge.get('knowledge_level', 'basic'),
+                    "diagnostic_questions": json.dumps(user_knowledge.get('diagnostic_questions', []))
                 }
-            # Create chain
-            chain = (
-                prepare_input
-                | prompt_template
+
+            # Create RAG chain
+            rag_chain = (
+                prepare_rag_input
+                | rag_prompt
                 | self.llm
                 | StrOutputParser()
             )
-            
+
             # Generate response
-            response = chain.stream(prompt)
+            response = rag_chain.stream(prompt)
 
             full_response = ""
             for chunk in response:
-                # Convert each chunk to markdown and append it
-                if chunk:
-                    full_response += chunk
-            
+                # logger.info(f"chunks from response: {chunk}")
+                full_response += chunk
+                yield chunk
+
+
             # Save interaction
             self.save_chat_history(
                 user_id=user_id,
@@ -245,14 +357,13 @@ class ChatModule:
                 content=full_response,
                 conversation_id=conversation_id
             )
-            
-            # for chunk in response:
-            #     if chunk:
-            #         yield chunk
-            return full_response
+
+            # return full_response
+
         except Exception as e:
             logger.error(f"Error processing message: {e}")
-            return "I apologize, but I encountered an error processing your message. Please try again."
+            yield "I apologize, but I encountered an error processing your message. Please try again."
+        
 
     def clear_chat_history(self, assistant_id: str, user_id: str, 
                           conversation_id: Optional[uuid.UUID] = None) -> bool:

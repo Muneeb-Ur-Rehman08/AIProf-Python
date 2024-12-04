@@ -22,17 +22,7 @@ def chat_query(request, ass_id: Optional[str] = None):
     """
     Endpoint to process chat queries and save conversations.
     """
-    def format_response_dict(data: Any = None, error: str = None, status: int = 200) -> Dict:
-        """Helper function to format consistent API responses as a dictionary"""
-        return {
-            "success": error is None,
-            "data": data if data is not None else {},
-            "error": error,
-            "status": status
-        }
-
     def generate_response():
-        assistant_data = request.session.get("assistant")  
         try:
             assistant_manager = AssistantManager()
             
@@ -43,16 +33,16 @@ def chat_query(request, ass_id: Optional[str] = None):
                 assistant_id = data.get('id')  
                 print(f"assistant id in chat: {assistant_id}")          
                 if not prompt:
-                    yield json.dumps(format_response_dict(error='Prompt is required', status=400))
+                    yield json.dumps({"success": False, "error": "Prompt is required", "status": 400})
                     return
                     
             except json.JSONDecodeError:
-                yield json.dumps(format_response_dict(error='Invalid JSON body', status=400))
+                yield json.dumps({"success": False, "error": "Invalid JSON body", "status": 400})
                 return
                 
             # User authentication check
             if not request.user.is_authenticated:
-                yield json.dumps(format_response_dict(error="User not authenticated", status=400))
+                yield json.dumps({"success": False, "error": "User not authenticated", "status": 400})
                 return
 
             try:
@@ -60,23 +50,22 @@ def chat_query(request, ass_id: Optional[str] = None):
                 user_id = str(user.id)
                 print(f"user id from chat: {user_id}")
             except (SupabaseUser.DoesNotExist, ValueError):
-                yield json.dumps(format_response_dict(error="Invalid user authentication", status=400))
+                yield json.dumps({"success": False, "error": "Invalid user authentication", "status": 400})
                 return
             
             # Assistant validation
             if not assistant_id:
-                yield json.dumps(format_response_dict(error='Assistant ID is required', status=400))
+                yield json.dumps({"success": False, "error": "Assistant ID is required", "status": 400})
                 return
                 
             try:
-                
                 assistant = Assistant.objects.get(id=assistant_id)
                 print(f"assistant get for chat: {assistant.id}")
             except (ValueError, TypeError):
-                yield json.dumps(format_response_dict(error='Invalid assistant ID format', status=400))
+                yield json.dumps({"success": False, "error": "Invalid assistant ID format", "status": 400})
                 return
             except Assistant.DoesNotExist:
-                yield json.dumps(format_response_dict(error='Assistant not found', status=404))
+                yield json.dumps({"success": False, "error": "Assistant not found", "status": 404})
                 return
             
             assistant_config = {
@@ -87,44 +76,23 @@ def chat_query(request, ass_id: Optional[str] = None):
             }
             print(f"assistant_chat_config: {assistant_config}")
 
-            
-             
-            
-            
-            # Initialize chat module and assistant
+            # Initialize chat module and process message
             chat_module = ChatModule()
-            
-            # Process message and get response
             response = chat_module.process_message(
                 prompt=prompt,
                 assistant_id=assistant.id,
                 user_id=user_id,
                 assistant_config=assistant_config,
-                # conversation_id=conv_id
             )
-            # rating_id = User.objects.get(id="15")
-            
-            # AssistantRating.objects.create(
-            #     assistant=assistant,
-            #     user=rating_id,
-            #     rating=Decimal('3.5'),
-            #     review='Great helpful assistant!'
-            # )
-
-            # average_rating = assistant.average_rating
-            
-            # logger.info(f"Assistant Ratings are: {average_rating}")
             
             # Collect and yield responses
-            full_response = ""
             for chunk in response:
-                content = chunk
-                if content:
-                    yield content
+                if chunk:
+                    yield chunk
             
         except Exception as e:
             logger.error(f"Error in chat query endpoint: {e}")
-            yield json.dumps(format_response_dict(error='Failed to process chat query', status=500))
+            yield json.dumps({"success": False, "error": "Failed to process chat query", "status": 500})
 
     # Return a StreamingHttpResponse with the generator
     return StreamingHttpResponse(
