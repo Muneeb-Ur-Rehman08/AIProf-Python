@@ -56,9 +56,6 @@
     <!-- Form section -->
     <form
       id="assistantForm"
-      hx-post="{% url 'manage_assistant' %}"
-      hx-vals='{"assistant_id": "{{ assistant.id }}"}'
-      hx-include="#subjectSelect, #topicSelect"
       hx-encoding="multipart/form-data"
       hx-swap="none"
       class="p-4 md:p-8 rounded-lg shadow-lg w-full md:w-1/2 items-self-start"
@@ -69,7 +66,11 @@
         <input
           type="text"
           name="assistant_name"
+          hx-post="{% url 'manage_assistant' %}"
+          hx-trigger="blur"
+          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "assistant_name"}'
           autocomplete="off"
+          hx-replace-url="false"
           value="{{ assistant.name|default:'' }}"
           placeholder="Name your ASSISTANT"
           class="input w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
@@ -80,7 +81,11 @@
         <input
           type="text"
           name="description"
+          hx-post="{% url 'manage_assistant' %}"
+          hx-trigger="blur"
+          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "description"}'
           autocomplete="off"
+          hx-replace-url="false"
           value="{{ assistant.description|default:'' }}"
           placeholder="Add a short description about what this ASSISTANT does"
           class="input w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
@@ -91,6 +96,10 @@
         <select
           name="subject"
           id="subjectSelect"
+          hx-post="{% url 'manage_assistant' %}"
+          hx-trigger="blur"
+          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "subject"}'
+          hx-replace-url="false"
           class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
         >
           <option value="" disabled>Select a subject</option>
@@ -101,6 +110,10 @@
         <select
           name="topic"
           id="topicSelect"
+          hx-trigger="blur"
+          hx-post="{% url 'manage_assistant' %}"
+          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "topic"}'
+          hx-replace-url="false"
           class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
         >
           <option value="" disabled>Select a topic</option>
@@ -112,7 +125,11 @@
         >
         <textarea
           name="teacher_instructions"
+          hx-trigger="blur"
+          hx-post="{% url 'manage_assistant' %}"
+          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "teacher_instructions"}'
           autocomplete="off"
+          hx-replace-url="false"
           placeholder="What does this ASSISTANT do? How does it behave? What should it avoid doing?"
           class="textarea w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
           rows="4"
@@ -124,28 +141,14 @@
           name="knowledge_base"
           id="fileInput"
           multiple
+          hx-trigger="blur"
+          hx-post="{% url 'manage_assistant' %}"
+          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "knowledge_base"}'
+          hx-replace-url="false"
           class="block w-full text-sm text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/20"
         />
         <div class="flex items-center mt-4" id="files-container"></div>
       </div>
-      <button
-        type="submit"
-        hx-post="{% url 'manage_assistant' %}"
-        hx-vals='{"assistant_id": "{{ assistant.id }}"}'
-        hx-include="#subjectSelect, #topicSelect"
-        hx-replace-url="false"
-        hx-swap="none"
-        class="btn transition-colors duration-200"
-        style="
-          background: var(--clr-main);
-          border: 1px solid var(--clr-main);
-          color: white;
-        "
-        onmouseover="this.style.backgroundColor='#0890cc'"
-        onmouseout="this.style.backgroundColor='var(--clr-main)'"
-      >
-        Create ASSISTANT
-      </button>
     </form>
 
     <div class="hidden md:block w-[1px] bg-gray-800"></div>

@@ -83,9 +83,6 @@
                         <li>
                             <a class=""
                             hx-post="{% url 'manage_assistant' %}"
-                            hx-target="body"
-                            hx-swap="outerHTML"
-                            hx-replace-url="/assistant/{{ assistant.id }}"
                             onclick="showLoading()"
                             _="on click remove .close-menu from .menu-toggler 
                             then remove .show from .menu-wrapper">

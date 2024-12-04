@@ -10,6 +10,7 @@ from django.conf import settings
 from django.core.files import File
 from django.shortcuts import redirect
 from django.contrib.auth.models import User
+from django_htmx.http import HttpResponseClientRedirect
 
 # Ensure these imports match your project structure
 from .models import SupabaseUser, Assistant, PDFDocument, AssistantRating
@@ -132,6 +133,8 @@ def create_assistant(request):
         assistant_id = data.get("assistant_id")
 
         if not data.get('assistant_id'):
+
+            print("No assistant id")
             
             try:
                 
@@ -154,7 +157,7 @@ def create_assistant(request):
                 }
                 request.session['assistant'] = response_data
                 print("After Session: ", request.session.get("assistant"))
-                return HttpResponseRedirect(f'/assistant/{str(assistant.id)}/')
+                return HttpResponseClientRedirect(f'/assistant/{str(assistant.id)}/')
 
             except Exception as e:
                 return format_response(error=f"Error creating initial assistant: {str(e)}", status=500)
@@ -163,22 +166,22 @@ def create_assistant(request):
             
             # Prepare assistant data
             # Validate required fields
-            required_fields = ['assistant_name', 'subject', 'description', 'topic', 'teacher_instructions']
-            missing_fields = [field for field in required_fields if not data.get(field)]
+            # required_fields = ['assistant_name', 'subject', 'description', 'topic', 'teacher_instructions']
+            # missing_fields = [field for field in required_fields if not data.get(field)]
             
-            if missing_fields:
-                return format_response(
-                    error=f"Missing required fields: {', '.join(missing_fields)}", 
-                    status=400
-                )
+            # if missing_fields:
+            #     return format_response(
+            #         error=f"Missing required fields: {', '.join(missing_fields)}", 
+            #         status=400
+            #     )
                 
             assistant_data = {
                 "user_id": user_id,  # Using string version of UUID
-                "assistant_name": data.get('assistant_name'),
-                "subject": data.get('subject'),
-                "description": data.get('description'),
-                "topic": data.get('topic'),
-                "teacher_instructions": data.get('teacher_instructions'),
+                "assistant_name": data.get('assistant_name') or "",
+                "subject": data.get('subject') or "",
+                "description": data.get('description') or "",
+                "topic": data.get('topic') or "",
+                "teacher_instructions": data.get('teacher_instructions') or "",
             }
 
             assistant = Assistant.objects.get(id=assistant_id)
