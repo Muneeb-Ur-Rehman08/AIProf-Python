@@ -13,7 +13,7 @@ import logging
 from django.contrib.auth.models import User 
 from django.contrib.postgres.fields import ArrayField
 import tempfile
-from langchain_community.document_loaders import PyPDFLoader, WebBaseLoader
+from langchain_community.document_loaders import PyPDFLoader, WebBaseLoader, YoutubeLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from openai import OpenAI
@@ -213,15 +213,39 @@ class PDFDocument(models.Model):
         if self.urls:
             for url in self.urls:
                 try:
-                    # Reuse existing URL validation logic
+                    # YouTube URL validation
+                    def is_youtube_url(url):
+                        parsed_url = urlparse(url)
+                        youtube_domains = [
+                            'youtube.com', 
+                            'www.youtube.com', 
+                            'youtu.be', 
+                            'm.youtube.com'
+                        ]
+                        return (
+                            parsed_url.netloc in youtube_domains or
+                            'youtube.com/watch' in url or
+                            'youtu.be/' in url
+                        )
+
+                    # Basic URL validation
                     result = urlparse(url)
                     if not all([result.scheme, result.netloc]):
                         raise ValidationError(f"Invalid URL format: {url}")
                     
                     # Optional: Check if URL is reachable
-                    response = requests.head(url, timeout=5)
-                    if response.status_code != 200:
-                        raise ValidationError(f"Unable to access URL: {url}")
+                    try:
+                        response = requests.head(url, timeout=5)
+                        if response.status_code != 200:
+                            raise ValidationError(f"Unable to access URL: {url}")
+                    except requests.RequestException:
+                        # Allow URLs that might not respond to HEAD requests
+                        pass
+                    
+                    # Log YouTube URL
+                    if is_youtube_url(url):
+                        logger.info(f"YouTube URL detected: {url}")
+                    
                 except Exception as e:
                     raise ValidationError(f"URL validation error for {url}: {str(e)}")
 
@@ -247,8 +271,8 @@ class PDFDocument(models.Model):
 
             # Initialize text splitter
             text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=1000,  # Adjust chunk size as needed
-                chunk_overlap=200,  # Adjust overlap as needed
+                chunk_size=1000,
+                chunk_overlap=200,
                 length_function=len,
                 separators=["\n\n", "\n", " ", ""]
             )
@@ -272,9 +296,29 @@ class PDFDocument(models.Model):
 
             # Process URL content
             elif self.urls:
-                loader = WebBaseLoader(self.urls)
-                web_docs = loader.load()
-                text_chunks = text_splitter.split_text(" ".join([doc.page_content for doc in web_docs]))
+                text_chunks = []
+                for url in self.urls:
+                    # Check if YouTube URL
+                    if any(yt_domain in url for yt_domain in ['youtube.com', 'youtu.be']):
+                        try:
+                            # Use YoutubeLoader to extract transcript
+                            youtube_loader = YoutubeLoader.from_youtube_url(url, add_video_info=False)
+                            youtube_docs = youtube_loader.load()
+                            youtube_text = " ".join([doc[0].page_content for doc in youtube_docs])
+                            youtube_chunks = text_splitter.split_text(youtube_text)
+                            text_chunks.extend(youtube_chunks)
+                        except Exception as e:
+                            logger.error(f"Error processing YouTube URL {url}: {str(e)}")
+                    else:
+                        # Process regular web URLs
+                        try:
+                            loader = WebBaseLoader(url)
+                            web_docs = loader.load()
+                            web_text = " ".join([doc[0].page_content for doc in web_docs])
+                            web_chunks = text_splitter.split_text(web_text)
+                            text_chunks.extend(web_chunks)
+                        except Exception as e:
+                            logger.error(f"Error processing web URL {url}: {str(e)}")
 
             else:
                 raise ValidationError("No valid document source found.")
