@@ -10,10 +10,14 @@ from django.conf import settings
 from django.core.files import File
 from django.shortcuts import redirect
 from django.contrib.auth.models import User
-from django_htmx.http import HttpResponseClientRedirect
+from django_htmx.http import HttpResponseClientRedirect, push_url
 
 # Ensure these imports match your project structure
 from .models import SupabaseUser, Assistant, PDFDocument, AssistantRating
+from django.template.loader import TemplateDoesNotExist
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+
 
 
 # Configure logging
@@ -90,9 +94,10 @@ def get_assistant(request, ass_id: Optional[str] = None):
         logger.error(f"Error retrieving assistant(s): {str(e)}")
         return format_response(error="Internal server error", status=500)
 
+@login_required(login_url='accounts/login/')
 @csrf_exempt
 @require_http_methods(["POST", "PUT", "GET", "OPTIONS"])
-def create_assistant(request):
+def create_assistant(request, ass_id: Optional[str] = None):
     """
     Flexible endpoint for managing assistants.
     
@@ -109,6 +114,18 @@ def create_assistant(request):
         response = JsonResponse({})
         response["Access-Control-Allow-Methods"] = "POST, PUT, GET, OPTIONS"
         return response
+    
+    if request.method == "GET":
+        data = request.GET.dict()
+
+        assistant_data = Assistant.objects.get(id=ass_id)
+        logger.info(f"Assistant Data: {assistant_data.id}")
+        return render(request, 'assistant_form.html', {
+            'assistant': assistant_data,
+            'subject': assistant_data.subject,
+            'topic': assistant_data.topic,
+            'teacher_instructions': assistant_data.teacher_instructions,
+        })
 
     try:
         
@@ -132,7 +149,7 @@ def create_assistant(request):
 
         assistant_id = data.get("assistant_id")
 
-        if not data.get('assistant_id'):
+        if not data.get('assistant_id') or assistant_id == "":
 
             print("No assistant id")
             
@@ -157,7 +174,10 @@ def create_assistant(request):
                 }
                 request.session['assistant'] = response_data
                 print("After Session: ", request.session.get("assistant"))
-                return HttpResponseClientRedirect(f'/assistant/{str(assistant.id)}/')
+                # now redirect to the assistant form page
+                
+                return create_assistant_view(request, str(assistant.id))
+                
 
             except Exception as e:
                 return format_response(error=f"Error creating initial assistant: {str(e)}", status=500)
@@ -289,3 +309,18 @@ def delete_assistant(request, ass_id):
     except Exception as e:
         logger.error(f"Error deleting assistant: {str(e)}")
         return format_response(error="Internal server error", status=500)
+    
+
+
+@login_required(login_url='accounts/login/')
+def create_assistant_view(request, ass_id):
+    try:
+        assistant = request.session.get('assistant', None)
+        assistant_id = ass_id or assistant.get('id')
+
+        if not assistant_id:
+            return redirect('index')
+        
+        return HttpResponseClientRedirect(f'/assistant/{str(assistant_id)}/')
+    except TemplateDoesNotExist:
+        return format_response(error="Template not found", status=404)

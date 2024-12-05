@@ -4,7 +4,8 @@ from . import views
 
 urlpatterns = [
     # Manage (create/update) assistants
-    path('assistants/manage/', views.create_assistant, name='manage_assistant'),
+    path('assistant/', views.create_assistant, name='create_assistant'),
+    path('assistant/<str:ass_id>/', views.create_assistant, name='assistant'),
     
     # Get assistants (list or specific)
     path('assistants/', views.get_assistant, name='get_assistants'),
