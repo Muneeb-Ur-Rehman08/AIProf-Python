@@ -37,26 +37,7 @@ def auth_view(request):
         return HttpResponse("Template not found", status=404)
 # assistant form is show only if user is logged in
 
-from users.models import PDFDocument
-@login_required(login_url='accounts/login/')
-def create_assistant_view(request, ass_id):
-    try:
-        assistant = request.session.get('assistant', None)
-        assistant_id = ass_id or assistant.get('id')
 
-        if not assistant_id:
-            return redirect('index')
-
-        assistant_data = Assistant.objects.get(id=assistant_id)
-
-        return render(request, 'assistant/assistant_form.html', {
-            'assistant': assistant_data,
-            'subject': assistant_data.subject,
-            'topic': assistant_data.topic,
-            'teacher_instructions': assistant_data.teacher_instructions,
-        })
-    except TemplateDoesNotExist:
-        return HttpResponse("Template not found", status=404)
 def assistant_chat_view(request):
     return render(request, 'assistant/assistant_chat.html')
 

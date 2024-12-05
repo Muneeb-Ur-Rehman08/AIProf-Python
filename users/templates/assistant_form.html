@@ -1,5 +1,5 @@
 {% extends 'base.html' %} {% block content %}
-<div class="min-h-screen h-full" hx-replace-url="/assistant/{{ assistant.id }}">
+<div class="min-h-screen h-full">
   <!-- <nav class="flex items-center justify-between p-4 border-b border-gray-800" >
     <h1 class="text-2xl font-bold">Ai Prof</h1>
     <div class="dropdown dropdown-left">
@@ -66,8 +66,8 @@
         <input
           type="text"
           name="assistant_name"
-          hx-post="{% url 'manage_assistant' %}"
-          hx-trigger="change"
+          hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
+          hx-trigger="blur"
           hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "assistant_name"}'
           autocomplete="off"
           hx-replace-url="false"
@@ -81,8 +81,8 @@
         <input
           type="text"
           name="description"
-          hx-post="{% url 'manage_assistant' %}"
-          hx-trigger="change"
+          hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
+          hx-trigger="blur"
           hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "description"}'
           autocomplete="off"
           hx-replace-url="false"
@@ -96,8 +96,8 @@
         <select
           name="subject"
           id="subjectSelect"
-          hx-post="{% url 'manage_assistant' %}"
-          hx-trigger="change"
+          hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
+          hx-trigger="blur"
           hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "subject"}'
           hx-replace-url="false"
           class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
@@ -110,8 +110,8 @@
         <select
           name="topic"
           id="topicSelect"
-          hx-trigger="change"
-          hx-post="{% url 'manage_assistant' %}"
+          hx-trigger="blur"
+          hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
           hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "topic"}'
           hx-replace-url="false"
           class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
@@ -125,8 +125,8 @@
         >
         <textarea
           name="teacher_instructions"
-          hx-trigger="change"
-          hx-post="{% url 'manage_assistant' %}"
+          hx-trigger="blur"
+          hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
           hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "teacher_instructions"}'
           autocomplete="off"
           hx-replace-url="false"
@@ -141,8 +141,8 @@
           name="knowledge_base"
           id="fileInput"
           multiple
-          hx-trigger="change"
-          hx-post="{% url 'manage_assistant' %}"
+          hx-trigger="blur"
+          hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
           hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "knowledge_base"}'
           hx-replace-url="false"
           class="block w-full text-sm text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/20"
