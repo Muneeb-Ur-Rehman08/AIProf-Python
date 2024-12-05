@@ -11,6 +11,8 @@ from django.core.files import File
 from django.shortcuts import redirect
 from django.contrib.auth.models import User
 from django_htmx.http import HttpResponseClientRedirect
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
 
 # Ensure these imports match your project structure
 from .models import SupabaseUser, Assistant, PDFDocument, AssistantRating
@@ -147,7 +149,8 @@ def create_assistant(request):
             'subject': 'subject',
             'description': 'description',
             'topic': 'topic',
-            'teacher_instructions': 'teacher_instructions'
+            'teacher_instructions': 'teacher_instructions',
+            'url': 'url'
         }
 
         changes_made = False
@@ -159,6 +162,12 @@ def create_assistant(request):
                 new_value = data.get(request_field, '').strip()
 
                 if new_value and new_value != current_value:
+                    # Special validation for URL field
+                    if model_field == 'url':
+                        try:
+                            URLValidator()(new_value)
+                        except ValidationError:
+                            return format_response(error="Invalid URL format", status=400)
                     setattr(assistant, model_field, new_value)
                     changes_made = True
 
@@ -167,6 +176,9 @@ def create_assistant(request):
             assistant.is_published = True
             changes_made = True
 
+
+        # Track if a document was uploaded
+        document_uploaded = False
         # Handle file uploads
         if files := request.FILES.getlist('knowledge_base'):
             for file in files:
@@ -180,12 +192,35 @@ def create_assistant(request):
                     
                     # Asynchronous PDF processing recommended
                     pdf_document.process_pdf()
-                    changes_made = True
+                    document_uploaded = True
                 
                 except Exception as e:
                     logger.error(f"PDF processing error for {file.name}: {e}")
 
-        
+
+        # Handle URL input
+        url = data.get('document_url')
+        if url:
+            try:
+                # Additional URL validation
+                URLValidator()(url)
+                
+                # Create PDFDocument with URL
+                url_document = PDFDocument.objects.create(
+                    user_id=user,
+                    assistant_id=assistant,
+                    url=url,
+                    title=url  # Use URL as title
+                )
+                
+                # Process the URL document
+                url_document.process_pdf()
+                document_uploaded = True
+            
+            except ValidationError:
+                return format_response(error="Invalid URL format", status=400)
+            except Exception as e:
+                logger.error(f"URL processing error for {url}: {e}")
 
         # Save changes if detected
         if changes_made:

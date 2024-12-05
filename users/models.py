@@ -1,6 +1,8 @@
 from django.db import models
 import uuid
 from typing import Optional
+import requests
+from urllib.parse import urlparse
 
 import numpy as np
 from django.core.files.storage import default_storage
@@ -11,7 +13,7 @@ import logging
 from django.contrib.auth.models import User 
 from django.contrib.postgres.fields import ArrayField
 import tempfile
-from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import PyPDFLoader, WebBaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from openai import OpenAI
@@ -20,6 +22,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.db.models import Avg
+from django.core.validators import URLValidator
 
 
 load_dotenv()
@@ -171,6 +174,12 @@ class PDFDocument(models.Model):
 
     doc_id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4)
     file = models.FileField(upload_to='pdfs/')
+    urls = ArrayField(
+        models.URLField(max_length=2000, validators=[URLValidator()]), 
+        null=True, 
+        blank=True, 
+        default=list
+    )
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     user_id = models.ForeignKey(
@@ -197,54 +206,103 @@ class PDFDocument(models.Model):
 
     def __str__(self):
         return self.title or str(self.doc_id)
+    
+
+    def _validate_document_input(self):
+        # Validate URLs if provided
+        if self.urls:
+            for url in self.urls:
+                try:
+                    # Reuse existing URL validation logic
+                    result = urlparse(url)
+                    if not all([result.scheme, result.netloc]):
+                        raise ValidationError(f"Invalid URL format: {url}")
+                    
+                    # Optional: Check if URL is reachable
+                    response = requests.head(url, timeout=5)
+                    if response.status_code != 200:
+                        raise ValidationError(f"Unable to access URL: {url}")
+                except Exception as e:
+                    raise ValidationError(f"URL validation error for {url}: {str(e)}")
 
     def process_pdf(self):
-        temp_dir = tempfile.mkdtemp(prefix='pdf_processing_')
-        original_file_path = self.file.path
-        temp_file_path = os.path.join(temp_dir, os.path.basename(original_file_path))
-        logger.info(f"The temp file path where temp file stored: {temp_file_path}")
-        shutil.copy2(original_file_path, temp_file_path)
+        # Validate input
+        self._validate_document_input()
+
+        # Check if a document with the same title already exists for this assistant
+        existing_document = PDFDocument.objects.filter(
+            assistant_id=self.assistant_id,
+            title=self.title
+        ).exists()
+
+        if existing_document:
+            logger.warning(f"Document with title '{self.title}' already exists for this assistant.")
+            self.status = 'failed'
+            self.save()
+            raise ValidationError(f"A document with the title '{self.title}' already exists for this assistant.")
 
         try:
-            # Save the uploaded file to a temporary location
-            with open(temp_file_path, 'wb+') as destination:
-                for chunk in self.file.chunks():
-                    destination.write(chunk)
-
             self.status = 'processing'
             self.save()
 
-            # Load PDF using PyPDFLoader
-            loader = PyPDFLoader(temp_file_path)
-            pages = loader.load_and_split()
+            # Initialize text splitter
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=1000,  # Adjust chunk size as needed
+                chunk_overlap=200,  # Adjust overlap as needed
+                length_function=len,
+                separators=["\n\n", "\n", " ", ""]
+            )
 
-            
+            # Process PDF file
+            if self.file:
+                temp_dir = tempfile.mkdtemp(prefix='pdf_processing_')
+                temp_file_path = os.path.join(temp_dir, os.path.basename(self.file.path))
+                shutil.copy2(self.file.path, temp_file_path)
+
+                try:
+                    loader = PyPDFLoader(temp_file_path)
+                    pages = loader.load_and_split()
+                    text_chunks = [page.page_content for page in pages]
+                finally:
+                    # Cleanup temp files
+                    if os.path.exists(temp_file_path):
+                        os.remove(temp_file_path)
+                    if os.path.exists(temp_dir):
+                        os.rmdir(temp_dir)
+
+            # Process URL content
+            elif self.urls:
+                loader = WebBaseLoader(self.urls)
+                web_docs = loader.load()
+                text_chunks = text_splitter.split_text(" ".join([doc.page_content for doc in web_docs]))
+
+            else:
+                raise ValidationError("No valid document source found.")
+
             # Initialize Langchain OpenAIEmbeddings client
             embeddings_model = OpenAIEmbeddings()
 
-            # Process each chunk and store it in DocumentChunk table
-            for page_number, page in enumerate(pages, start=1):
-                # Page-wise content (each page will be a chunk)
-                page_content = page.page_content
+            # Process each chunk and store it
+            for chunk_number, chunk_content in enumerate(text_chunks, start=1):
+                # Generate embedding for the chunk's content
+                chunk_embedding = embeddings_model.embed_documents([chunk_content])[0]
 
-                # Generate embedding for the page's content
-                page_embedding = embeddings_model.embed_documents([page_content])[0]
-
-                # Store the page content and its embedding in the DocumentChunk model
+                # Store the chunk content and its embedding in the DocumentChunk model
                 DocumentChunk.objects.create(
                     document=self,
-                    page_number=page_number,  # Keep track of page number
-                    content=page_content,
-                    vector_embedding=page_embedding  # Store embedding for the entire page
+                    page_number=chunk_number,
+                    content=chunk_content,
+                    vector_embedding=chunk_embedding
                 )
-
 
             # Prepare metadata for the document
             self.metadata = {
                 'filename': self.title,
+                'source': self.file.name if self.file else ", ".join(self.urls),
                 'user_id': str(self.user_id.id) if self.user_id else None,
                 'assistant_id': str(self.assistant_id.id) if self.assistant_id else None,
-                'total_chunks': len(pages)
+                'total_chunks': len(text_chunks),
+                'document_type': 'pdf' if self.file else 'url'
             }
 
             self.status = 'completed'
@@ -253,41 +311,7 @@ class PDFDocument(models.Model):
         except Exception as e:
             self.status = 'failed'
             self.save()
-            raise RuntimeError(f"PDF Processing Error: {str(e)}")
-
-        finally:
-            try:
-                # Remove temporary file
-                if os.path.exists(temp_file_path):
-                    os.remove(temp_file_path)
-                    logger.info(f"Temporary file deleted: {temp_file_path}")
-
-                # Remove temporary directory
-                if os.path.exists(temp_dir):
-                    os.rmdir(temp_dir)
-                    logger.info(f"Temporary directory removed: {temp_dir}")
-
-                # Remove the original file from the 'pdfs/' directory
-                if self.file and self.file.path and os.path.exists(self.file.path):
-                    try:
-                        # Try default_storage delete first
-                        default_storage.delete(self.file.path)
-                        logger.info(f"File deleted from storage: {self.file.path}")
-                    except Exception as storage_delete_error:
-                        logger.warning(f"Default storage delete failed: {storage_delete_error}")
-                        
-                        # Fallback to OS-level file removal
-                        try:
-                            os.remove(self.file.path)
-                            logger.info(f"File deleted using os.remove: {self.file.path}")
-                        except Exception as os_delete_error:
-                            logger.error(f"Failed to delete file: {os_delete_error}")
-                            logger.error(f"File details - exists: {os.path.exists(self.file.path)}, "
-                                        f"is readable: {os.access(self.file.path, os.R_OK)}, "
-                                        f"is writable: {os.access(self.file.path, os.W_OK)}")
-
-            except Exception as cleanup_error:
-                logger.error(f"Unexpected error during cleanup: {cleanup_error}")
+            raise RuntimeError(f"Document Processing Error: {str(e)}")
 
 
 class DocumentChunk(models.Model):
