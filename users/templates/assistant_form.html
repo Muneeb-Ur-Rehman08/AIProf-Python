@@ -371,17 +371,37 @@
       const uploadForm = document.createElement('form');
       uploadForm.style.display = 'none';
       uploadForm.setAttribute('hx-post', "{% url 'assistant' ass_id='{{ assistant.id }}' %}");
-      uploadForm.setAttribute('hx-trigger', 'htmx:sendFile'); // custom event
+      uploadForm.setAttribute('hx-trigger', 'htmx:sendFile');
       uploadForm.setAttribute('hx-encoding', 'multipart/form-data');
       uploadForm.setAttribute('hx-swap', 'none');
       uploadForm.setAttribute('hx-vals', `{"assistant_id": "{{ assistant.id }}", "field": "knowledge_base"}`);
 
+      // Add all form fields
+      const formData = {
+        'assistant_name': document.querySelector('input[name="assistant_name"]').value,
+        'description': document.querySelector('input[name="description"]').value,
+        'subject': document.querySelector('select[name="subject"]').value,
+        'topic': document.querySelector('select[name="topic"]').value,
+        'teacher_instructions': document.querySelector('textarea[name="teacher_instructions"]').value,
+      };
+
+      // Add all form fields as hidden inputs
+      Object.entries(formData).forEach(([key, value]) => {
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = key;
+        hiddenInput.value = value || '';
+        uploadForm.appendChild(hiddenInput);
+      });
+
+      // Add CSRF token
       const csrfInput = document.createElement('input');
       csrfInput.type = 'hidden';
       csrfInput.name = 'csrfmiddlewaretoken';
       csrfInput.value = '{{ csrf_token }}';
       uploadForm.appendChild(csrfInput);
 
+      // Add file input
       const hiddenFileInput = document.createElement('input');
       hiddenFileInput.type = 'file';
       hiddenFileInput.name = 'knowledge_base';
