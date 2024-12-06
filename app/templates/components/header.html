@@ -76,10 +76,10 @@
                 <div class="dropdown dropdown-end hidden space-y-2 p-1.5 xl:block">
                     <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar" _="on click toggle .hidden on #dropdownMenu">
                         <div class="w-10 rounded-full">
-                            <img alt="Tailwind CSS Navbar component" src="https://i.pravatar.cc/150?img=1" />
+                            <img alt="user avatar" src="https://i.pravatar.cc/150?img=1" />
                         </div>
                     </div>
-                    <ul id="dropdownMenu" tabindex="0" class="dropdown-content menu p-2 space-y-2 shadow bg-base-100 rounded-box w-52" style="background-color: var(--clr-dark-blue);color: white;">
+                    <ul id="dropdownMenu" tabindex="0" class="dropdown-content menu p-2 space-y-1 shadow bg-base-100 rounded-box w-52 shadow hidden" style="background-color: var(--clr-dark-blue);color: white;">
                         <li>
                             <a class=""
                             hx-post="{% url 'create_assistant' %}"
@@ -106,6 +106,7 @@
                         </li>
                     </ul>
                 </div>
+
                 {% endif %}
 
                 {% if not request.user.is_authenticated %}
