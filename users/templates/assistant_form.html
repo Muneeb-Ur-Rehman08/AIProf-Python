@@ -67,7 +67,7 @@
           type="text"
           name="assistant_name"
           hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
-          hx-trigger="blur"
+          hx-trigger="change"
           hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "assistant_name"}'
           autocomplete="off"
           hx-replace-url="false"
@@ -82,7 +82,7 @@
           type="text"
           name="description"
           hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
-          hx-trigger="blur"
+          hx-trigger="change"
           hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "description"}'
           autocomplete="off"
           hx-replace-url="false"
@@ -97,7 +97,7 @@
           name="subject"
           id="subjectSelect"
           hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
-          hx-trigger="blur"
+          hx-trigger="change"
           hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "subject"}'
           hx-replace-url="false"
           class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
@@ -110,7 +110,7 @@
         <select
           name="topic"
           id="topicSelect"
-          hx-trigger="blur"
+          hx-trigger="change"
           hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
           hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "topic"}'
           hx-replace-url="false"
@@ -125,7 +125,7 @@
         >
         <textarea
           name="teacher_instructions"
-          hx-trigger="blur"
+          hx-trigger="change"
           hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
           hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "teacher_instructions"}'
           autocomplete="off"
@@ -141,7 +141,7 @@
           name="knowledge_base"
           id="fileInput"
           multiple
-          hx-trigger="blur"
+          hx-trigger="change"
           hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
           hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "knowledge_base"}'
           hx-replace-url="false"
