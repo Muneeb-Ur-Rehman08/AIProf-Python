@@ -276,6 +276,7 @@ def list_assistants(request):
         }
     ]
 
+    keyword = request.GET.get('keyword')
     subjects = request.GET.getlist('subject')  # Retrieve selected subjects from checkboxes
     topics = request.GET.getlist('topic')      # Retrieve selected topics from checkboxes
 
@@ -289,38 +290,16 @@ def list_assistants(request):
     # If topics are selected, filter based on topics
     if topics:
         assistants = assistants.filter(topic__in=topics)
-
-    # Prepare the data for rendering
-    assistants_data = list(assistants.values('name', 'subject', 'topic', 'description', 'created_at'))
-    return render(request, 'assistant/list.html', {"subjects_data": subjects_data, "filtered_assistants": assistants_data})
-
-
-# @login_required
-@csrf_exempt
-@require_http_methods(["GET"])
-def list_assistant_partial(request):
-    keyword = request.GET.get('keyword', '')
-    subjects = request.GET.getlist('subject')  # Retrieve selected subjects from checkboxes
-    topics = request.GET.getlist('topic')      # Retrieve selected topics from checkboxes
-
-    # Filter assistants based on subjects and topics
-    assistants = Assistant.objects.all()
 
     # If keyword is provided, filter based on assistant name
     if keyword and len(keyword) > 2:
         assistants = assistants.filter(name__icontains=keyword)
 
-    # If subjects are selected, filter based on subjects
-    if subjects:
-        assistants = assistants.filter(subject__in=subjects)
-
-    # If topics are selected, filter based on topics
-    if topics:
-        assistants = assistants.filter(topic__in=topics)
-
     # Prepare the data for rendering
     assistants_data = list(assistants.values('name', 'subject', 'topic', 'description', 'created_at'))
+    if request.htmx:
+        return render(request, 'assistant/list_partials.html', {"assistants": assistants_data})
+    else:
+        return render(request, 'assistant/list.html', {"subjects_data": subjects_data, "filtered_assistants": assistants_data})
 
-    logger.info(f"Filtered assistants: {assistants_data}")
-    
-    return render(request, 'assistant/list_partials.html', {"assistants": assistants_data})
+
