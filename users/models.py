@@ -418,3 +418,46 @@ class DocumentChunk(models.Model):
         except Exception as e:
             logger.error(f"Similarity search error: {str(e)}")
             return []
+
+
+
+class Subject(models.Model):
+    id = models.AutoField(primary_key=True, unique=True)
+    name = models.CharField(
+        max_length=255, 
+        null=True, 
+        blank=True, 
+        verbose_name=('Subject Name')
+    )
+    
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = ('Subject')
+        verbose_name_plural = ('Subjects')
+        ordering = ['name']
+
+class Topic(models.Model):
+    id = models.AutoField(primary_key=True, unique=True)
+    name = models.CharField(
+        max_length=255, 
+        verbose_name=('Topic Name')
+    )
+    subject = models.ForeignKey(
+        Subject, 
+        on_delete=models.CASCADE, 
+        related_name='topics',
+        null=True, 
+        blank=True
+    )
+    
+   
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = ('Topic')
+        verbose_name_plural = ('Topics')
+        ordering = ['name']

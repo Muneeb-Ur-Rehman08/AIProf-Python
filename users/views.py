@@ -19,6 +19,7 @@ from .models import SupabaseUser, Assistant, PDFDocument, AssistantRating
 from django.template.loader import TemplateDoesNotExist
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
+from .add import populate_subjects_and_topics
 
 
 
