@@ -4,51 +4,81 @@
 <!-- Search Input -->
 <div class="h-full mx-3" style="min-height: 100vh;" hx-replace-url="{% url 'list_assistants' %}">
   {% block navbar %}
-  {% include 'modal/navbar.html' %}
+
+    <div id="navbar" class="fixed top-0 left-0 right-0 z-20">
+      {% include 'modal/navbar.html' %}
+  </div>
   {% endblock %}
-  <div class="flex items-center justify-end my-5">
-    <label class="input input-bordered bg-transparent flex items-center gap-2 w-full md:w-60">
-      <input type="text" class="grow" autocomplete="off" placeholder="Search"
-        hx-get="{% url 'list_assistant_partial' %}" hx-target="#assistants-list" hx-trigger="keyup changed delay:500ms"
-        name="keyword" />
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4 opacity-70">
-        <path fill-rule="evenodd"
-          d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
-          clip-rule="evenodd" />
-      </svg>
-    </label>
+  <div id="search-bar" class=" flex items-center justify-between sticky top-28 z-20">
+    <div class="drawer">
+      <input id="my-drawer" type="checkbox" class="drawer-toggle" />
+      <div class="drawer-content">
+        <!-- Page content here -->
+        <label for="my-drawer" class="btn text-sky-500 drawer-button lg:hidden">Open drawer</label>
+      </div>
+      <div class="drawer-side ">
+        <label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+        <ul class="menu bg-base-200 text-base-content min-h-full w-full sm:w-96 p-4 z-50">
+          <div class="flex justify-end mb-2">
+            <label for="my-drawer" class="btn text-2xl text-sky-500 drawer-button lg:hidden mb-4">x</label>
+          </div>
+          {% include 'assistant/form_filters.html' %}
+        </ul>
+      </div>
+    </div>
+    <div class="flex items-center justify-end">
+      <label class="input input-bordered bg-transparent flex items-center gap-2 w-full md:w-60">
+        <input type="text" hx-push-url="true" class="grow" autocomplete="off" placeholder="Search"
+          hx-get="{% url 'list_assistants' %}" hx-target="#assistants-list" hx-trigger="keyup changed delay:500ms"
+          name="keyword"
+          hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword']"
+          />
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4">
+          <path fill-rule="evenodd"
+            d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
+            clip-rule="evenodd" />
+        </svg>
+      </label>
+    </div>
+    
   </div>
   <!-- Filters Section -->
-  <div class="drawer drawer-mobile">
-    <input id="my-drawer" type="checkbox" class="drawer-toggle" />
-    <div class="drawer-content flex flex-col lg:flex-row">
+  <div class="flex pt-32">
       <!-- Main content area -->
       <div class="flex-1 p-2.5">
-        <!-- Button for smaller screens to toggle the sidebar -->
-        <label for="my-drawer" class="btn text-sky-500 drawer-button lg:hidden mb-4">Show Filters</label>
-        <!-- Sidebar for larger screens -->
         <div class="hidden lg:block w-full">
           {% include 'assistant/form_filters.html' %}
         </div>
       </div>
       <!-- Assistants list content -->
-      <div class="w-full lg:w-8/12 xl:w-9/12" id="assistants-list" hx-get="{% url 'list_assistant_partial' %}"
-        hx-trigger="load">
+      <div class="w-full lg:w-8/12 xl:w-9/12" id="assistants-list" hx-get="{% url 'list_assistants' %}"
+        hx-trigger="load" hx-replace-url="false">
         <!-- Content loaded dynamically -->
-      </div>
-    </div>
-
-
-
-    <!-- Drawer for smaller screens -->
-    <div class="drawer-side">
-      <label for="my-drawer" class="drawer-overlay"></label>
-      <div class="menu p-4 w-80 bg-base-100 text-base-content">
-        <!-- Sidebar content here -->
-        {% include 'assistant/form_filters.html' %}
       </div>
     </div>
   </div>
 </div>
+
+<script>
+  window.addEventListener('scroll', function() {
+    const searchBar = document.getElementById('search-bar');
+    if (window.scrollY > 30) {
+      searchBar.classList.remove('top-28');
+      searchBar.classList.add('top-16');
+
+    } else {
+      searchBar.classList.remove('top-16');
+      searchBar.classList.add('top-28');
+    }
+  });
+  window.addEventListener('scroll', function() {
+    const navbar = document.getElementById('navbar');
+    if (window.scrollY > 30) {
+      navbar.classList.add('bg-base-100', 'sticky-menu', 'active');
+    } else {
+      navbar.classList.remove('bg-base-100', 'sticky-menu', 'active');
+    }
+  });
+</script>
 
 {% endblock %}
