@@ -27,3 +27,6 @@ app/.env
 
 myenv
 venv
+
+
+.vscode
