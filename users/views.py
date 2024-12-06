@@ -227,6 +227,7 @@ def create_assistant(request, ass_id: Optional[str] = None):
                     # Asynchronous PDF processing recommended
                     pdf_document.process_pdf()
                     document_uploaded = True
+                    changes_made = True
                 
                 except Exception as e:
                     logger.error(f"PDF processing error for {file.name}: {e}")

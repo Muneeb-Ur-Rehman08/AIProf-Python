@@ -40,9 +40,9 @@ class ChatModule:
         Your goal is to precisely evaluate the user's current knowledge level through a strategic questioning approach:
         - Develop 3-5 progressively challenging questions
         - Questions should systematically probe:
-          1. Basic comprehension
-          2. Intermediate understanding
-          3. Advanced application or conceptual depth
+        1. Basic comprehension
+        2. Intermediate understanding
+        3. Advanced application or conceptual depth
 
         Assessment Guidelines:
         - Subject Focus: {subject}
@@ -58,9 +58,10 @@ class ChatModule:
         }}
         """
 
-        human_message = f"""
-        Conduct a knowledge assessment for a learner interested in {subject}.
-        Generate diagnostic questions that reveal their current understanding level in {topic}.
+        human_message = """
+        Conduct a knowledge assessment for a user's understanding of {subject} in {topic}.
+        Generate diagnostic questions that reveal their current understanding level.
+        Follow the specified pedagogical approach: {teacher_instructions}
         """
 
         return ChatPromptTemplate.from_messages([
@@ -69,56 +70,65 @@ class ChatModule:
         ])
 
     def _create_contextual_rag_prompt(self, assistant_config) -> ChatPromptTemplate:
-        """Create a context-aware RAG prompt adapting to user's knowledge level."""
-        subject = assistant_config.get('subject', 'General Learning')
+        """Create a context-aware RAG prompt adapting to user's knowledge level and subject expertise."""
+
+        subject = assistant_config.get('subject', 'General Knowledge')
         topic = assistant_config.get('topic', 'Comprehensive Understanding')
-        pedagogical_approach = assistant_config.get('teacher_instructions', 'Systematic, incremental knowledge probing')
+        pedagogical_approach = assistant_config.get('teacher_instructions', 'Adaptive Learning')
+        prompt = assistant_config.get('prompt')
 
-        system_message = f"""
-        You are an adaptive teaching assistant specializing in {subject}.
+        system_message = f"""# Intelligent Teaching Assistant Configuration
 
-        Teaching Context:
-        - Subject Focus: {subject}
-        - Topic Specifics: {topic}
-        - Pedagogical Approach: {pedagogical_approach}
+            ## Core Parameters
+            - **Subject:** {subject}
+            - **Topic:** {topic}
+            - **Pedagogical Strategy:** {pedagogical_approach}
 
-        Response Customization Rules:
-        - Precisely adapt explanation complexity based on detected knowledge level
-        - Utilize {subject}-specific language and insights
-        - Provide explanations that align with {topic} understanding
-        - Follow {pedagogical_approach} in knowledge delivery
+            ## Response Intelligence Framework
 
-        Knowledge Level Adaptation:
-        - Basic Level: Foundational explanations, simple terminology
-        - Intermediate Level: Technical details, conceptual connections
-        - Advanced Level: Nuanced insights, complex applications specific to {subject}
+            ### 1. Adaptive Knowledge Delivery
+            - **Knowledge Level Detection**
+            * Dynamically adjust explanation depth
+            * Match response complexity to user's understanding
 
-        Contextual Constraints:
-        Available Context: {{context}}
+            ### 2. Contextual Response Generation
+            - **Context Utilization**
+            * Leverage available information
+            * Ensure precise, relevant answers
+            - **Information Integrity**
+            * Use only verified context
+            * Highlight information limitations
 
-        Previous Interaction Analysis:
-        Knowledge Level: {{knowledge_level}}
-        Diagnostic Questions: {{diagnostic_questions}}
+            ### 3. Linguistic Precision
+            - **Communication Strategies**
+            * Use domain-specific terminology
+            * Maintain clarity and conciseness
+            - **Verbatim Extraction**
+            * Prioritize direct quotes
+            * Preserve original context meaning
 
+            ## Operational Constraints
+            - **Available Context:** {{context}}
+            - **Knowledge Assessment:**
+            * Level: {{knowledge_level}}
+            * Diagnostic Insights: {{diagnostic_questions}}
 
-        Response Requirements:
-        1. Answer using ONLY the information from the context.
-        2. If no direct answer exists, explicitly state: "Insufficient information in the available context."
-        3. Maintain clarity and precision in responses.
-        4. Use verbatim quotes from the context whenever possible.
-        5. If partial information is available, make sure to highlight the limitations of the context.
-        6. Start the response directly from the answer, without using phrases like 'Based on the provided context.'.
-        """
+            ## Response Optimization
+            - Systematic knowledge progression
+            - Incremental complexity introduction
+            - Contextual relevance maintenance
+            """
 
-        human_message = f"""
-        {subject} Query: {{question}}
+        human_message = f"""# {subject} Inquiry
 
-        Provide a response that:
-        1. Matches the detected knowledge level in {subject}
-        2. Utilizes available context about {topic}
-        3. Addresses the specific query with appropriate depth and {pedagogical_approach}
-        
-        """
+    ## Query Context
+    {prompt}
+
+    ### Response Requirements
+    - Align with {topic} understanding
+    - Apply {pedagogical_approach}
+    - Address query with precise, multilevel explanation
+    """
 
         return ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(system_message),
@@ -140,9 +150,9 @@ class ChatModule:
 
             # Generate assessment questions
             assessment_result = assessment_chain.invoke({
-                "subject": assistant_config.get('subject', 'General Learning'),
-                "topic": assistant_config.get('topic', 'Comprehensive Understanding'),
-                "teacher_instructions": assistant_config.get('teacher_instructions', 'Systematic, incremental knowledge probing')
+                "subject": assistant_config.get('subject'),
+                "topic": assistant_config.get('topic'),
+                "teacher_instructions": assistant_config.get('teacher_instructions')
             })
             
             # Parse JSON response

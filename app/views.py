@@ -18,7 +18,7 @@ from django.contrib.auth.decorators import login_required
 from app.utils.auth_backend import SupabaseBackend
 from app.utils.assistant_manager import AssistantManager
 from app.modals.assistants import AssistantConfig
-from users.models import Assistant, Subject, Topic
+from users.models import Assistant
 
 # Ensure the GROQ_API_KEY is loaded from the environment
 api_key = os.getenv('GROQ_API_KEY')

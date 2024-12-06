@@ -253,18 +253,6 @@ class PDFDocument(models.Model):
         # Validate input
         self._validate_document_input()
 
-        # Check if a document with the same title already exists for this assistant
-        existing_document = PDFDocument.objects.filter(
-            assistant_id=self.assistant_id,
-            title=self.title
-        ).exists()
-
-        if existing_document:
-            logger.warning(f"Document with title '{self.title}' already exists for this assistant.")
-            self.status = 'failed'
-            self.save()
-            raise ValidationError(f"A document with the title '{self.title}' already exists for this assistant.")
-
         try:
             self.status = 'processing'
             self.save()
@@ -279,20 +267,36 @@ class PDFDocument(models.Model):
 
             # Process PDF file
             if self.file:
-                temp_dir = tempfile.mkdtemp(prefix='pdf_processing_')
-                temp_file_path = os.path.join(temp_dir, os.path.basename(self.file.path))
-                shutil.copy2(self.file.path, temp_file_path)
+                # Check if the document already exists
+                existing_document = PDFDocument.objects.filter(
+                    assistant_id=self.assistant_id,
+                    title=self.title,
+                    status='completed'
+                ).first()
+                
+                if existing_document:
+                    # Log that the document already exists
+                    logger.info(f"Document '{self.title}' already processed. Skipping.")
+                else:
+                    temp_dir = tempfile.mkdtemp(prefix='pdf_processing_')
+                    original_file_path = self.file.path
+                    temp_file_path = os.path.join(temp_dir, os.path.basename(original_file_path))
+                    logger.info(f"Processing file: {temp_file_path}")
+                    shutil.copy2(original_file_path, temp_file_path)
 
-                try:
-                    loader = PyPDFLoader(temp_file_path)
-                    pages = loader.load_and_split()
-                    text_chunks = [page.page_content for page in pages]
-                finally:
-                    # Cleanup temp files
-                    if os.path.exists(temp_file_path):
-                        os.remove(temp_file_path)
-                    if os.path.exists(temp_dir):
-                        os.rmdir(temp_dir)
+                    try:
+                        loader = PyPDFLoader(temp_file_path)
+                        pages = loader.load_and_split()
+                        text_chunks = [page.page_content for page in pages]
+                    except Exception as e:
+                        logger.error(f"Error processing PDF: {e}")
+                        text_chunks = []
+                    finally:
+                        # Cleanup temp files
+                        if os.path.exists(temp_file_path):
+                            os.remove(temp_file_path)
+                        if os.path.exists(temp_dir):
+                            os.rmdir(temp_dir)
 
             # Process URL content
             elif self.urls:
