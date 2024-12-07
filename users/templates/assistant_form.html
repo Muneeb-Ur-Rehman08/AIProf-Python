@@ -1,34 +1,6 @@
-{% extends 'base.html' %} {% block content %}
+{% extends 'base.html' %}
+{% block content %}
 <div class="min-h-screen h-full">
-  <!-- <nav class="flex items-center justify-between p-4 border-b border-gray-800" >
-    <h1 class="text-2xl font-bold">Ai Prof</h1>
-    <div class="dropdown dropdown-left">
-      <div tabindex="0" class="flex items-center gap-2 cursor-pointer">
-        <div class="avatar">
-          <div
-            class="ring-primary ring-offset-base-100 w-12 rounded-full ring ring-offset-2"
-          >
-            <img
-              src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"
-            />
-          </div>
-        </div>
-        <div class="ml-2 hidden md:block">
-          <div class="font-bold">login</div>
-          <div class="text-sm text-gray-400">Your Email</div>
-        </div>
-      </div>
-      <ul
-        tabindex="0"
-        class="dropdown-content menu p-2 shadow z-50 rounded-box w-52 mt-2"
-        style="background-color: var(--clr-dark-blue); color: white"
-      >
-        <li><a href="#" class="hover:bg-gray-700">Profile</a></li>
-        <li><a href="#" class="hover:bg-gray-700">Settings</a></li>
-        <li><a href="#" class="hover:bg-gray-700">Logout</a></li>
-      </ul>
-    </div>
-  </nav> -->
   {% include 'modal/navbar.html' %}
   <div
     id="assistant-form"
@@ -67,7 +39,7 @@
           type="text"
           name="assistant_name"
           hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
-          hx-trigger="change"
+          hx-trigger="blur changed delay:1s"
           hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "assistant_name"}'
           autocomplete="off"
           hx-replace-url="false"
@@ -82,7 +54,7 @@
           type="text"
           name="description"
           hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
-          hx-trigger="change"
+          hx-trigger="blur changed delay:1s"
           hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "description"}'
           autocomplete="off"
           hx-replace-url="false"
@@ -96,8 +68,8 @@
         <select
           name="subject"
           id="subjectSelect"
-          hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
-          hx-trigger="change"
+          hx-post="{% url 'assistant' ass_id=assistant.id %}"
+          hx-trigger="blur changed delay:1s"
           hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "subject"}'
           hx-replace-url="false"
           class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
@@ -110,7 +82,7 @@
         <select
           name="topic"
           id="topicSelect"
-          hx-trigger="change"
+          hx-trigger="blur changed delay:1s"
           hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
           hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "topic"}'
           hx-replace-url="false"
@@ -120,13 +92,11 @@
         </select>
       </div>
       <div class="mb-4">
-        <label class="block text-white text-lg font-bold mb-2"
-          >Instructions</label
-        >
+        <label class="block text-white text-lg font-bold mb-2">Instructions</label>
         <textarea
           name="teacher_instructions"
-          hx-trigger="change"
-          hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
+          hx-trigger="blur changed delay:1s" 
+          hx-post="{% url 'assistant' ass_id=assistant.id %}"
           hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "teacher_instructions"}'
           autocomplete="off"
           hx-replace-url="false"
@@ -136,176 +106,180 @@
         >{{ assistant.teacher_instructions|default:'' }}</textarea>
       </div>
       <div class="mb-4">
+        <label 
+          for="fileInput" 
+          class="inline-block cursor-pointer bg-white/10 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-white/20"
+        >
+          Upload Files
+        </label>
         <input
           type="file"
-          name="knowledge_base"
+          name="file_picker"
           id="fileInput"
           multiple
-          hx-trigger="change"
-          hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
-          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "knowledge_base"}'
-          hx-replace-url="false"
-          class="block w-full text-sm text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/20"
+          onchange="onFileChange(event)"
+          class="sr-only"
         />
-        <div class="flex items-center mt-4" id="files-container"></div>
+        <div class="flex flex-wrap gap-2 items-center mt-4" id="files-container"></div>
       </div>
     </form>
 
     <div class="hidden md:block w-[1px] bg-gray-800"></div>
 
     <!-- Chat section -->
-      {% include 'assistant/assistant_chat.html' with assistant=assistant %}
+    {% include 'assistant/assistant_chat.html' with assistant=assistant %}
   </div>
 </div>
+
 <script>
   const subjectsData = {
     "subjects": [
-    {
-      "name": "Mathematics",
-      "topics": [
-        "Arithmetic",
-        "Addition",
-        "Subtraction",
-        "Multiplication",
-        "Division",
-        "Fractions",
-        "Decimals",
-        "Percentages",
-        "Algebra",
-        "Linear Equations",
-        "Quadratic Equations",
-        "Inequalities",
-        "Polynomials",
-        "Geometry",
-        "Shapes",
-        "Angles",
-        "Theorems",
-        "Coordinate Geometry",
-        "Trigonometry",
-        "Sine",
-        "Cosine",
-        "Tangent",
-        "Pythagoras' Theorem",
-        "Calculus",
-        "Limits",
-        "Derivatives",
-        "Integrals",
-        "Differential Equations",
-        "Statistics & Probability",
-        "Mean",
-        "Median",
-        "Mode",
-        "Standard Deviation"
-      ]
-    },
-    {
-      "name": "Science",
-      "topics": [
-        "Physics",
-        "Newton's Laws of Motion",
-        "Electricity",
-        "Magnetism",
-        "Thermodynamics",
-        "Waves",
-        "Quantum Mechanics",
-        "Chemistry",
-        "Periodic Table",
-        "Chemical Reactions",
-        "Molecular Structure",
-        "Acids and Bases",
-        "Organic Chemistry",
-        "Biology",
-        "Cell Structure",
-        "Human Anatomy",
-        "Genetics",
-        "Ecology",
-        "Evolution"
-      ]
-    },
-    {
-      "name": "English",
-      "topics": [
-        "Grammar",
-        "Sentence Structure",
-        "Tenses",
-        "Vocabulary",
-        "Writing Skills",
-        "Essay Writing",
-        "Creative Writing",
-        "Literature",
-        "Poetry Analysis",
-        "Novel Studies",
-        "Drama",
-        "Research and Citation"
-      ]
-    },
-    {
-      "name": "History",
-      "topics": [
-        "Ancient Civilizations",
-        "Greek and Roman History",
-        "Middle Ages",
-        "Renaissance",
-        "World Wars",
-        "American Revolution",
-        "Industrial Revolution",
-        "Modern History",
-        "Cold War",
-        "Civil Rights Movement"
-      ]
-    },
-    {
-      "name": "Geography",
-      "topics": [
-        "Physical Geography",
-        "Landforms",
-        "Weather and Climate",
-        "Ecosystems",
-        "Human Geography",
-        "Population Studies",
-        "Urbanization",
-        "Economic Geography",
-        "Global Trade"
-      ]
-    },
-    {
-      "name": "Computer Science",
-      "topics": [
-        "Programming Basics",
-        "Algorithms",
-        "Data Structures",
-        "Databases",
-        "Web Development",
-        "Networking",
-        "Cybersecurity",
-        "Artificial Intelligence",
-        "Machine Learning"
-      ]
-    },
-    {
-      "name": "Art",
-      "topics": [
-        "Drawing Techniques",
-        "Painting Styles",
-        "Sculpture",
-        "Art History",
-        "Photography",
-        "Digital Art",
-        "Design Principles"
-      ]
-    },
-    {
-      "name": "Physical Education",
-      "topics": [
-        "Fitness Training",
-        "Team Sports",
-        "Individual Sports",
-        "Health and Nutrition",
-        "Mental Well-being",
-        "Exercise Physiology"
-      ]
-    }
-  ]
+      {
+        "name": "Mathematics",
+        "topics": [
+          "Arithmetic",
+          "Addition",
+          "Subtraction",
+          "Multiplication",
+          "Division",
+          "Fractions",
+          "Decimals",
+          "Percentages",
+          "Algebra",
+          "Linear Equations",
+          "Quadratic Equations",
+          "Inequalities",
+          "Polynomials",
+          "Geometry",
+          "Shapes",
+          "Angles",
+          "Theorems",
+          "Coordinate Geometry",
+          "Trigonometry",
+          "Sine",
+          "Cosine",
+          "Tangent",
+          "Pythagoras' Theorem",
+          "Calculus",
+          "Limits",
+          "Derivatives",
+          "Integrals",
+          "Differential Equations",
+          "Statistics & Probability",
+          "Mean",
+          "Median",
+          "Mode",
+          "Standard Deviation"
+        ]
+      },
+      {
+        "name": "Science",
+        "topics": [
+          "Physics",
+          "Newton's Laws of Motion",
+          "Electricity",
+          "Magnetism",
+          "Thermodynamics",
+          "Waves",
+          "Quantum Mechanics",
+          "Chemistry",
+          "Periodic Table",
+          "Chemical Reactions",
+          "Molecular Structure",
+          "Acids and Bases",
+          "Organic Chemistry",
+          "Biology",
+          "Cell Structure",
+          "Human Anatomy",
+          "Genetics",
+          "Ecology",
+          "Evolution"
+        ]
+      },
+      {
+        "name": "English",
+        "topics": [
+          "Grammar",
+          "Sentence Structure",
+          "Tenses",
+          "Vocabulary",
+          "Writing Skills",
+          "Essay Writing",
+          "Creative Writing",
+          "Literature",
+          "Poetry Analysis",
+          "Novel Studies",
+          "Drama",
+          "Research and Citation"
+        ]
+      },
+      {
+        "name": "History",
+        "topics": [
+          "Ancient Civilizations",
+          "Greek and Roman History",
+          "Middle Ages",
+          "Renaissance",
+          "World Wars",
+          "American Revolution",
+          "Industrial Revolution",
+          "Modern History",
+          "Cold War",
+          "Civil Rights Movement"
+        ]
+      },
+      {
+        "name": "Geography",
+        "topics": [
+          "Physical Geography",
+          "Landforms",
+          "Weather and Climate",
+          "Ecosystems",
+          "Human Geography",
+          "Population Studies",
+          "Urbanization",
+          "Economic Geography",
+          "Global Trade"
+        ]
+      },
+      {
+        "name": "Computer Science",
+        "topics": [
+          "Programming Basics",
+          "Algorithms",
+          "Data Structures",
+          "Databases",
+          "Web Development",
+          "Networking",
+          "Cybersecurity",
+          "Artificial Intelligence",
+          "Machine Learning"
+        ]
+      },
+      {
+        "name": "Art",
+        "topics": [
+          "Drawing Techniques",
+          "Painting Styles",
+          "Sculpture",
+          "Art History",
+          "Photography",
+          "Digital Art",
+          "Design Principles"
+        ]
+      },
+      {
+        "name": "Physical Education",
+        "topics": [
+          "Fitness Training",
+          "Team Sports",
+          "Individual Sports",
+          "Health and Nutrition",
+          "Mental Well-being",
+          "Exercise Physiology"
+        ]
+      }
+    ]
   };
 
   const subjectSelect = document.getElementById('subjectSelect');
@@ -322,11 +296,7 @@
   // Update topics when subject changes
   subjectSelect.addEventListener('change', (e) => {
     const selectedSubject = subjectsData.subjects.find(s => s.name === e.target.value);
-    
-    // Clear existing topics
-    topicSelect.innerHTML = '<option value="" disabled selected>Select a topic</option>';
-    
-    // Add new topics
+    topicSelect.innerHTML = '<option value="" disabled>Select a topic</option>';
     if (selectedSubject) {
       selectedSubject.topics.forEach(topic => {
         const option = document.createElement('option');
@@ -361,35 +331,128 @@
   document.addEventListener('DOMContentLoaded', function() {
     const savedSubject = "{{ assistant.subject }}";
     const savedTopic = "{{ assistant.topic }}";
-    
-    // Add default "Select a subject" option
-    const defaultOption = document.createElement('option');
-    defaultOption.value = "";
-    defaultOption.textContent = "Select a subject";
-    defaultOption.selected = true;
-    defaultOption.disabled = true;
-    subjectSelect.insertBefore(defaultOption, subjectSelect.firstChild);
-    
-    // Set subject only if it exists in the available options
+
     if (savedSubject && subjectsData.subjects.some(s => s.name === savedSubject)) {
-        subjectSelect.value = savedSubject;
-        // Trigger change event to populate topics
-        const event = new Event('change');
-        subjectSelect.dispatchEvent(event);
-        
-        // Set topic after topics are populated
-        setTimeout(() => {
-            if (savedTopic) {
-                topicSelect.value = savedTopic || '';
-            }
-        }, 0);
+      subjectSelect.value = savedSubject;
+      const event = new Event('change');
+      subjectSelect.dispatchEvent(event);
+      
+      setTimeout(() => {
+        if (savedTopic) {
+          topicSelect.value = savedTopic || '';
+        }
+      }, 0);
     }
   });
+
+  function onFileChange(e) {
+    const filesContainer = document.getElementById('files-container');
+    const files = Array.from(e.target.files);
+
+    files.forEach((file, index) => {
+      const fileContainer = document.createElement('div');
+      fileContainer.className = 'flex items-center p-2 bg-gray-800 rounded-lg';
+      fileContainer.dataset.fileName = file.name;
+
+      fileContainer.innerHTML = `
+        <svg class="w-5 h-5 mr-2 animate-spin text-red-500 loader-indicator" fill="none" viewBox="0 0 24 24" style="display:block;">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <svg class="w-5 h-5 mr-2 file-icon" fill="currentColor" viewBox="0 0 20 20" style="display:none;">
+          <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"></path>
+        </svg>
+        <span class="text-sm text-white">${file.name}</span>
+      `;
+
+      filesContainer.appendChild(fileContainer);
+
+      // Create a separate hidden form for each file
+      const uploadForm = document.createElement('form');
+      uploadForm.style.display = 'none';
+      uploadForm.setAttribute('hx-post', "{% url 'assistant' ass_id='{{ assistant.id }}' %}");
+      uploadForm.setAttribute('hx-trigger', 'htmx:sendFile');
+      uploadForm.setAttribute('hx-encoding', 'multipart/form-data');
+      uploadForm.setAttribute('hx-swap', 'none');
+      uploadForm.setAttribute('hx-vals', `{"assistant_id": "{{ assistant.id }}", "field": "knowledge_base"}`);
+
+      // Add all form fields
+      const formData = {
+        'assistant_name': document.querySelector('input[name="assistant_name"]').value,
+        'description': document.querySelector('input[name="description"]').value,
+        'subject': document.querySelector('select[name="subject"]').value,
+        'topic': document.querySelector('select[name="topic"]').value,
+        'teacher_instructions': document.querySelector('textarea[name="teacher_instructions"]').value,
+      };
+
+      // Add all form fields as hidden inputs
+      Object.entries(formData).forEach(([key, value]) => {
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = key;
+        hiddenInput.value = value || '';
+        uploadForm.appendChild(hiddenInput);
+      });
+
+      // Add CSRF token
+      const csrfInput = document.createElement('input');
+      csrfInput.type = 'hidden';
+      csrfInput.name = 'csrfmiddlewaretoken';
+      csrfInput.value = '{{ csrf_token }}';
+      uploadForm.appendChild(csrfInput);
+
+      // Add file input
+      const hiddenFileInput = document.createElement('input');
+      hiddenFileInput.type = 'file';
+      hiddenFileInput.name = 'knowledge_base';
+      hiddenFileInput.files = createFileList([file]);
+      uploadForm.appendChild(hiddenFileInput);
+
+      document.body.appendChild(uploadForm);
+
+      // Let htmx process this newly added form so it recognizes hx attributes
+      htmx.process(uploadForm);
+
+      // Events for this specific form
+      uploadForm.addEventListener('htmx:beforeRequest', function(evt) {
+        const loader = fileContainer.querySelector('.loader-indicator');
+        const fileIcon = fileContainer.querySelector('.file-icon');
+        if (loader) loader.style.display = 'block';
+        if (fileIcon) fileIcon.style.display = 'none';
+      });
+
+      uploadForm.addEventListener('htmx:afterRequest', function(evt) {
+        const loader = fileContainer.querySelector('.loader-indicator');
+        const fileIcon = fileContainer.querySelector('.file-icon');
+        if (loader) loader.style.display = 'none';
+        if (fileIcon) fileIcon.style.display = 'block';
+      });
+
+      // Trigger our custom event to start the upload
+      htmx.trigger(uploadForm, 'htmx:sendFile');
+    });
+  }
+
+  // Utility to create a FileList from an array of Files
+  function createFileList(files) {
+    const dataTransfer = new DataTransfer();
+    files.forEach(file => dataTransfer.items.add(file));
+    return dataTransfer.files;
+  }
 </script>
 
 <style>
   .active-tab {
     border-color: var(--clr-main);
+  }
+  .htmx-indicator {
+    display: none;
+  }
+  .htmx-request .htmx-indicator {
+    display: block;
+  }
+  .htmx-request .htmx-indicator-hide {
+    display: none;
   }
 </style>
 {% endblock %}
