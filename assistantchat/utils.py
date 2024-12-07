@@ -58,7 +58,7 @@ class ChatModule:
         }}
         """
 
-        human_message = """
+        human_message = f"""
         Conduct a knowledge assessment for a user's understanding of {subject} in {topic}.
         Generate diagnostic questions that reveal their current understanding level.
         Follow the specified pedagogical approach: {teacher_instructions}
@@ -70,70 +70,67 @@ class ChatModule:
         ])
 
     def _create_contextual_rag_prompt(self, assistant_config) -> ChatPromptTemplate:
-        """Create a context-aware RAG prompt adapting to user's knowledge level and subject expertise."""
+        """Create a context-aware RAG prompt with Markdown formatting for better readability."""
+        
+        subject = assistant_config.get('subject', 'General Learning')
+        topic = assistant_config.get('topic', 'Specific Topic')
+        pedagogical_approach = assistant_config.get('teacher_instructions', 'Systematic, incremental knowledge probing')
+        prompt = assistant_config.get('prompt', 'Provide a detailed explanation on the topic')
 
-        subject = assistant_config.get('subject', 'General Knowledge')
-        topic = assistant_config.get('topic', 'Comprehensive Understanding')
-        pedagogical_approach = assistant_config.get('teacher_instructions', 'Adaptive Learning')
-        prompt = assistant_config.get('prompt')
+        # System message with detailed instructions for the assistant
+        system_message = f"""
+        You are an adaptive teaching assistant specializing in **{subject}**. Your goal is to provide context-aware, knowledge-level-adapted responses.
 
-        system_message = f"""# Intelligent Teaching Assistant Configuration
+        ## Teaching Context:
+        - **Subject Focus**: {subject}
+        - **Topic Specifics**: {topic}
+        - **Pedagogical Approach**: {pedagogical_approach}
 
-            ## Core Parameters
-            - **Subject:** {subject}
-            - **Topic:** {topic}
-            - **Pedagogical Strategy:** {pedagogical_approach}
+        ### Response Customization Rules:
+        - Precisely adapt explanation complexity based on the user's detected knowledge level.
+        - Utilize {subject}-specific terminology and insights to align with {topic}.
+        - Follow the {pedagogical_approach} in structuring the response.
 
-            ## Response Intelligence Framework
+        ### Knowledge Level Adaptation:
+        - **Basic Level**: Provide foundational explanations with simple, accessible language.
+        - **Intermediate Level**: Offer more detailed, technical explanations and conceptual connections.
+        - **Advanced Level**: Provide in-depth insights and advanced applications related to {subject}.
 
-            ### 1. Adaptive Knowledge Delivery
-            - **Knowledge Level Detection**
-            * Dynamically adjust explanation depth
-            * Match response complexity to user's understanding
+        ### Contextual Constraints:
+        - Only use the **provided context**: {{context}}. Do not include any out-of-context information.
+        - Ensure **verbatim quotes** from the context are used where possible.
+        
+        ### Response Requirements:
+        1. Generate the response **strictly from the provided context**.
+        2. If the context is insufficient to answer the query, explicitly state: "Insufficient information in the available context."
+        3. Ensure the response is **concise**, **precise**, and **well-organized**.
+        4. Use **Markdown formatting** to enhance readability:
+        - Use appropriate headings (e.g., `##`, `###`).
+        - Use bullet points or numbered lists for structured information.
+        - Use **bold** and *italics* for emphasis.
+        - Include code blocks if applicable (e.g., ```python for code snippets).
+        5. **Do not include phrases** like "Based on the provided context." Respond directly and concisely to the question.
+        6. Highlight any limitations in the available context if applicable.
+        """
 
-            ### 2. Contextual Response Generation
-            - **Context Utilization**
-            * Leverage available information
-            * Ensure precise, relevant answers
-            - **Information Integrity**
-            * Use only verified context
-            * Highlight information limitations
+        # Human message prompting the assistant to respond to the query
+        human_message = f"""
+        ## {subject} Query: {prompt}
 
-            ### 3. Linguistic Precision
-            - **Communication Strategies**
-            * Use domain-specific terminology
-            * Maintain clarity and conciseness
-            - **Verbatim Extraction**
-            * Prioritize direct quotes
-            * Preserve original context meaning
+        Please provide a response that:
+        1. Matches the user's detected knowledge level.
+        2. Utilizes the available context about **{topic}**.
+        3. Addresses the specific query with appropriate depth, following the **{pedagogical_approach}**.
+        4. Is formatted using **Markdown** for clarity.
+        """
 
-            ## Operational Constraints
-            - **Available Context:** {{context}}
-            - **Knowledge Assessment:**
-            * Level: {{knowledge_level}}
-            * Diagnostic Insights: {{diagnostic_questions}}
-
-            ## Response Optimization
-            - Systematic knowledge progression
-            - Incremental complexity introduction
-            - Contextual relevance maintenance
-            """
-
-        human_message = f"""# {subject} Inquiry
-
-    ## Query Context
-    {prompt}
-
-    ### Response Requirements
-    - Align with {topic} understanding
-    - Apply {pedagogical_approach}
-    - Address query with precise, multilevel explanation
-    """
-
+        # Return the constructed prompt
         return ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(system_message),
             HumanMessagePromptTemplate.from_template(human_message)
         ])
+
+
 
     def assess_user_knowledge(self, assistant_config: dict, user_assistant_key: str) -> Dict[str, Any]:
         """Conduct initial knowledge assessment."""
