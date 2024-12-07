@@ -21,7 +21,7 @@ from app.modals.assistants import AssistantConfig
 from users.models import Assistant
 from typing import Optional
 from django.http import Http404
-
+from assistantchat.models import Conversation
 # Ensure the GROQ_API_KEY is loaded from the environment
 api_key = os.getenv('GROQ_API_KEY')
 if not api_key:
@@ -295,34 +295,25 @@ def list_assistants(request):
 
     # If keyword is provided, filter based on assistant name
     if keyword and len(keyword) > 2:
-        assistants = assistants.filter(name__icontains=keyword)
+        assistants = assistants.filter(name__icontains=keyword)    
 
     # Prepare the data for rendering
-    assistants_data = list(assistants.values('name', 'subject', 'topic', 'description', 'created_at'))
+    assistants_data = [{"id": str(assistant.id), "name": assistant.name, "subject": assistant.subject, "topic": assistant.topic, "description": assistant.description, "created_at": assistant.created_at, "interaction": Conversation.objects.filter(assistant_id=assistant.id).count()} for assistant in assistants]
+
     if request.htmx:
         return render(request, 'assistant/list_partials.html', {"assistants": assistants_data})
     else:
         return render(request, 'assistant/list.html', {"subjects_data": subjects_data, "filtered_assistants": assistants_data})
 
-@csrf_exempt
-@require_http_methods(["GET"])
-def assistant_detail(request, assistant_id: Optional[str] = None):
-    if not is_valid_uuid(assistant_id):
-        return JsonResponse({'error': 'assistant_id is not a valid uuid'}, status=400)
-    assistant = Assistant.objects.get(id=assistant_id)
-    print(f"assistant: {assistant}")
-    return render(request, 'assistant/assistant.html', {"assistant": assistant})
 
 @csrf_exempt
 @require_http_methods(["GET"])
 def assistant_detail(request, assistant_id: Optional[str] = None):
-    if not is_valid_uuid(assistant_id):
-        return JsonResponse({'error': 'assistant_id is not a valid uuid'}, status=400)
-    
+
     try:
+        interactions = Conversation.objects.filter(assistant_id=assistant_id).count()
         assistant = Assistant.objects.get(id=assistant_id)
     except Assistant.DoesNotExist:
         raise Http404("Assistant not found")
     
-    return render(request, 'assistant/assistant_detail_partial.html', {"assistant": assistant})
-
+    return render(request, 'assistant/assistant.html', {"assistant": assistant, "interactions": interactions})

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load static %}
 {% block content %}
 <!-- Search Input -->
 <div class="h-full mx-3" style="min-height: 100vh;" hx-replace-url="{% url 'list_assistants' %}">
@@ -14,21 +14,23 @@
       <input id="my-drawer" type="checkbox" class="drawer-toggle" />
       <div class="drawer-content ">
         <!-- Page content here -->
-        <label for="my-drawer" class="btn text-sky-500 drawer-button lg:hidden">Open drawer</label>
+        <label for="my-drawer" class="btn drawer-button lg:hidden">
+          <img src="{% static 'assets/images/filter.png' %}" class="w-6 h-6" alt="Filter">
+        </label>
       </div>
       <div class="drawer-side">
         <label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
         <ul class="menu bg-base-200 text-base-content min-h-full w-full sm:w-96 p-4 z-50">
           <div class="flex items-center  justify-between mb-2">
-            <p>select filters</p>
+            <p class="text-lg font-semibold">Select filters</p>
             <label for="my-drawer" class="btn text-2xl text-sky-500 drawer-button lg:hidden mb-4">x</label>
           </div>
           {% include 'assistant/form_filters.html' %}
         </ul>
       </div>
     </div>
-    <div class="w-96">
-      <label class="input input-bordered bg-transparent flex items-center gap-2">
+    <div class="w-72 sm:w-96">
+      <label id="search-input" class="input input-bordered flex items-center gap-2 bg-transparent">
         <input type="text" hx-push-url="true" class="grow" autocomplete="off" placeholder="Search"
           hx-get="{% url 'list_assistants' %}" hx-target="#assistants-list" hx-trigger="keyup changed delay:500ms"
           name="keyword"
@@ -61,25 +63,29 @@
 </div>
 
 <script>
-  window.addEventListener('scroll', function() {
+  function handleScroll() {
     const searchBar = document.getElementById('search-bar');
-    if (window.scrollY > 30) {
+    const navbar = document.getElementById('navbar');
+    const searchInput = document.getElementById('search-input');
+
+    if (window.scrollY > 20) {
+      searchBar.style.transition = 'top 0.3s ease';
       searchBar.classList.remove('top-28');
       searchBar.classList.add('top-16');
-
-    } else {
-      searchBar.classList.remove('top-16');
-      searchBar.classList.add('top-28');
-    }
-  });
-  window.addEventListener('scroll', function() {
-    const navbar = document.getElementById('navbar');
-    if (window.scrollY > 30) {
+      searchInput.classList.remove('bg-transparent');
+      searchInput.classList.add('bg-dark-200');
       navbar.classList.add('bg-base-100', 'sticky-menu', 'active');
     } else {
+      searchBar.style.transition = 'top 0.3s ease';
+      searchBar.classList.remove('top-16');
+      searchBar.classList.add('top-28');
+      searchInput.classList.remove('bg-dark-200');
+      searchInput.classList.add('bg-transparent');
       navbar.classList.remove('bg-base-100', 'sticky-menu', 'active');
     }
-  });
+  }
+
+  window.addEventListener('scroll', handleScroll);
 </script>
 
 {% endblock %}
