@@ -19,6 +19,8 @@ from app.utils.auth_backend import SupabaseBackend
 from app.utils.assistant_manager import AssistantManager
 from app.modals.assistants import AssistantConfig
 from users.models import Assistant
+from typing import Optional
+from django.http import Http404
 
 # Ensure the GROQ_API_KEY is loaded from the environment
 api_key = os.getenv('GROQ_API_KEY')
@@ -302,4 +304,25 @@ def list_assistants(request):
     else:
         return render(request, 'assistant/list.html', {"subjects_data": subjects_data, "filtered_assistants": assistants_data})
 
+@csrf_exempt
+@require_http_methods(["GET"])
+def assistant_detail(request, assistant_id: Optional[str] = None):
+    if not is_valid_uuid(assistant_id):
+        return JsonResponse({'error': 'assistant_id is not a valid uuid'}, status=400)
+    assistant = Assistant.objects.get(id=assistant_id)
+    print(f"assistant: {assistant}")
+    return render(request, 'assistant/assistant.html', {"assistant": assistant})
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def assistant_detail(request, assistant_id: Optional[str] = None):
+    if not is_valid_uuid(assistant_id):
+        return JsonResponse({'error': 'assistant_id is not a valid uuid'}, status=400)
+    
+    try:
+        assistant = Assistant.objects.get(id=assistant_id)
+    except Assistant.DoesNotExist:
+        raise Http404("Assistant not found")
+    
+    return render(request, 'assistant/assistant_detail_partial.html', {"assistant": assistant})
 

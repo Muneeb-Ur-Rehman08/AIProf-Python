@@ -9,25 +9,26 @@
       {% include 'modal/navbar.html' %}
   </div>
   {% endblock %}
-  <div id="search-bar" class="flex items-center justify-between sticky top-28 z-20">
-    <div class="drawer">
+  <div id="search-bar" class="flex items-center gap-x-2 sticky top-28 z-20">
+    <div class="drawer inline-block w-auto">
       <input id="my-drawer" type="checkbox" class="drawer-toggle" />
-      <div class="drawer-content">
+      <div class="drawer-content ">
         <!-- Page content here -->
         <label for="my-drawer" class="btn text-sky-500 drawer-button lg:hidden">Open drawer</label>
       </div>
-      <div class="drawer-side ">
+      <div class="drawer-side">
         <label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
         <ul class="menu bg-base-200 text-base-content min-h-full w-full sm:w-96 p-4 z-50">
-          <div class="flex justify-end mb-2">
+          <div class="flex items-center  justify-between mb-2">
+            <p>select filters</p>
             <label for="my-drawer" class="btn text-2xl text-sky-500 drawer-button lg:hidden mb-4">x</label>
           </div>
           {% include 'assistant/form_filters.html' %}
         </ul>
       </div>
     </div>
-    <div class="flex items-center justify-end">
-      <label class="input input-bordered bg-transparent flex items-center gap-2 w-full md:w-60">
+    <div class="w-96">
+      <label class="input input-bordered bg-transparent flex items-center gap-2">
         <input type="text" hx-push-url="true" class="grow" autocomplete="off" placeholder="Search"
           hx-get="{% url 'list_assistants' %}" hx-target="#assistants-list" hx-trigger="keyup changed delay:500ms"
           name="keyword"
