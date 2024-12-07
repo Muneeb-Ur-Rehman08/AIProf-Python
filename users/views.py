@@ -232,25 +232,26 @@ def create_assistant(request, ass_id: Optional[str] = None):
                 except Exception as e:
                     logger.error(f"PDF processing error for {file.name}: {e}")
 
-
+        url_list = []
         # Handle URL input
         url = data.get('url')
         if url:
             try:
                 # Additional URL validation
-                URLValidator()(url)
-                
+                # URLValidator()(url)
+                urls = url_list.append(url)
                 # Create PDFDocument with URL
                 url_document = PDFDocument.objects.create(
                     user_id=user,
                     assistant_id=assistant,
-                    url=url,
+                    urls=url_list,
                     title=url  # Use URL as title
                 )
                 
                 # Process the URL document
                 url_document.process_pdf()
                 document_uploaded = True
+                changes_made = True
             
             except ValidationError:
                 return format_response(error="Invalid URL format", status=400)

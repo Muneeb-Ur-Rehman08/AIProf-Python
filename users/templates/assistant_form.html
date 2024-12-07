@@ -63,33 +63,35 @@
           class="input w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
         />
       </div>
-      <div class="mb-4">
-        <label class="block text-white text-lg font-bold mb-2">Subject</label>
-        <select
-          name="subject"
-          id="subjectSelect"
-          hx-post="{% url 'assistant' ass_id=assistant.id %}"
-          hx-trigger="blur changed delay:1s"
-          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "subject"}'
-          hx-replace-url="false"
-          class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
-        >
-          <option value="" disabled>Select a subject</option>
-        </select>
-      </div>
-      <div class="mb-4">
-        <label class="block text-white text-lg font-bold mb-2">Topic</label>
-        <select
-          name="topic"
-          id="topicSelect"
-          hx-trigger="blur changed delay:1s"
-          hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
-          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "topic"}'
-          hx-replace-url="false"
-          class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
-        >
-          <option value="" disabled>Select a topic</option>
-        </select>
+      <div class="mb-4 flex gap-4">
+        <div class="flex-1">
+          <label class="block text-white text-lg font-bold mb-2">Subject</label>
+          <select
+            name="subject"
+            id="subjectSelect"
+            hx-post="{% url 'assistant' ass_id=assistant.id %}"
+            hx-trigger="blur changed delay:1s"
+            hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "subject"}'
+            hx-replace-url="false"
+            class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
+          >
+            <option value="" disabled>Select a subject</option>
+          </select>
+        </div>
+        <div class="flex-1">
+          <label class="block text-white text-lg font-bold mb-2">Topic</label>
+          <select
+            name="topic"
+            id="topicSelect"
+            hx-trigger="blur changed delay:1s"
+            hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
+            hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "topic"}'
+            hx-replace-url="false"
+            class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
+          >
+            <option value="" disabled>Select a topic</option>
+          </select>
+        </div>
       </div>
       <div class="mb-4">
         <label class="block text-white text-lg font-bold mb-2">Instructions</label>
@@ -121,6 +123,28 @@
           class="sr-only"
         />
         <div class="flex flex-wrap gap-2 items-center mt-4" id="files-container"></div>
+      </div>
+      <div class="mb-4">
+        <label class="block text-white text-lg font-bold mb-2">URLs</label>
+        <div id="url-container">
+          <div class="url-input-group mb-2 flex items-center gap-2">
+            <input
+              type="url"
+              name="url"
+              hx-post="{% url 'assistant' ass_id=assistant.id %}"
+              hx-trigger="blur"
+              hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "url"}'
+              placeholder="Enter a URL"
+              class="input flex-1 bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
+            />
+            <div class="loader hidden">
+              <svg class="w-5 h-5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
       </div>
     </form>
 
@@ -296,9 +320,10 @@
   // Update topics when subject changes
   subjectSelect.addEventListener('change', (e) => {
     const selectedSubject = subjectsData.subjects.find(s => s.name === e.target.value);
-    topicSelect.innerHTML = '<option value="" disabled>Select a topic</option>';
+    topicSelect.innerHTML = '<option value="default" disabled>Select a topic</option>';
+    topicSelect.value = 'default';
     if (selectedSubject) {
-      selectedSubject.topics.forEach(topic => {
+      selectedSubject.topics.forEach((topic, index) => {
         const option = document.createElement('option');
         option.value = topic;
         option.textContent = topic;
@@ -439,6 +464,77 @@
     files.forEach(file => dataTransfer.items.add(file));
     return dataTransfer.files;
   }
+
+  function addNewUrlField() {
+    const container = document.getElementById('url-container');
+    const newGroup = document.createElement('div');
+    newGroup.className = 'url-input-group mb-2 flex items-center gap-2';
+    newGroup.innerHTML = `
+      <input
+        type="url"
+        name="url"
+        hx-post="{% url 'assistant' ass_id=assistant.id %}"
+        hx-trigger="blur changed delay:1s"
+        hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "url"}'
+        placeholder="Enter a URL"
+        class="input flex-1 bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
+      />
+      <div class="loader hidden">
+        <svg class="w-5 h-5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </div>
+    `;
+    container.appendChild(newGroup);
+    htmx.process(newGroup);
+  }
+
+  // Add HTMX event listeners for URL inputs
+  document.addEventListener('htmx:beforeRequest', function(evt) {
+    if (evt.detail.elt.name === 'url') {
+      const inputGroup = evt.detail.elt.closest('.url-input-group');
+      const loader = inputGroup.querySelector('.loader');
+      loader.classList.remove('hidden');
+      addNewUrlField();
+    }
+  });
+
+  document.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.detail.elt.name === 'url') {
+      const inputGroup = evt.detail.elt.closest('.url-input-group');
+      const loader = inputGroup.querySelector('.loader');
+      const input = inputGroup.querySelector('input');
+      loader.classList.add('hidden');
+      
+      if (evt.detail.successful) {
+        input.disabled = true;
+        input.classList.add('opacity-50');
+      }
+    }
+  });
+
+  function updateLocalAssistantData(field, value) {
+    // Update chat form elements if they exist
+    const chatNameElement = document.querySelector('#chat-assistant-name');
+    if (chatNameElement && field === 'assistant_name') {
+      chatNameElement.textContent = value;
+    }
+    
+    // You can add more field updates here as needed
+  }
+
+  document.addEventListener('htmx:afterRequest', function(evt) {
+    // Check if the request was successful
+    if (evt.detail.successful) {
+      const field = evt.detail.requestConfig.parameters?.field;
+      const value = evt.detail.elt.value;
+      
+      if (field) {
+        updateLocalAssistantData(field, value);
+      }
+    }
+  });
 </script>
 
 <style>
@@ -453,6 +549,35 @@
   }
   .htmx-request .htmx-indicator-hide {
     display: none;
+  }
+
+  select option {
+    background-color: #1a1a1a;  /* Dark background */
+    color: white;               /* White text */
+  }
+
+  select {
+    background-color: rgba(255, 255, 255, 0.1);  /* Matches the input background */
+    color: white;
+  }
+
+  /* For Firefox */
+  select:-moz-focusring {
+    color: transparent;
+    text-shadow: 0 0 0 white;
+  }
+
+  /* For Chrome/Safari */
+  select::-ms-expand {
+    display: none;
+  }
+
+  select option:hover,
+  select option:focus,
+  select option:active,
+  select option:checked {
+    background: linear-gradient(#2d3748, #2d3748);
+    background-color: #2d3748 !important; /* Darker highlight color */
   }
 </style>
 {% endblock %}
