@@ -239,7 +239,8 @@ def create_assistant(request, ass_id: Optional[str] = None):
             try:
                 # Additional URL validation
                 # URLValidator()(url)
-                urls = url_list.append(url)
+                url_list.append(url)
+                
                 # Create PDFDocument with URL
                 url_document = PDFDocument.objects.create(
                     user_id=user,
