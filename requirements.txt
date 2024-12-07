@@ -115,3 +115,5 @@ slippers==0.6.2
 django-allauth-ui==1.5.1
 django-widget-tweaks==1.5.0
 django-htmx==1.21.0
+bs4==0.0.2
+youtube-transcript-api==0.6.3
