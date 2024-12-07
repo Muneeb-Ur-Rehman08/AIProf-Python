@@ -465,16 +465,6 @@
     return dataTransfer.files;
   }
 
-  // URL handling
-  document.getElementById('url-container').addEventListener('input', function(e) {
-    if (e.target.tagName === 'INPUT') {
-      const lastInput = Array.from(document.querySelectorAll('.url-input-group input')).pop();
-      if (e.target === lastInput && e.target.value) {
-        addNewUrlField();
-      }
-    }
-  });
-
   function addNewUrlField() {
     const container = document.getElementById('url-container');
     const newGroup = document.createElement('div');
@@ -484,7 +474,7 @@
         type="url"
         name="url"
         hx-post="{% url 'assistant' ass_id=assistant.id %}"
-        hx-trigger="blur"
+        hx-trigger="blur changed delay:1s"
         hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "url"}'
         placeholder="Enter a URL"
         class="input flex-1 bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
@@ -506,6 +496,7 @@
       const inputGroup = evt.detail.elt.closest('.url-input-group');
       const loader = inputGroup.querySelector('.loader');
       loader.classList.remove('hidden');
+      addNewUrlField();
     }
   });
 
