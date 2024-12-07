@@ -1,6 +1,10 @@
 <div id="assistantChat" class="hidden w-full md:w-1/2 flex flex-col justify-between"
 _="on load if window.innerWidth > 768 then remove .hidden from me end"
 >
+    <!-- Chat header -->
+    <div class="bg-black/30 p-3 md:p-4 w-full text-center" style="border-bottom: 1px solid var(--clr-main)">
+        <h2 class="text-lg font-bold">{{ assistant.name }}</h2>
+    </div>
     <!-- Chat Container -->
     <div class="flex-1 flex flex-col p-4 md:p-6 overflow-y-auto" id="chat-container">
         <!-- Messages will be dynamically inserted here -->
@@ -85,60 +89,71 @@ _="on load if window.innerWidth > 768 then remove .hidden from me end"
     // // default response
     // appendMessage('I am an AI assistant designed to help you with your questions and tasks. How can I assist you today?', false);
 
+    function createLoadingAnimation() {
+        return `
+            <div class="flex space-x-2">
+                <div class="w-1 h-2 rounded-full animate-bounce" style="animation-delay: -0.3s; background: var(--clr-main); transform: translateY(-50px);"></div>
+                <div class="w-1 h-2 rounded-full animate-bounce" style="animation-delay: -0.15s; background: var(--clr-main); transform: translateY(-50px);"></div>
+                <div class="w-1 h-2 rounded-full animate-bounce" style="background: var(--clr-main); transform: translateY(-50px);"></div>
+            </div>
+        `;
+    }
 
     function sendPayload() {
-        const promptInput = document.getElementById('prompt-input');
-        const promptValue = promptInput.value.trim();
-        
-        if (!promptValue) return;
-        
-        appendMessage(promptValue, true);
-        
-        promptInput.value = '';
+    const promptInput = document.getElementById('prompt-input');
+    const promptValue = promptInput.value.trim();
+    
+    if (!promptValue) return;
+    
+    // Append the user's message
+    appendMessage(promptValue, true);
+    // Append the loader message (assistant-message-pending)
+    appendMessage(createLoadingAnimation(), false);
+    
+    promptInput.value = '';
 
-        const payload = {
-            conversation_id: '{{ assistant.id }}',
-            message: promptValue,
-            id: '{{ assistant.id }}'
-        };
+    const payload = {
+        conversation_id: '{{ assistant.id }}',
+        message: promptValue,
+        id: '{{ assistant.id }}'
+    };
 
-        const existingPending = document.querySelector('.assistant-message-pending');
-        if (existingPending) {
-            existingPending.classList.remove('assistant-message-pending');
+    fetch('/assistantchat/chat/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'HX-Request': 'true'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(response => {
+        const reader = response.body.getReader();
+        
+        function processStream({ done, value }) {
+            if (done) {
+                // Streaming complete - remove the loader
+                const pendingMessage = document.querySelector('.assistant-message-pending');
+                if (pendingMessage) {
+                    pendingMessage.classList.remove('assistant-message-pending');
+                }
+                return;
+            }
+
+            const chunk = new TextDecoder().decode(value);
+            appendMessage(chunk, false);
+            return reader.read().then(processStream);
         }
 
-        fetch('/assistantchat/chat/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'HX-Request': 'true'
-            },
-            body: JSON.stringify(payload)
-        })
-        .then(response => {
-            const reader = response.body.getReader();
-            let accumulatedResponse = '';
-            
-            function processStream({ done, value }) {
-                if (done) {
-                    const pendingMessage = document.querySelector('.assistant-message-pending');
-                    if (pendingMessage) {
-                        pendingMessage.classList.remove('assistant-message-pending');
-                    }
-                    return;
-                }
-                
-                const chunk = new TextDecoder().decode(value);
-                appendMessage(chunk, false);
-                
-                return reader.read().then(processStream);
-            }
-            
-            return reader.read().then(processStream);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            appendMessage('Error: Failed to get response', false);
-        });
-    }
+        return reader.read().then(processStream);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // On error, remove the loader and show error message
+        const pendingMessage = document.querySelector('.assistant-message-pending');
+        if (pendingMessage) {
+            pendingMessage.remove();
+        }
+        appendMessage('Error: Failed to get response', false);
+    });
+}
 </script>
