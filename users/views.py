@@ -234,7 +234,7 @@ def create_assistant(request, ass_id: Optional[str] = None):
 
 
         # Handle URL input
-        url = data.get('document_url')
+        url = data.get('url')
         if url:
             try:
                 # Additional URL validation

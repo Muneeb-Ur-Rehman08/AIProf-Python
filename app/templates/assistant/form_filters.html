@@ -12,11 +12,14 @@
         </svg>
         <input
           type="text"
+          hx-push-url="true"
           placeholder="Search subjects..."
           class="input input-bordered w-full bg-transparent pl-8"
           id="subject-search"
           hx-trigger="keyup changed delay:300ms"
           onkeyup="filterSubjects()"
+          _="on keyup from #subject-search
+              send this.closest('div') to #assistants-list"
         />
       </div>
       <div class="space-y-2 max-h-32 overflow-y-auto" id="subject-list">
@@ -24,14 +27,15 @@
         <div class="flex items-center space-x-2 subject-item">
           <input
             type="checkbox"
+            hx-push-url="true"
             id="subject-{{ subject.name }}"
             class="checkbox"
             name="subject"
             value="{{ subject.name }}"
             hx-trigger="change"
-            hx-get="{% url 'list_assistant_partial' %}"
+            hx-get="{% url 'list_assistants' %}"
             hx-target="#assistants-list"
-            hx-include="[name='subject']:checked,[name='topic']:checked"
+            hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword']"
           />
           <label for="subject-{{ subject.name }}" class="label cursor-pointer">
             {{ subject.name }}
@@ -55,11 +59,14 @@
         </svg>
         <input
           type="text"
+          hx-push-url="true"
           placeholder="Search topics..."
           class="input input-bordered bg-transparent w-full pl-8"
           id="topic-search"
           hx-trigger="keyup changed delay:300ms"
           onkeyup="filterTopics()"
+          _="on keyup from #topic-search
+              send this.closest('div') to #assistants-list"
         />
       </div>
       <div class="space-y-2 max-h-32 overflow-y-auto" id="topic-list">
@@ -68,14 +75,15 @@
         <div class="flex items-center space-x-2 topic-item">
           <input
             type="checkbox"
+            hx-push-url="true"
             id="topic-{{ topic }}"
             class="checkbox"
             name="topic"
             value="{{ topic }}"
             hx-trigger="change"
-            hx-get="{% url 'list_assistant_partial' %}"
+            hx-get="{% url 'list_assistants' %}"
             hx-target="#assistants-list"
-            hx-include="[name='topic']:checked,[name='subject']:checked"
+            hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword']"
           />
           <label for="topic-{{ topic }}" class="label cursor-pointer">
             {{ topic }}
