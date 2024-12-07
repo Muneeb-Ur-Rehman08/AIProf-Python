@@ -175,7 +175,7 @@ class PDFDocument(models.Model):
     doc_id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4)
     file = models.FileField(upload_to='pdfs/')
     urls = ArrayField(
-        models.URLField(max_length=2000, validators=[URLValidator()]), 
+        models.URLField(max_length=2000), 
         null=True, 
         blank=True, 
         default=list
@@ -303,12 +303,13 @@ class PDFDocument(models.Model):
                 text_chunks = []
                 for url in self.urls:
                     # Check if YouTube URL
-                    if any(yt_domain in url for yt_domain in ['youtube.com', 'youtu.be']):
+                    if any(yt_domain in url for yt_domain in ['youtube.com', 'youtu.be', 'www.youtube.com', 'm.youtube.com']):
                         try:
                             # Use YoutubeLoader to extract transcript
                             youtube_loader = YoutubeLoader.from_youtube_url(url, add_video_info=False)
                             youtube_docs = youtube_loader.load()
-                            youtube_text = " ".join([doc[0].page_content for doc in youtube_docs])
+                            logger.info(f"Youtube docs are: {youtube_docs}")
+                            youtube_text = " ".join([doc.page_content for doc in youtube_docs])
                             youtube_chunks = text_splitter.split_text(youtube_text)
                             text_chunks.extend(youtube_chunks)
                         except Exception as e:
@@ -318,7 +319,8 @@ class PDFDocument(models.Model):
                         try:
                             loader = WebBaseLoader(url)
                             web_docs = loader.load()
-                            web_text = " ".join([doc[0].page_content for doc in web_docs])
+                            logger.info(f"Web docs are: {web_docs}")
+                            web_text = " ".join([doc.page_content for doc in web_docs])
                             web_chunks = text_splitter.split_text(web_text)
                             text_chunks.extend(web_chunks)
                         except Exception as e:
