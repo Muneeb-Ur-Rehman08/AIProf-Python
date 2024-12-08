@@ -108,6 +108,7 @@
         >{{ assistant.teacher_instructions|default:'' }}</textarea>
       </div>
       <div class="mb-4">
+        <label class="block text-white text-lg font-bold mb-2">Files</label>
         <label 
           for="fileInput" 
           class="inline-block cursor-pointer bg-white/10 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-white/20"
@@ -122,11 +123,32 @@
           onchange="onFileChange(event)"
           class="sr-only"
         />
-        <div class="flex flex-wrap gap-2 items-center mt-4" id="files-container"></div>
+        <div class="flex flex-wrap gap-2 items-center mt-4" id="files-container">
+          {{ knowledge_base.all }}
+          {% for file in knowledge_base %}
+          <div class="flex items-center p-2 bg-gray-800 rounded-lg">
+            <svg class="w-5 h-5 mr-2 file-icon" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"></path>
+            </svg>
+            <span class="text-sm text-white">{{ file }}</span>
+          </div>
+          {% endfor %}
+        </div>
       </div>
       <div class="mb-4">
         <label class="block text-white text-lg font-bold mb-2">URLs</label>
         <div id="url-container">
+          {% for url in urls %}
+          <div class="url-input-group mb-2 flex items-center gap-2">
+            <input
+              type="url"
+              name="url"
+              value="{{ url }}"
+              disabled
+              class="input flex-1 bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 opacity-50"
+            />
+          </div>
+          {% endfor %}
           <div class="url-input-group mb-2 flex items-center gap-2">
             <input
               type="url"
