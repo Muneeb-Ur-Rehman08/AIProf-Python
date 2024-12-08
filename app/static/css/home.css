@@ -1,3 +1,11 @@
+.mermaid {
+    margin: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: #f9f9f9;
+}
+
 .clr-main {
     color: #09aff4;
 }
