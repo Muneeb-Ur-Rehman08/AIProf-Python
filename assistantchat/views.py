@@ -95,7 +95,8 @@ def chat_query(request, ass_id: Optional[str] = None):
             assistant_config = {
                 "subject": assistant.subject,
                 "topic": assistant.topic,
-                "teacher_instructions": final_instructions,
+                "teacher_instructions": assistant.teacher_instructions,
+                "prompt_instructions": mermaid_instructions,
                 "prompt": prompt,
             }
 

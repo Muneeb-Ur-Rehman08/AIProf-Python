@@ -33,6 +33,8 @@ class ChatModule:
         subject = assistant_config.get('subject', 'General Learning')
         topic = assistant_config.get('topic', 'Comprehensive Understanding')
         teacher_instructions = assistant_config.get('teacher_instructions', 'Systematic, incremental knowledge probing')
+        prompt_instructions = assistant_config.get("prompt_instructions")
+        prompt = assistant_config.get('prompt')
 
         system_message = f"""
         You are an expert educational diagnostics specialist focusing on {subject} assessment.
@@ -70,70 +72,115 @@ class ChatModule:
         ])
 
     def _create_contextual_rag_prompt(self, assistant_config) -> ChatPromptTemplate:
-        """Create a context-aware RAG prompt adapting to user's knowledge level and subject expertise."""
-
+        """
+        Create an advanced contextual RAG prompt with multi-dimensional awareness.
+        """
         subject = assistant_config.get('subject', 'General Knowledge')
         topic = assistant_config.get('topic', 'Comprehensive Understanding')
         pedagogical_approach = assistant_config.get('teacher_instructions', 'Adaptive Learning')
+        prompt_instructions = assistant_config.get('prompt_instructions', '')
         prompt = assistant_config.get('prompt')
-
-        system_message = f"""# Intelligent Teaching Assistant Configuration
-
-            ## Core Parameters
-            - **Subject:** {subject}
-            - **Topic:** {topic}
-            - **Pedagogical Strategy:** {pedagogical_approach}
-
-            ## Response Intelligence Framework
-
-            ### 1. Adaptive Knowledge Delivery
-            - **Knowledge Level Detection**
-            * Dynamically adjust explanation depth
-            * Match response complexity to user's understanding
-
-            ### 2. Contextual Response Generation
-            - **Context Utilization**
-            * Leverage available information
-            * Ensure precise, relevant answers
-            - **Information Integrity**
-            * Use only verified context
-            * Highlight information limitations
-
-            ### 3. Linguistic Precision
-            - **Communication Strategies**
-            * Use domain-specific terminology
-            * Maintain clarity and conciseness
-            - **Verbatim Extraction**
-            * Prioritize direct quotes
-            * Preserve original context meaning
-
-            ## Operational Constraints
-            - **Available Context:** {{context}}
-            - **Knowledge Assessment:**
-            * Level: {{knowledge_level}}
-            * Diagnostic Insights: {{diagnostic_questions}}
-
-            ## Response Optimization
-            - Systematic knowledge progression
-            - Incremental complexity introduction
-            - Contextual relevance maintenance
-            """
-
-        human_message = f"""# {subject} Inquiry
-
-    ## Query Context
-    {prompt}
-
-    ### Response Requirements
-    - Align with {topic} understanding
-    - Apply {pedagogical_approach}
-    - Address query with precise, multilevel explanation
-    """
-
+        
+        system_message = f"""You are an AI assistant professional that helps the user with their questions.
+        # Contextual Response Generator
+        ## Operational Parameters
+        - **Domain**: {subject}
+        - **Specific Topic**: {topic}
+        - **Pedagogical Strategy**: {pedagogical_approach}
+        
+        ## Contextual Inputs
+        1. Previous Interactions: {{chat_history}}
+        2. Relevant Document Context: {{context}}
+        3. Current User Query: {prompt}
+        4. Prompt Instructions: {prompt_instructions}
+        
+        ## CRITICAL RESPONSE GENERATION CONSTRAINTS
+        ### Context Utilization Mandate
+        - STRICTLY generate responses ONLY using:
+        * Provided chat history
+        * Available document context
+        - DO NOT introduce external knowledge
+        - If context is insufficient, clearly state limitations
+        
+        ### Diagram Usage Protocol
+        - Create Mermaid diagrams ONLY when:
+        * Context explicitly supports visual representation
+        * Diagram meaningfully clarifies complex concepts
+        * Direct textual explanation is insufficient
+        - Avoid diagram generation as a default
+        - Diagrams should provide ESSENTIAL visual insights
+        
+        ### Response Integrity Guidelines
+        - Prioritize context relevance
+        - Maintain fidelity to available information
+        - If context lacks detailed information, provide:
+        * Partial, context-based response
+        * Clear indication of information gaps
+        
+        ## Response Generation Principles
+        1. Contextual Coherence
+        2. Knowledge Level Adaptation
+        3. Precise, Focused Answers
+        4. Incremental Information Delivery
+        
+        ## Advanced Response Guidelines
+        - Analyze chat history for:
+        * Previous knowledge demonstrations
+        * Learning progression
+        * Identified knowledge gaps
+        - Context Utilization Strategy:
+        * Extract most relevant information
+        * Avoid redundant explanations
+        * Highlight connections to previous interactions
+        
+        ## Mermaid Diagram Integration
+        - Use diagrams sparingly and purposefully
+        - Ensure diagram adds significant value
+        - Align with {subject} and {topic} domain specifics
+        - One diagram per significant concept, only if absolutely necessary or asked by user
+        
+        ## Response Constraints
+        - Direct answer to the specific query
+        - Maintain academic rigor
+        - Ensure clarity and comprehensibility
+        - If you are not sure about the answer, ask the user to clarify their question
+        
+        ## LANGUAGE AND RESPONSE STYLE RESTRICTIONS
+        - AVOID phrases such as:
+        * "I will not provide any further information."
+        * "Based on the provided context."
+        * "Based on our previous conversation."
+        * "The answer to your query is straightforward and simple."
+        * "Please let me know if this revised response meets your requirements."
+        - Instead, focus on:
+        * Providing thorough explanations
+        * Offering additional insights or directions for further learning
+        * Encouraging deeper engagement without closing the conversation prematurely
+        """
+        
+        human_message = f"""## Precise Query Resolution
+        ### Conversational Context
+        {{chat_history}}
+        
+        ### Available Knowledge Context
+        {{context}}
+        
+        ### Current Specific Query
+        {prompt}
+        
+        ### Response Requirements
+        - Build upon previous explanations
+        - Provide connected, incremental insights
+        - Maintain appropriate explanation depth
+        - Use ONLY provided context
+        - Consider {pedagogical_approach}
+        """
+        
         return ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(system_message),
             HumanMessagePromptTemplate.from_template(human_message)
         ])
+
 
     def assess_user_knowledge(self, assistant_config: dict, user_assistant_key: str) -> Dict[str, Any]:
         """Conduct initial knowledge assessment."""
@@ -256,7 +303,7 @@ class ChatModule:
 
     def get_chat_history(self, assistant_id: str, user_id: str, 
                         conversation_id: Optional[uuid.UUID] = None,
-                        limit: int = 10) -> List[Dict]:
+                        ) -> List[Dict]:
         """Retrieve chat history from Django model."""
         try:
             # Base query
@@ -269,7 +316,7 @@ class ChatModule:
                 query = Conversation.objects.filter(conversation_id=existing_conversation.conversation_id)
                 
                 # Order by creation date and limit results
-                conversations = query.order_by('-created_at')[:limit]
+                conversations = query.order_by('-created_at')
 
                 # Convert query result to list of dicts for consistent output
                 return [
