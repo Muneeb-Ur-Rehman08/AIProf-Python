@@ -26,7 +26,7 @@ urlpatterns = [
     path('api/create_assistant/', create_assistant, name='create_assistant'),
     path('', index_view, name='index'),
     path('auth/', auth_view, name='auth_view'),
-    path('assistantchat/', assistant_chat_view, name='assistant_chat'),
+    path('assistant_chat/<str:assistant_id>/', assistant_chat_view, name='assistant_chat'),
     path('assistants/', list_assistants, name='list_assistants'),
     # users app route
     path('', include('users.urls')),
