@@ -122,12 +122,18 @@ def create_assistant(request, ass_id: Optional[str] = None):
         data = request.GET.dict()
 
         assistant_data = Assistant.objects.get(id=ass_id)
-        logger.info(f"Assistant Data: {assistant_data.id}")
+        documents = PDFDocument.objects.filter(assistant_id=ass_id)
+
+        urls = [document.title for document in documents if document.metadata.get('document_type') == 'url']
+        pdfs = [document.title for document in documents if document.metadata.get('document_type') == 'pdf']
+
         return render(request, 'assistant_form.html', {
             'assistant': assistant_data,
             'subject': assistant_data.subject,
             'topic': assistant_data.topic,
             'teacher_instructions': assistant_data.teacher_instructions,
+            'urls': urls,
+            'knowledge_base': pdfs
         })
 
     try:
