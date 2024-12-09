@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 import uuid
 from typing import Optional
 import requests
@@ -130,15 +130,24 @@ class AssistantRating(models.Model):
         Override the save method to update the average rating of the assistant
         when a new rating is created without modifying the existing entries.
         """
-        super().save(*args, **kwargs)  # Save the new rating entry
+        # Use atomic transaction to ensure both rating and assistant update happen together
+        with transaction.atomic():
+            # Save the new rating entry
+            super().save(*args, **kwargs)
 
-        # Recalculate the average rating for the assistant after saving the new rating
-        ratings = AssistantRating.objects.filter(assistant=self.assistant).aggregate(average=Avg('rating'))
-        
-        new_average = ratings['average'] or Decimal('0.0')  # Set default to 0.0 if no ratings
-        self.assistant.average_rating = round(Decimal(new_average), 1)  # Round to 1 decimal place
-        
-        self.assistant.save()  # Update the assistant's average rating
+            # Lock the assistant record to prevent race conditions
+            assistant = Assistant.objects.select_for_update().get(id=self.assistant.id)
+
+            # Recalculate the average rating for the assistant
+            ratings = AssistantRating.objects.filter(assistant=self.assistant).aggregate(average=Avg('rating'))
+
+            # Set the new average rating (default to 0.0 if no ratings are present)
+            new_average = ratings['average'] or Decimal('0.0')
+            assistant.average_rating = round(Decimal(new_average), 1)  # Round to 1 decimal place
+
+            # Save the assistant with the updated average rating
+            assistant.save()
+
 
     def __str__(self):
         return f"Rating {self.rating} for {self.assistant.name} by {self.user.username}"

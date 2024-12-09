@@ -12,10 +12,11 @@ from app.utils.assistant_manager import AssistantManager
 from django.contrib.auth.models import User
 from decimal import Decimal
 from django.db.models import Q
+from django.contrib.auth.decorators import login_required
 
 logger = logging.getLogger(__name__)
 
-
+@login_required(login_url='accounts/login/')
 @csrf_exempt
 @require_http_methods(["POST", "OPTIONS", "GET"])
 def chat_query(request, ass_id: Optional[str] = None):
@@ -99,6 +100,18 @@ def chat_query(request, ass_id: Optional[str] = None):
                 "prompt_instructions": mermaid_instructions,
                 "prompt": prompt,
             }
+
+
+            # Check if a rating already exists for this user and assistant
+            # AssistantRating.objects.update_or_create(
+            #     assistant=assistant,
+            #     user=user,
+            #     defaults={
+            #         'rating': 3.5,
+            #         'review': "Great assistant, very helpful in explaining the topic!"
+            #     }
+            # )
+
 
             # Initialize chat module and process message
             chat_module = ChatModule()
