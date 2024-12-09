@@ -1,8 +1,9 @@
 <!-- list details of assistants -->
 
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-2.5">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-2.5 cursor-pointer">
     {% if assistants %}
     {% for assistant in assistants %}
+    <a href="{% url 'assistant_detail' assistant_id=assistant.id %}">
     <div class="card bg-white text-gray-800 rounded-lg shadow-md overflow-hidden">
         <div class="card-body p-4 rounded-lg" style="border: 1px solid rgba(var(--clr-main-rgb), 0.35)">
             <div class="flex items-center gap-4 mb-4">
@@ -12,8 +13,8 @@
                     </div>
                 </div>
                 <div>
-                    <h3 class="font-semibold text-lg text-black">{{assistant.name}}</h3>
-                    <p class="text-sm text-gray-600">{{assistant.subject}} - {{assistant.topic}}</p>
+                    <h3 class="font-semibold text-lg text-black">{{assistant.name | default:"AI Professor"}}</h3>
+                    <p class="text-sm text-gray-600">{{assistant.subject | default:""}} - {{assistant.topic | default:""}}</p>
                 </div>
             </div>
 
@@ -21,7 +22,7 @@
                 <div>
                     <h2 class="">{{ assistant.description}}</h2>
                     <p class="text-sm text-gray-400">
-                        {{ assistant.topic | default:"" }}
+                        {{ assistant.topic | default:"-" }}
                     </p>
                 </div>
             </div>
@@ -33,9 +34,10 @@
                 <input type="radio" name="rating-5" class="mask mask-star-2 bg-orange-400" />
                 <span class="ml-2 text-xs font-semibold">4.5</span>
             </div>
-            <p class="text-end">100 interactions</p>
+            <p class="text-end">{{assistant.interaction}} Interactions</p>
         </div>
     </div>
+    </a>
     {% endfor %}
     {% else %}
     <div class="text-center col-span-1 lg:col-span-2">

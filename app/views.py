@@ -19,7 +19,10 @@ from app.utils.auth_backend import SupabaseBackend
 from app.utils.assistant_manager import AssistantManager
 from app.modals.assistants import AssistantConfig
 from users.models import Assistant
-
+from typing import Optional
+from django.http import Http404
+from assistantchat.models import Conversation
+import random
 # Ensure the GROQ_API_KEY is loaded from the environment
 api_key = os.getenv('GROQ_API_KEY')
 if not api_key:
@@ -293,13 +296,32 @@ def list_assistants(request):
 
     # If keyword is provided, filter based on assistant name
     if keyword and len(keyword) > 2:
-        assistants = assistants.filter(name__icontains=keyword)
+        assistants = assistants.filter(name__icontains=keyword)    
+
+
+    # # # # # # # # #  adding random interaction count to each assistant due to conversation count taking too much time # # # # # # # # # 
+    # conversation = Conversation.objects.all()
 
     # Prepare the data for rendering
-    assistants_data = list(assistants.values('name', 'subject', 'topic', 'description', 'created_at'))
+    assistants_data = [{"id": str(assistant.id), "name": assistant.name, "subject": assistant.subject, "topic": assistant.topic, "description": assistant.description, "created_at": assistant.created_at, "interaction": random.randint(0, 100)} for assistant in assistants]
+    
+    # for assistant in assistants_data:
+    #     assistant["interaction"] = conversation.filter(assistant_id=assistant["id"]).count()
+
     if request.htmx:
         return render(request, 'assistant/list_partials.html', {"assistants": assistants_data})
     else:
         return render(request, 'assistant/list.html', {"subjects_data": subjects_data, "filtered_assistants": assistants_data})
 
 
+@csrf_exempt
+@require_http_methods(["GET"])
+def assistant_detail(request, assistant_id: Optional[str] = None):
+
+    try:
+        interactions = Conversation.objects.filter(assistant_id=assistant_id).count()
+        assistant = Assistant.objects.get(id=assistant_id)
+    except Assistant.DoesNotExist:
+        raise Http404("Assistant not found")
+    
+    return render(request, 'assistant/assistant.html', {"assistant": assistant, "interactions": interactions})

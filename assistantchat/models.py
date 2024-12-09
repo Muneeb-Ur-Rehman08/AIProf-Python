@@ -1,8 +1,12 @@
-from django.db import models
+from django.db import models, transaction
 from users.models import SupabaseUser, Assistant
 from django.contrib.auth.models import User
 import uuid
+import logging
 # Create your models here.
+
+# Initialize logger
+logger = logging.getLogger(__name__)
 
 
 class Conversation(models.Model):
@@ -29,3 +33,64 @@ class Conversation(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     conversation_id = models.UUIDField(unique=False, default=uuid.uuid4)
+
+    class Meta:
+        verbose_name = 'Conversation'
+        verbose_name_plural = 'Conversations'
+        ordering = ['-created_at']  # Order by most recent first
+
+
+    def __str__(self):
+        """
+        String representation of the conversation.
+        Shows assistant name and creation date.
+        """
+        return f"Conversation with {self.assistant_id.name} on {self.created_at}"
+
+
+
+    def save(self, *args, **kwargs):
+        """
+        Override save method to increment assistant interactions
+        when a new conversation is created.
+        """
+        # Check if this is a new conversation entry
+        is_new = self._state.adding  # This ensures it checks if it's new before saving
+        
+        try:
+            # Use a transaction to ensure both the conversation save and the assistant interaction update succeed
+            with transaction.atomic():
+                # Save the conversation first
+                super().save(*args, **kwargs)
+                
+                # If this is a new conversation, increment the assistant's interactions
+                if is_new and self.assistant_id:
+                    try:
+                        logger.info(f"Attempting to increment interactions for assistant {self.assistant_id.id}")
+                        
+                        # Lock the assistant row for updates
+                        assistant = Assistant.objects.select_for_update().get(id=self.assistant_id.id)
+                        
+                        # Increment interactions, default to 1 if None
+                        current_interactions = assistant.interactions or 0
+                        assistant.interactions = current_interactions + 1
+                        
+                        # Save the updated assistant
+                        assistant.save()
+                        
+                        logger.info(f"Interactions incremented for assistant {self.assistant_id.id}: {assistant.interactions}")
+                    
+                    except Assistant.DoesNotExist:
+                        # Log the error with detailed information
+                        logger.error(
+                            f"Failed to increment interactions: Assistant with ID {self.assistant_id.id} does not exist. "
+                            f"Conversation ID: {self.id}"
+                        )
+                    except Exception as e:
+                        # Log any other unexpected errors
+                        logger.error(
+                            f"Unexpected error incrementing assistant interactions: {str(e)}. "
+                            f"Assistant ID: {self.assistant_id.id}, Conversation ID: {self.id}"
+                        )
+        except Exception as e:
+            logger.error(f"Failed to save conversation: {str(e)}")

@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from .views import chat_view, upload_doc, get_rag_answer, create_assistant, custom_login, logout, list_assistants
+from .views import chat_view, upload_doc, get_rag_answer, create_assistant, custom_login, logout, list_assistants,assistant_detail
 from .template_views import auth_view, index_view, assistant_chat_view
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -26,7 +26,7 @@ urlpatterns = [
     path('api/create_assistant/', create_assistant, name='create_assistant'),
     path('', index_view, name='index'),
     path('auth/', auth_view, name='auth_view'),
-    path('assistantchat/', assistant_chat_view, name='assistant_chat'),
+    path('assistant_chat/<str:assistant_id>/', assistant_chat_view, name='assistant_chat'),
     path('assistants/', list_assistants, name='list_assistants'),
     # users app route
     path('', include('users.urls')),
@@ -35,4 +35,5 @@ urlpatterns = [
     path('logout/', logout, name='logout'),
     # demo app route
     path('accounts/', include('authentication.urls')),
+    path('assistant_detail/<str:assistant_id>/', assistant_detail, name='assistant_detail'),
 ]

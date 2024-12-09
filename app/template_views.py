@@ -38,6 +38,7 @@ def auth_view(request):
 # assistant form is show only if user is logged in
 
 
-def assistant_chat_view(request):
-    return render(request, 'assistant/assistant_chat.html')
+def assistant_chat_view(request, assistant_id):
+    assistant = Assistant.objects.get(id=assistant_id)
+    return render(request, 'assistant/chat.html', {'assistant': assistant})
 
