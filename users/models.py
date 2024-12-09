@@ -79,6 +79,7 @@ class Assistant(models.Model):
     topic = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     average_rating = models.DecimalField(max_digits=3, decimal_places=1, default=Decimal('0.0'))
+    interactions = models.IntegerField(blank=True, null=True, default=0)
     is_published = models.BooleanField(default=False)
 
 

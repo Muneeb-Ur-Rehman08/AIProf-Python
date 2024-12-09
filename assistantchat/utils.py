@@ -33,6 +33,8 @@ class ChatModule:
         subject = assistant_config.get('subject', 'General Learning')
         topic = assistant_config.get('topic', 'Comprehensive Understanding')
         teacher_instructions = assistant_config.get('teacher_instructions', 'Systematic, incremental knowledge probing')
+        prompt_instructions = assistant_config.get("prompt_instructions")
+        prompt = assistant_config.get('prompt')
 
         system_message = f"""
         You are an expert educational diagnostics specialist focusing on {subject} assessment.
@@ -70,70 +72,142 @@ class ChatModule:
         ])
 
     def _create_contextual_rag_prompt(self, assistant_config) -> ChatPromptTemplate:
-        """Create a context-aware RAG prompt adapting to user's knowledge level and subject expertise."""
-
-        subject = assistant_config.get('subject', 'General Knowledge')
-        topic = assistant_config.get('topic', 'Comprehensive Understanding')
-        pedagogical_approach = assistant_config.get('teacher_instructions', 'Adaptive Learning')
+        """
+        Create an advanced contextual RAG prompt with multi-dimensional awareness.
+        """
+        subject = assistant_config.get('subject', '')
+        topic = assistant_config.get('topic', '')
+        pedagogical_approach = assistant_config.get('teacher_instructions', '')
+        prompt_instructions = assistant_config.get('prompt_instructions', '')
         prompt = assistant_config.get('prompt')
+        
+        system_message = f"""You are an AI assistant professional that helps the user with their questions.
+    # Contextual Response Generator
+    ## Operational Parameters
+    - **Domain**: {subject}
+    - **Specific Topic**: {topic}
+    - **Pedagogical Strategy**: {pedagogical_approach}
 
-        system_message = f"""# Intelligent Teaching Assistant Configuration
+    ## Contextual Inputs
+    1. Previous Interactions: {{chat_history}}
+    2. Relevant Document Context: {{context}}
+    3. Current User Query: {prompt}
+    4. Prompt Instructions: {prompt_instructions}
 
-            ## Core Parameters
-            - **Subject:** {subject}
-            - **Topic:** {topic}
-            - **Pedagogical Strategy:** {pedagogical_approach}
+    ## STRICT PROHIBITION OF CERTAIN PHRASES
+    ### ABSOLUTELY FORBIDDEN PHRASES:
+    - DO NOT use phrases like:
+    * "Based on the provided context,"
+    * "Based on your query,"
+    * "According to your input,"
+    * "In response to your question,"
+    * "I'll explain"
+    * Any phrasing similar to these.
+    
+    **If you use any of these phrases, the response is considered invalid and incorrect.**
 
-            ## Response Intelligence Framework
+    ### How to avoid these phrases:
+    - Directly state the information without introducing the response with qualifiers.
+    - Instead of saying "Based on your query," immediately address the subject. 
+    - For example, instead of saying "Based on your query, Newton’s First Law..." just start with "Newton’s First Law..."
 
-            ### 1. Adaptive Knowledge Delivery
-            - **Knowledge Level Detection**
-            * Dynamically adjust explanation depth
-            * Match response complexity to user's understanding
+    ### ALTERNATIVE PHRASES TO USE:
+    - When explaining or expanding on a topic, use direct, concise language such as:
+    * "The key point here is..."
+    * "From the information provided, we can infer that..."
+    * "A more detailed explanation would involve..."
+    * "This concept can be understood as..."
 
-            ### 2. Contextual Response Generation
-            - **Context Utilization**
-            * Leverage available information
-            * Ensure precise, relevant answers
-            - **Information Integrity**
-            * Use only verified context
-            * Highlight information limitations
+    ## CRITICAL RESPONSE GENERATION CONSTRAINTS
+    ### Context Utilization Mandate
+    - STRICTLY generate responses ONLY using:
+    * Provided chat history
+    * Available document context
+    - DO NOT introduce external knowledge
+    - If context is insufficient, clearly state limitations without using prohibited phrases.
 
-            ### 3. Linguistic Precision
-            - **Communication Strategies**
-            * Use domain-specific terminology
-            * Maintain clarity and conciseness
-            - **Verbatim Extraction**
-            * Prioritize direct quotes
-            * Preserve original context meaning
+    ### Diagram Usage Protocol
+    - Create Mermaid diagrams ONLY when:
+    * Context explicitly supports visual representation
+    * Diagram meaningfully clarifies complex concepts
+    * Direct textual explanation is insufficient
+    - Avoid diagram generation as a default
+    - Diagrams should provide ESSENTIAL visual insights
 
-            ## Operational Constraints
-            - **Available Context:** {{context}}
-            - **Knowledge Assessment:**
-            * Level: {{knowledge_level}}
-            * Diagnostic Insights: {{diagnostic_questions}}
+    ### Response Integrity Guidelines
+    - Prioritize context relevance
+    - Maintain fidelity to available information
+    - If context lacks detailed information, provide:
+    * Partial, context-based response
+    * Clear indication of information gaps
 
-            ## Response Optimization
-            - Systematic knowledge progression
-            - Incremental complexity introduction
-            - Contextual relevance maintenance
-            """
+    ## Language Generation Constraints
+    - Generate responses that are:
+    * Direct and substantive
+    * Fully addressing the user's query
+    * Contextually rich and informative
+    * Free from unnecessary qualifiers or restrictive language
 
-        human_message = f"""# {subject} Inquiry
+    ## Response Principles
+    - Provide comprehensive answers
+    - Demonstrate deep understanding
+    - Encourage further exploration
+    - Maintain academic rigor
+    - Ensure clarity without formulaic language
 
-    ## Query Context
+    ## Response Generation Principles
+    1. Contextual Coherence
+    2. Knowledge Level Adaptation
+    3. Precise, Focused Answers
+    4. Incremental Information Delivery
+
+    ## Advanced Response Guidelines
+    - Analyze chat history for:
+    * Previous knowledge demonstrations
+    * Learning progression
+    * Identified knowledge gaps
+    - Context Utilization Strategy:
+    * Extract most relevant information
+    * Avoid redundant explanations
+    * Highlight connections to previous interactions
+
+    ## Mermaid Diagram Integration
+    - Use diagrams sparingly and purposefully
+    - Ensure diagram adds significant value
+    - Align with {subject} and {topic} domain specifics
+    - One diagram per significant concept, only if absolutely necessary or asked by user
+
+    ## Response Constraints
+    - Direct answer to the specific query
+    - Maintain academic rigor
+    - Ensure clarity and comprehensibility
+    - If uncertain about the answer, seek user clarification
+    """
+        
+        human_message = f"""## Precise Query Resolution
+    ### Conversational Context
+    {{chat_history}}
+
+    ### Available Knowledge Context
+    {{context}}
+
+    ### Current Specific Query
     {prompt}
 
     ### Response Requirements
-    - Align with {topic} understanding
-    - Apply {pedagogical_approach}
-    - Address query with precise, multilevel explanation
+    - Build upon previous explanations
+    - Provide connected, incremental insights
+    - Maintain appropriate explanation depth
+    - Use ONLY provided context
+    - Consider {pedagogical_approach}
     """
-
+        
         return ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(system_message),
             HumanMessagePromptTemplate.from_template(human_message)
         ])
+
+
 
     def assess_user_knowledge(self, assistant_config: dict, user_assistant_key: str) -> Dict[str, Any]:
         """Conduct initial knowledge assessment."""
@@ -179,7 +253,7 @@ class ChatModule:
             return {'error': 'Assessment failed', 'details': str(e)}
 
 
-    def get_relevant_context(self, query: str, assistant_id: str, k: int = 5, api_key: Optional[str] = None) -> str:
+    def get_relevant_context(self, query: str, assistant_id: str, k: int = 3, api_key: Optional[str] = None) -> str:
         """Retrieve relevant context from the DocumentChunk model based on similarity search."""
         try:
             # Step 1: Call the similarity_search class method from DocumentChunk
@@ -256,7 +330,7 @@ class ChatModule:
 
     def get_chat_history(self, assistant_id: str, user_id: str, 
                         conversation_id: Optional[uuid.UUID] = None,
-                        limit: int = 10) -> List[Dict]:
+                        limit: int = 5) -> List[Dict]:
         """Retrieve chat history from Django model."""
         try:
             # Base query
