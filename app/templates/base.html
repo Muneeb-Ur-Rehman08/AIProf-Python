@@ -228,6 +228,16 @@
     <script src="{% static 'js/Teacher.js' %}"></script>
     <script src="{% static 'js/GenImage.js' %}"></script>
     <script src="{% static 'js/sendText.js' %}"></script>
+    
+    <!-- For Markdown -->
+     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- For mermaid -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+    <script>
+        window.mermaid = mermaid;
+        mermaid.initialize({ startOnLoad: false });
+    </script>
 
     <script>
         function showLoading() {

@@ -21,6 +21,15 @@
                     {{ assistant.topic }}
                 </p>
             </div>
+            <a 
+                class="px-4 py-2 rounded transition-colors duration-200"
+                style="background: var(--clr-main); border: 1px solid var(--clr-main); color: white;"
+                onmouseover="this.style.backgroundColor='#0890cc'"
+                onmouseout="this.style.backgroundColor='var(--clr-main)'"
+                href="{% url 'assistant_chat' assistant.id %}"
+            >
+                Chat
+            </a>
         </div>
         <div class="rating rating-xs">
             {% for i in 1..5 %}

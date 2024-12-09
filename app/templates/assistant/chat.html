@@ -1,6 +1,8 @@
-<div id="assistantChat" class="hidden w-full md:w-1/2 flex flex-col justify-between"
-     _="on load if window.innerWidth > 768 then remove .hidden from me end"
->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div id="chat" class="w-full h-screen flex flex-col justify-between">
     <!-- Chat header -->
     <div class="bg-black/30 p-3 md:p-4 w-full text-center" style="border-bottom: 1px solid var(--clr-main)">
         <h2 class="text-lg font-bold">{{ assistant.name }}</h2>
@@ -44,7 +46,6 @@
         </div>
     </div>
 </div>
-
 <script>
     window.addEventListener('resize', () => {
         if (window.innerWidth >= 768) {
@@ -281,3 +282,4 @@
                 });
         }
 </script>
+{% endblock %}
