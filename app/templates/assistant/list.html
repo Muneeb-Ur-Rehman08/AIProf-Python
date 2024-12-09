@@ -9,44 +9,47 @@
       {% include 'modal/navbar.html' %}
   </div>
   {% endblock %}
-  <div id="search-bar" class="flex items-center gap-x-2 sticky top-28 z-20">
-    <div class="drawer inline-block w-auto">
-      <input id="my-drawer" type="checkbox" class="drawer-toggle" />
-      <div class="drawer-content ">
-        <!-- Page content here -->
-        <label for="my-drawer" class="btn drawer-button lg:hidden">
-          <img src="{% static 'assets/images/filter.png' %}" class="w-6 h-6" alt="Filter">
+  <div id="search-bar" class="sticky top-28 z-20">
+    <div class="grid grid-cols-12 gap-x-2.5 sm:gap-x-1.5 lg:gap-x-0">
+
+      <div class="drawer inline-block w-auto col-span-2 sm:col-span-1 lg:hidden">
+        <input id="my-drawer" type="checkbox" class="drawer-toggle" />
+        <div class="drawer-content ">
+          <!-- Page content here -->
+          <label for="my-drawer" class="btn drawer-button">
+            <img src="{% static 'assets/images/filter.png' %}" class="w-6 h-6" alt="Filter">
+          </label>
+        </div>
+        <div class="drawer-side">
+          <label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+          <ul class="menu bg-base-200 text-base-content min-h-full w-full sm:w-96 p-4 z-50">
+            <div class="flex items-center  justify-between mb-2">
+              <p class="text-lg font-semibold">Select filters</p>
+              <label for="my-drawer" class="btn text-2xl text-sky-500 drawer-button lg:hidden mb-4">x</label>
+            </div>
+            {% include 'assistant/form_filters.html' %}
+          </ul>
+        </div>
+      </div>
+      <div class="w-full col-span-10 sm:col-span-5 lg:col-span-3">
+        <label id="search-input" class="input input-bordered flex items-center gap-2 bg-transparent">
+          <input type="text" hx-push-url="true" class="grow" autocomplete="off" placeholder="Search"
+            hx-get="{% url 'list_assistants' %}" hx-target="#assistants-list" hx-trigger="keyup changed delay:500ms"
+            name="keyword"
+            hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword']"
+            />
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4">
+            <path fill-rule="evenodd"
+              d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
+              clip-rule="evenodd" />
+          </svg>
         </label>
       </div>
-      <div class="drawer-side">
-        <label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
-        <ul class="menu bg-base-200 text-base-content min-h-full w-full sm:w-96 p-4 z-50">
-          <div class="flex items-center  justify-between mb-2">
-            <p class="text-lg font-semibold">Select filters</p>
-            <label for="my-drawer" class="btn text-2xl text-sky-500 drawer-button lg:hidden mb-4">x</label>
-          </div>
-          {% include 'assistant/form_filters.html' %}
-        </ul>
-      </div>
-    </div>
-    <div class="w-72 sm:w-96">
-      <label id="search-input" class="input input-bordered flex items-center gap-2 bg-transparent">
-        <input type="text" hx-push-url="true" class="grow" autocomplete="off" placeholder="Search"
-          hx-get="{% url 'list_assistants' %}" hx-target="#assistants-list" hx-trigger="keyup changed delay:500ms"
-          name="keyword"
-          hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword']"
-          />
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4">
-          <path fill-rule="evenodd"
-            d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
-            clip-rule="evenodd" />
-        </svg>
-      </label>
     </div>
     
   </div>
   <!-- Filters Section -->
-  <div class="flex gap-x-2 pt-32">
+  <div class="flex gap-x-2 pt-32 py-2">
       <!-- Main content area -->
     
         <div class="hidden lg:block lg:w-1/3">
@@ -54,7 +57,7 @@
         </div>
 
       <!-- Assistants list content -->
-      <div class="w-full lg:w-w-2/3" id="assistants-list" hx-get="{% url 'list_assistants' %}"
+      <div class="w-full lg:w-w-2/3" id="assistants-list"  hx-get="{% url 'list_assistants' %}"
         hx-trigger="load" hx-replace-url="false">
         <!-- Content loaded dynamically -->
       </div>
