@@ -29,178 +29,131 @@ class ChatModule:
     
 
     def _create_knowledge_assessment_prompt(self, assistant_config) -> ChatPromptTemplate:
-        """Create a prompt for assessing user's knowledge level."""
+        """Create an interactive and welcoming prompt for assessing user's knowledge level."""
         subject = assistant_config.get('subject', 'General Learning')
         topic = assistant_config.get('topic', 'Comprehensive Understanding')
-        teacher_instructions = assistant_config.get('teacher_instructions', 'Systematic, incremental knowledge probing')
-        prompt_instructions = assistant_config.get("prompt_instructions")
-        prompt = assistant_config.get('prompt')
+        teacher_instructions = assistant_config.get('teacher_instructions', 'Interactive, adaptive knowledge assessment')
+        
+        system_message = f"""You are a friendly and supportive AI educator specializing in {subject} education.
 
-        system_message = f"""
-        You are an expert educational diagnostics specialist focusing on {subject} assessment.
+        Interaction Guidelines:
+        - Create a warm, encouraging learning environment
+        - Ask diagnostic questions that reveal knowledge depth
+        - Use conversational, approachable language
+        - Adapt questioning based on initial responses
+        - Provide constructive, motivational feedback
 
-        Your goal is to precisely evaluate the user's current knowledge level through a strategic questioning approach:
-        - Develop 3-5 progressively challenging questions
-        - Questions should systematically probe:
-        1. Basic comprehension
-        2. Intermediate understanding
-        3. Advanced application or conceptual depth
+        Assessment Goals:
+        - Understand the learner's current knowledge level
+        - Identify strengths and areas for growth
+        - Personalize the learning experience
+        - Build learner confidence
 
-        Assessment Guidelines:
-        - Subject Focus: {subject}
+        Focus Areas:
+        - Subject: {subject}
         - Topic: {topic}
         - Pedagogical Approach: {teacher_instructions}
 
-        Output Format (CRITICAL):
-        A JSON array of assessment questions, where each question includes:
+        Output Instructions:
+        Respond with a JSON object containing:
         {{
-            "question": "Specific diagnostic question",
-            "difficulty": "basic/intermediate/advanced",
-            "expected_knowledge_indicators": ["key conceptual markers"]
+            "welcome_message": "Personalized greeting that makes the user feel comfortable",
+            "diagnostic_questions": [
+                {{
+                    "question": "Conversational, engaging question",
+                    "difficulty": "basic/intermediate/advanced",
+                    "learning_goal": "What this question helps assess"
+                }}
+            ]
         }}
         """
+        
+        human_message = f"""Let's explore your current understanding of {topic} in {subject}.
 
-        human_message = """
-        Conduct a knowledge assessment for a user's understanding of {subject} in {topic}.
-        Generate diagnostic questions that reveal their current understanding level.
-        Follow the specified pedagogical approach: {teacher_instructions}
-        """
+        I'll ask you a few friendly questions to understand your knowledge level. 
+        There are no right or wrong answers - this is just to help me understand 
+        how I can best support your learning journey.
 
+        Please answer the following questions as openly and honestly as you can."""
+        
         return ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(system_message),
             HumanMessagePromptTemplate.from_template(human_message)
         ])
 
+
     def _create_contextual_rag_prompt(self, assistant_config) -> ChatPromptTemplate:
-        """
-        Create an advanced contextual RAG prompt with multi-dimensional awareness.
-        """
+        """Create an advanced contextual prompt with adaptive learning approach."""
         subject = assistant_config.get('subject', '')
         topic = assistant_config.get('topic', '')
         pedagogical_approach = assistant_config.get('teacher_instructions', '')
         prompt_instructions = assistant_config.get('prompt_instructions', '')
-        prompt = assistant_config.get('prompt')
+        prompt = assistant_config.get('prompt', '')
         
-        system_message = f"""You are an AI assistant professional that helps the user with their questions.
-    # Contextual Response Generator
-    ## Operational Parameters
-    - **Domain**: {subject}
-    - **Specific Topic**: {topic}
-    - **Pedagogical Strategy**: {pedagogical_approach}
+        system_message = f"""You are a knowledgeable, adaptive AI educator in {subject}.
 
-    ## Contextual Inputs
-    1. Previous Interactions: {{chat_history}}
-    2. Relevant Document Context: {{context}}
-    3. Current User Query: {prompt}
-    4. Prompt Instructions: {prompt_instructions}
+        ## Core Teaching Principles:
+        - Tailor explanations to the learner's knowledge level
+        - Use context and chat history for personalized responses
+        - Prioritize clarity and incremental learning
+        - Encourage curiosity and deeper understanding
 
-    ## STRICT PROHIBITION OF CERTAIN PHRASES
-    ### ABSOLUTELY FORBIDDEN PHRASES:
-    - DO NOT use phrases like:
-    * "Based on the provided context,"
-    * "Based on your query,"
-    * "According to your input,"
-    * "In response to your question,"
-    * "I'll explain"
-    * Any phrasing similar to these.
-    
-    **If you use any of these phrases, the response is considered invalid and incorrect.**
+        ## Response Generation Strategy:
+        1. Carefully analyze the available context
+        2. Review chat history for learning progression
+        3. Match explanation depth to user's comprehension
+        4. Use simple, clear language
+        5. Offer additional learning paths when appropriate
 
-    ### How to avoid these phrases:
-    - Directly state the information without introducing the response with qualifiers.
-    - Instead of saying "Based on your query," immediately address the subject. 
-    - For example, instead of saying "Based on your query, Newton’s First Law..." just start with "Newton’s First Law..."
+        ## Mermaid Diagram Guidelines:
+        - Use diagrams ONLY when they significantly enhance understanding
+        - Ensure diagrams are clear, simple, and educational
+        - Create only one diagram per complex concept
+        - Avoid diagrams for purely textual concept explanations
+        - Avoid diagrams for any kind of concept explanation which have not any flow
 
-    ### ALTERNATIVE PHRASES TO USE:
-    - When explaining or expanding on a topic, use direct, concise language such as:
-    * "The key point here is..."
-    * "From the information provided, we can infer that..."
-    * "A more detailed explanation would involve..."
-    * "This concept can be understood as..."
+        ## Contextual Constraints:
+        - STRICTLY use provided context
+        - Do not introduce external knowledge
+        - If context is insufficient, guide user to additional resources
+        - Maintain academic integrity and accuracy
 
-    ## CRITICAL RESPONSE GENERATION CONSTRAINTS
-    ### Context Utilization Mandate
-    - STRICTLY generate responses ONLY using:
-    * Provided chat history
-    * Available document context
-    - DO NOT introduce external knowledge
-    - If context is insufficient, clearly state limitations without using prohibited phrases.
+        ## Interaction Principles:
+        - Be encouraging and supportive
+        - Ask clarifying questions if context is unclear
+        - Highlight connections between new and existing knowledge
+        - Avoid academic jargon unless necessary
 
-    ### Diagram Usage Protocol
-    - Create Mermaid diagrams ONLY when:
-    * Context explicitly supports visual representation
-    * Diagram meaningfully clarifies complex concepts
-    * Direct textual explanation is insufficient
-    - Avoid diagram generation as a default
-    - Diagrams should provide ESSENTIAL visual insights
+        # Contextual Response Generator
+        ## Operational Parameters
+        - **Domain**: {subject}
+        - **Specific Topic**: {topic}
+        - **Pedagogical Strategy**: {pedagogical_approach}
 
-    ### Response Integrity Guidelines
-    - Prioritize context relevance
-    - Maintain fidelity to available information
-    - If context lacks detailed information, provide:
-    * Partial, context-based response
-    * Clear indication of information gaps
-
-    ## Language Generation Constraints
-    - Generate responses that are:
-    * Direct and substantive
-    * Fully addressing the user's query
-    * Contextually rich and informative
-    * Free from unnecessary qualifiers or restrictive language
-
-    ## Response Principles
-    - Provide comprehensive answers
-    - Demonstrate deep understanding
-    - Encourage further exploration
-    - Maintain academic rigor
-    - Ensure clarity without formulaic language
-
-    ## Response Generation Principles
-    1. Contextual Coherence
-    2. Knowledge Level Adaptation
-    3. Precise, Focused Answers
-    4. Incremental Information Delivery
-
-    ## Advanced Response Guidelines
-    - Analyze chat history for:
-    * Previous knowledge demonstrations
-    * Learning progression
-    * Identified knowledge gaps
-    - Context Utilization Strategy:
-    * Extract most relevant information
-    * Avoid redundant explanations
-    * Highlight connections to previous interactions
-
-    ## Mermaid Diagram Integration
-    - Use diagrams sparingly and purposefully
-    - Ensure diagram adds significant value
-    - Align with {subject} and {topic} domain specifics
-    - One diagram per significant concept, only if absolutely necessary or asked by user
-
-    ## Response Constraints
-    - Direct answer to the specific query
-    - Maintain academic rigor
-    - Ensure clarity and comprehensibility
-    - If uncertain about the answer, seek user clarification
-    """
+        ## Contextual Inputs
+        1. Previous Interactions: {{chat_history}}
+        - Avoid to use any phrase for Previous Interactions in response.
+        2. Relevant Document Context: {{context}}
+        - Avoid to use any phrase for Context or Relevant Document in response.
+        3. Current User Query: {prompt}
+        - Avoid to use any phrase for User Query in response.
+        4. Prompt Instructions: {prompt_instructions}
+        - Avoid to use any phrase for Prompt Instructions in response.
+        """
         
-        human_message = f"""## Precise Query Resolution
-    ### Conversational Context
-    {{chat_history}}
+        human_message = f"""Help me understand this {topic} in {subject}.
 
-    ### Available Knowledge Context
-    {{context}}
+        ### Context Available: {{context}}
+        ### Previous Conversation: {{chat_history}}
 
-    ### Current Specific Query
-    {prompt}
+        ### My Question: {prompt}
 
-    ### Response Requirements
-    - Build upon previous explanations
-    - Provide connected, incremental insights
-    - Maintain appropriate explanation depth
-    - Use ONLY provided context
-    - Consider {pedagogical_approach}
-    """
+        ### Respond considering:
+        - My current knowledge level
+        - Available context
+        - Our previous interaction
+        
+        Guide me through this concept step by step."""
         
         return ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(system_message),
@@ -210,7 +163,6 @@ class ChatModule:
 
 
     def assess_user_knowledge(self, assistant_config: dict, user_assistant_key: str) -> Dict[str, Any]:
-        """Conduct initial knowledge assessment."""
         try:
             # Create knowledge assessment prompt
             assessment_prompt = self._create_knowledge_assessment_prompt(assistant_config)
@@ -224,27 +176,32 @@ class ChatModule:
 
             # Generate assessment questions
             assessment_result = assessment_chain.invoke({
-                "subject": assistant_config.get('subject'),
-                "topic": assistant_config.get('topic'),
-                "teacher_instructions": assistant_config.get('teacher_instructions')
+                "subject": assistant_config.get('subject', 'General Learning'),
+                "topic": assistant_config.get('topic', 'Comprehensive Understanding'),
+                "teacher_instructions": assistant_config.get('teacher_instructions', 'Interactive assessment')
             })
             
-            # Parse JSON response
+            # Enhanced JSON parsing with error handling
             try:
-                diagnostic_questions = json.loads(assessment_result)
+                parsed_result = json.loads(assessment_result)
+                diagnostic_questions = parsed_result.get('questions', [])
+                assessment_context = parsed_result.get('assessment_context', {})
             except json.JSONDecodeError:
-                logger.error("Failed to parse assessment questions")
+                logger.error(f"Failed to parse assessment result: {assessment_result}")
                 diagnostic_questions = []
+                assessment_context = {}
 
-            # Store assessment with assistant-specific information
+            # Store assessment with more comprehensive information
             self.user_knowledge_levels[user_assistant_key] = {
                 'diagnostic_questions': diagnostic_questions,
                 'knowledge_level': 'unassessed',
-                'assistant_id': assistant_config.get('id')  # Store assistant ID
+                'assistant_id': assistant_config.get('id'),
+                'assessment_context': assessment_context
             }
 
             return {
                 'diagnostic_questions': diagnostic_questions,
+                'assessment_context': assessment_context,
                 'instructions': 'Please answer these diagnostic questions to help us understand your current knowledge level.'
             }
 
@@ -392,10 +349,14 @@ class ChatModule:
                 
                 # Conduct knowledge assessment for this specific assistant
                 assessment_result = self.assess_user_knowledge(assistant_config, user_assistant_key)
+                logger.info(f"The result of assessment: {assessment_result}")
                 
                 # If assessment generated questions, return them
                 if 'diagnostic_questions' in assessment_result:
-                    return json.dumps(assessment_result)
+                    return json.dumps({
+                        'type': 'knowledge_assessment',
+                        'data': assessment_result
+                    })
 
             # Retrieve context
             context = self.get_relevant_context(prompt, assistant_id)
@@ -412,7 +373,8 @@ class ChatModule:
                     "subject": assistant_config.get("subject", ""),
                     "instructions": assistant_config.get("teacher_instructions", ""),
                     "knowledge_level": user_knowledge.get('knowledge_level', 'basic'),
-                    "diagnostic_questions": json.dumps(user_knowledge.get('diagnostic_questions', []))
+                    "diagnostic_questions": json.dumps(user_knowledge.get('diagnostic_questions', [])),
+                    "assessment_context": json.dumps(user_knowledge.get('assessment_context', {}))
                 }
 
             # Create RAG chain
@@ -489,87 +451,3 @@ class ChatModule:
             return []
         
 
-def main():
-    """Test function to demonstrate ChatModule functionality."""
-    # Set up logging
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
-    
-    try:
-        # Initialize ChatModule
-        chat_module = ChatModule()
-        
-        # Create test user ID and assistant ID
-        test_assistant_id = "78b0cdb8-2ee0-41b2-bbfa-0ee4276e8630"
-        test_user_id = "33039e91-cee1-4896-9cd3-ab6bba98369a"
-        
-        # Sample assistant configuration
-        assistant_config = {
-            "subject": "Python Programming",
-            "teacher_instructions": "Provide clear, beginner-friendly explanations with code examples when appropriate."
-        }
-        
-        # Create a test conversation
-        conversation_id = uuid.uuid4()
-        
-        # Test messages
-        test_messages = [
-            "What is a Python decorator?",
-            "Can you show me an example of using decorators?",
-            "How do I create a class decorator?"
-        ]
-        
-        print("\n=== Starting ChatModule Test ===\n")
-        
-        # Process multiple messages in conversation
-        for message in test_messages:
-            print(f"\nUser: {message}\n")
-            
-            response = chat_module.process_message(
-                message=message,
-                assistant_id=test_assistant_id,
-                user_id=test_user_id,
-                assistant_config=assistant_config,
-                conversation_id=conversation_id
-            )
-            
-            print(f"Assistant: {response}\n")
-            print("-" * 50)
-        
-        # Test retrieving chat history
-        print("\n=== Retrieving Chat History ===\n")
-        chat_history = chat_module.get_chat_history(
-            assistant_id=test_assistant_id,
-            user_id=test_user_id,
-            conversation_id=conversation_id
-        )
-        
-        for interaction in chat_history:
-            print(f"Time: {interaction['timestamp']}")
-            print(f"Question: {interaction['question']}")
-            print(f"Answer: {interaction['answer']}")
-            print("-" * 50)
-        
-        # Test clearing chat history
-        print("\n=== Clearing Chat History ===\n")
-        success = chat_module.clear_chat_history(
-            assistant_id=test_assistant_id,
-            user_id=test_user_id,
-            conversation_id=conversation_id
-        )
-        print(f"Chat history cleared: {success}")
-        
-        # Verify chat history is cleared
-        empty_history = chat_module.get_chat_history(
-            assistant_id=test_assistant_id,
-            user_id=test_user_id,
-            conversation_id=conversation_id
-        )
-        print(f"Chat history after clearing: {empty_history}")
-        
-    except Exception as e:
-        logger.error(f"Error in main test function: {e}")
-        raise
-
-if __name__ == "__main__":
-    main()
