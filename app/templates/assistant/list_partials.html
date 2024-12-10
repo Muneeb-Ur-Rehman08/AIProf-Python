@@ -3,7 +3,7 @@
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-2.5 cursor-pointer">
     {% if assistants %}
     {% for assistant in assistants %}
-    <a href="{% url 'assistant_detail' assistant_id=assistant.id %}">
+    <a href="{% url 'assistant_detail' assistant_id=assistant.id %}" target="_blank">
     <div class="card bg-white text-gray-800 rounded-lg shadow-md overflow-hidden">
         <div class="card-body p-4 rounded-lg" style="border: 1px solid rgba(var(--clr-main-rgb), 0.35)">
             <div class="flex items-center gap-4 mb-4">
