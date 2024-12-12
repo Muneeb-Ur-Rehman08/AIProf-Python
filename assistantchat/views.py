@@ -108,14 +108,14 @@ def chat_query(request, ass_id: Optional[str] = None):
 
 
             # Check if a rating already exists for this user and assistant
-            AssistantRating.objects.update_or_create(
-                assistant=assistant,
-                user=user,
-                defaults={
-                    'rating': 4.0,
-                    'review': "Great assistant, very helpful in explaining the topic!"
-                }
-            )
+            # AssistantRating.objects.update_or_create(
+            #     assistant=assistant,
+            #     user=user,
+            #     defaults={
+            #         'rating': 4.0,
+            #         'review': "Great assistant, very helpful in explaining the topic!"
+            #     }
+            # )
 
 
             # Initialize chat module and process message
