@@ -18,7 +18,7 @@ from django.contrib.auth.decorators import login_required
 from app.utils.auth_backend import SupabaseBackend
 from app.utils.assistant_manager import AssistantManager
 from app.modals.assistants import AssistantConfig
-from users.models import Assistant
+from users.models import Assistant, AssistantRating
 from typing import Optional
 from django.http import Http404
 from assistantchat.models import Conversation
@@ -298,12 +298,11 @@ def list_assistants(request):
     if keyword and len(keyword) > 2:
         assistants = assistants.filter(name__icontains=keyword)    
 
-
     # # # # # # # # #  adding random interaction count to each assistant due to conversation count taking too much time # # # # # # # # # 
     # conversation = Conversation.objects.all()
 
     # Prepare the data for rendering
-    assistants_data = [{"id": str(assistant.id), "name": assistant.name, "subject": assistant.subject, "topic": assistant.topic, "description": assistant.description, "created_at": assistant.created_at, "interaction": random.randint(0, 100)} for assistant in assistants]
+    assistants_data = [{"id": str(assistant.id), "name": assistant.name, "subject": assistant.subject, "topic": assistant.topic, "description": assistant.description, "created_at": assistant.created_at, "interactions": assistant.interactions, "average_rating": assistant.average_rating} for assistant in assistants]
     
     # for assistant in assistants_data:
     #     assistant["interaction"] = conversation.filter(assistant_id=assistant["id"]).count()
@@ -321,7 +320,8 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
     try:
         interactions = Conversation.objects.filter(assistant_id=assistant_id).count()
         assistant = Assistant.objects.get(id=assistant_id)
+        ratings = AssistantRating.objects.filter(assistant=assistant_id)
     except Assistant.DoesNotExist:
         raise Http404("Assistant not found")
     
-    return render(request, 'assistant/assistant.html', {"assistant": assistant, "interactions": interactions})
+    return render(request, 'assistant/assistant.html', {"assistant": assistant, "interactions": interactions, "reviews": len(ratings)})
