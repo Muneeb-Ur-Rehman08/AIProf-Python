@@ -13,8 +13,13 @@ from django.contrib.auth.models import User
 from decimal import Decimal
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
+import os
 
 logger = logging.getLogger(__name__)
+
+os.getenv('LANGCHAIN_TRACING_V2')
+os.getenv('LANGCHAIN_API_KEY')
+
 
 @login_required(login_url='accounts/login/')
 @csrf_exempt
@@ -107,7 +112,7 @@ def chat_query(request, ass_id: Optional[str] = None):
             #     assistant=assistant,
             #     user=user,
             #     defaults={
-            #         'rating': 3.5,
+            #         'rating': 4.0,
             #         'review': "Great assistant, very helpful in explaining the topic!"
             #     }
             # )
