@@ -1,7 +1,11 @@
-{% extends 'base.html' %} {% load static %} {% if chat_mode %} {% block content
-%}
-<div id="chat" class="w-full h-screen flex flex-col justify-between">
-  {% include 'assistant/assistant_chat.html' %}
-</div>
-{% endblock %} {% endif %} {% if not chat_mode %} {% include
-'assistant/assistant_form.html' %} {% endif %}
+{% extends 'base.html' %} {% load static %}
+
+{% block content %}
+    {% if chat_mode %}
+        <div id="chat" class="w-full h-screen flex flex-col justify-between">
+            {% include 'assistant/assistant_chat.html' %}
+        </div>
+    {% else %}
+        {% include 'assistant/assistant_form.html' %}
+    {% endif %}
+{% endblock %}
