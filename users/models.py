@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 import uuid
 from typing import Optional
 import requests
@@ -79,6 +79,7 @@ class Assistant(models.Model):
     topic = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     average_rating = models.DecimalField(max_digits=3, decimal_places=1, default=Decimal('0.0'))
+    total_reviews = models.DecimalField(max_digits=3, decimal_places=1, default=Decimal('0.0')) 
     interactions = models.IntegerField(blank=True, null=True, default=0)
     is_published = models.BooleanField(default=False)
 
@@ -127,18 +128,31 @@ class AssistantRating(models.Model):
 
     def save(self, *args, **kwargs):
         """
-        Override the save method to update the average rating of the assistant
-        when a new rating is created without modifying the existing entries.
+        Override the save method to update the average rating and total reviews 
+        of the assistant when a new rating is created without modifying the existing entries.
         """
-        super().save(*args, **kwargs)  # Save the new rating entry
+        # Use atomic transaction to ensure both rating and assistant update happen together
+        with transaction.atomic():
+            # Save the new rating entry
+            super().save(*args, **kwargs)
+            
+            # Lock the assistant record to prevent race conditions
+            assistant = Assistant.objects.select_for_update().get(id=self.assistant.id)
+            
+            # Recalculate the average rating for the assistant
+            ratings = AssistantRating.objects.filter(assistant=self.assistant)
+            average_rating = ratings.aggregate(average=Avg('rating'))['average'] or Decimal('0.0')
+            
+            # Calculate total number of reviews
+            total_reviews = ratings.count()
+            
+            # Update the assistant with new average rating and total reviews
+            assistant.average_rating = round(Decimal(average_rating), 1)  # Round to 1 decimal place
+            assistant.total_reviews = Decimal(total_reviews)
+            
+            # Save the assistant with the updated average rating and total reviews
+            assistant.save()
 
-        # Recalculate the average rating for the assistant after saving the new rating
-        ratings = AssistantRating.objects.filter(assistant=self.assistant).aggregate(average=Avg('rating'))
-        
-        new_average = ratings['average'] or Decimal('0.0')  # Set default to 0.0 if no ratings
-        self.assistant.average_rating = round(Decimal(new_average), 1)  # Round to 1 decimal place
-        
-        self.assistant.save()  # Update the assistant's average rating
 
     def __str__(self):
         return f"Rating {self.rating} for {self.assistant.name} by {self.user.username}"
