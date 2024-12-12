@@ -302,7 +302,7 @@ def list_assistants(request):
     # conversation = Conversation.objects.all()
 
     # Prepare the data for rendering
-    assistants_data = [{"id": str(assistant.id), "name": assistant.name, "subject": assistant.subject, "topic": assistant.topic, "description": assistant.description, "created_at": assistant.created_at, "interactions": assistant.interactions, "average_rating": assistant.average_rating} for assistant in assistants]
+    assistants_data = [{"id": str(assistant.id), "name": assistant.name, "subject": assistant.subject, "topic": assistant.topic, "description": assistant.description, "created_at": assistant.created_at, "interactions": assistant.interactions, "average_rating": assistant.average_rating, "total_reviews": assistant.total_reviews} for assistant in assistants]
     
     # for assistant in assistants_data:
     #     assistant["interaction"] = conversation.filter(assistant_id=assistant["id"]).count()
