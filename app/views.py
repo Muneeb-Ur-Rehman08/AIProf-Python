@@ -317,11 +317,18 @@ def list_assistants(request):
 @require_http_methods(["GET"])
 def assistant_detail(request, assistant_id: Optional[str] = None):
 
+    # logged in user id
+    user_id = request.user.id
+
     try:
         interactions = Conversation.objects.filter(assistant_id=assistant_id).count()
         assistant = Assistant.objects.get(id=assistant_id)
         ratings = AssistantRating.objects.filter(assistant=assistant_id)
     except Assistant.DoesNotExist:
         raise Http404("Assistant not found")
+
+    logger.info(f"user_id: {user_id}, assistant: {assistant.user_id.id}")
+
+    is_creator = user_id == assistant.user_id.id
     
-    return render(request, 'assistant/assistant.html', {"assistant": assistant, "interactions": interactions, "reviews": len(ratings)})
+    return render(request, 'assistant/assistant.html', {"assistant": assistant, "interactions": interactions, "reviews": len(ratings), "is_creator": is_creator})
