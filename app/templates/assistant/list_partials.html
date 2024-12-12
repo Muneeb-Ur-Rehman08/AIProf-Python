@@ -1,10 +1,11 @@
 <!-- list details of assistants -->
 
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-2.5 cursor-pointer">
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2.5">
     {% if assistants %}
     {% for assistant in assistants %}
+    {% if assistant.subject and assistant.topic and assistant.description %}
     <a href="{% url 'assistant_detail' assistant_id=assistant.id %}" target="_blank">
-    <div class="card bg-white text-gray-800 rounded-lg shadow-md overflow-hidden">
+    <div class="card bg-white text-gray-800 rounded-lg shadow-md overflow-hidden cursor-pointer h-full">
         <div class="card-body p-4 rounded-lg" style="border: 1px solid rgba(var(--clr-main-rgb), 0.35)">
             <div class="flex items-center gap-4 mb-4">
                 <div class="avatar">
@@ -14,7 +15,7 @@
                 </div>
                 <div>
                     <h3 class="font-semibold text-lg text-black">{{assistant.name | default:"AI Professor"}}</h3>
-                    <p class="text-sm text-gray-600">{{assistant.subject | default:""}} - {{assistant.topic | default:""}}</p>
+                    <p class="text-sm text-gray-600">{{assistant.subject}} - {{assistant.topic}}</p>
                 </div>
             </div>
 
@@ -22,21 +23,51 @@
                 <div>
                     <h2 class="">{{ assistant.description}}</h2>
                     <p class="text-sm text-gray-400">
-                        {{ assistant.topic | default:"-" }}
+                        {{ assistant.topic }}
                     </p>
                 </div>
             </div>
-            <div class="rating rating-xs">
-                <input type="radio" name="rating-5" class="mask mask-star-2 bg-orange-400" />
-                <input type="radio" name="rating-5" class="mask mask-star-2 bg-orange-400" checked="checked" />
-                <input type="radio" name="rating-5" class="mask mask-star-2 bg-orange-400" />
-                <input type="radio" name="rating-5" class="mask mask-star-2 bg-orange-400" />
-                <input type="radio" name="rating-5" class="mask mask-star-2 bg-orange-400" />
-                <span class="ml-2 text-xs font-semibold">4.5</span>
+            <div class="rating rating-xs items-center ">
+                <div class="relative inline-block">
+                    <input type="radio" name="rating-{{ assistant.id }}" class="mask mask-star-2 {% if assistant.average_rating >= 1 %}bg-orange-400{% else %}bg-gray-300{% endif %}" />
+                    {% if assistant.average_rating >= 0.5 and assistant.average_rating < 1 %}
+                    <div class="absolute inset-0 mask mask-star-2 bg-orange-400" style="clip-path: inset(0 50% 0 0);"></div>
+                    {% endif %}
+                </div>
+                <div class="relative inline-block">
+                    <input type="radio" name="rating-{{ assistant.id }}" class="mask mask-star-2 {% if assistant.average_rating >= 2 %}bg-orange-400{% else %}bg-gray-300{% endif %}" />
+                    {% if assistant.average_rating >= 1.5 and assistant.average_rating < 2 %}
+                    <div class="absolute inset-0 mask mask-star-2 bg-orange-400" style="clip-path: inset(0 50% 0 0);"></div>
+                    {% endif %}
+                </div>
+                <div class="relative inline-block">
+                    <input type="radio" name="rating-{{ assistant.id }}" class="mask mask-star-2 {% if assistant.average_rating >= 3 %}bg-orange-400{% else %}bg-gray-300{% endif %}" />
+                    {% if assistant.average_rating >= 2.5 and assistant.average_rating < 3 %}
+                    <div class="absolute inset-0 mask mask-star-2 bg-orange-400" style="clip-path: inset(0 50% 0 0);"></div>
+                    {% endif %}
+                </div>
+                <div class="relative inline-block">
+                    <input type="radio" name="rating-{{ assistant.id }}" class="mask mask-star-2 {% if assistant.average_rating >= 4 %}bg-orange-400{% else %}bg-gray-300{% endif %}" />
+                    {% if assistant.average_rating >= 3.5 and assistant.average_rating < 4 %}
+                    <div class="absolute inset-0 mask mask-star-2 bg-orange-400" style="clip-path: inset(0 50% 0 0);"></div>
+                    {% endif %}
+                </div>
+                <div class="relative inline-block">
+                    <input type="radio" name="rating-{{ assistant.id }}" class="mask mask-star-2 {% if assistant.average_rating >= 5 %}bg-orange-400{% else %}bg-gray-300{% endif %}" />
+                    {% if assistant.average_rating >= 4.5 and assistant.average_rating < 5 %}
+                    <div class="absolute inset-0 mask mask-star-2 bg-orange-400" style="clip-path: inset(0 50% 0 0);"></div>
+                    {% endif %}
+                </div>
+                <span class="ml-2 text-xs font-semibold">{{ assistant.average_rating|default:"0.0" }}</span>
             </div>
-            <p class="text-end">{{assistant.interaction}} Interactions</p>
+            <div class="flex items-center gap-2">
+                <p class="text-sm text-gray-400">{{assistant.reviews|default:"0"}} Reviews</p>
+                <p class="text-sm text-gray-400">{{assistant.interactions|default:"0"}} Interactions</p>
+            </div>
         </div>
+   
     </div>
+    {% endif %}
     </a>
     {% endfor %}
     {% else %}
