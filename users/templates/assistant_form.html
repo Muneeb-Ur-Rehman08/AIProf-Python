@@ -183,9 +183,12 @@
     <div class="hidden md:block w-[1px] bg-gray-800"></div>
 
     <!-- Chat section -->
+    <div id="assistantChat" class="hidden w-full md:w-1/2 flex flex-col justify-between"
+    _="on load if window.innerWidth > 768 then remove .hidden from me end"
+>
     {% include 'assistant/assistant_chat.html' with assistant=assistant %}
+    </div>
   </div>
-</div>
 
 <script>
   const subjectsData = {

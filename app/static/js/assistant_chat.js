@@ -1,52 +1,3 @@
-{% extends 'base.html' %}
-{% load static %}
-
-{% block content %}
-<div id="chat" class="w-full h-screen flex flex-col justify-between">
-    <!-- Chat header -->
-    <div class="bg-black/30 p-3 md:p-4 w-full text-center" style="border-bottom: 1px solid var(--clr-main)">
-        <h2 class="text-lg font-bold">{{ assistant.name }}</h2>
-    </div>
-    <!-- Chat Container -->
-    <div class="flex-1 flex flex-col p-4 md:p-6 overflow-y-auto" id="chat-container">
-        <!-- Messages will be dynamically inserted here -->
-    </div>
-
-    <!-- Message Input Area -->
-    <div class="bg-black/30 p-3 md:p-4 w-full" style="border-top: 1px solid var(--clr-main)">
-        <div class="max-w-4xl mx-auto flex gap-2">
-            <!-- <button class="p-2 md:p-3 rounded bg-white/10 hover:bg-white/20 transition-colors text-white">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                </svg>
-            </button> -->
-
-            <input
-                    type="text"
-                    name="prompt"
-                    id="prompt-input"
-                    class="flex-1 bg-white/10 rounded px-3 md:px-4 py-2 md:py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
-                    placeholder="Type your message here..."
-                    onkeydown="if (event.key === 'Enter') { event.preventDefault(); sendPayload(); }"
-            >
-
-            <button
-                    class="p-2 md:p-3 rounded transition-colors duration-200"
-                    style="background: var(--clr-main); border: 1px solid var(--clr-main); color: white;"
-                    onmouseover="this.style.backgroundColor='#0890cc'"
-                    onmouseout="this.style.backgroundColor='var(--clr-main)'"
-                    onclick="sendPayload()"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                     stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-                </svg>
-            </button>
-        </div>
-    </div>
-</div>
-<script>
     window.addEventListener('resize', () => {
         if (window.innerWidth >= 768) {
             document.getElementById('assistantChat').classList.remove('hidden');
@@ -281,5 +232,3 @@
                     appendMessage('Error: Failed to get response', false);
                 });
         }
-</script>
-{% endblock %}
