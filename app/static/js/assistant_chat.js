@@ -24,7 +24,7 @@
                 assistantMessageDiv = document.createElement('div');
                 assistantMessageDiv.className = `w-full text-left mb-4 assistant-message-pending`;
                 assistantMessageDiv.innerHTML = `
-                    <div class="inline-block bg-white/10 rounded-lg p-3 text-white max-w-[80%]">
+                    <div class="inline-block bg-white/10 rounded-lg p-3 text-white max-w-[80%] relative">
                         ${text}
                     </div>
                 `;
@@ -57,6 +57,23 @@
             
             const parsedHTML = marked.parse(processedMarkdown);
             divElement.innerHTML = parsedHTML;
+            
+            // Add speak button if this is the final chunk (no pending class)
+            if (!divElement.parentElement.classList.contains('assistant-message-pending')) {
+                const speakButton = `
+                    <button onclick="toggleSpeech(this.parentElement.getAttribute('data-raw') || this.parentElement.textContent, this)" 
+                            class="absolute top-2 right-2 p-1 rounded-full hover:bg-white/20 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 speak-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 stop-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                `;
+                divElement.insertAdjacentHTML('beforeend', speakButton);
+            }
             
             setTimeout(() => {
                 try {
@@ -159,10 +176,25 @@
 
                     function processStream({done, value}) {
                         if (done) {
-                            // Streaming complete - remove the loader
+                            // Streaming complete - remove the loader and add speak button
                             const pendingMessage = document.querySelector('.assistant-message-pending');
                             if (pendingMessage) {
                                 pendingMessage.classList.remove('assistant-message-pending');
+                                const messageDiv = pendingMessage.querySelector('div');
+                                const speakButton = `
+                                    <button onclick="toggleSpeech(this.parentElement.getAttribute('data-raw') || this.parentElement.textContent, this)" 
+                                            class="absolute top-2 right-2 p-1 rounded-full hover:bg-white/20 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 speak-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                  d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                        </svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 stop-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                  d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                `;
+                                messageDiv.insertAdjacentHTML('beforeend', speakButton);
                             }
                             return;
                         }
@@ -183,4 +215,27 @@
                     }
                     appendMessage('Error: Failed to get response', false);
                 });
+        }
+
+        function toggleSpeech(text, buttonElement) {
+            if (window.speechSynthesis.speaking) {
+                stopSpeech();
+                updateSpeakButtons(false);
+            } else {
+                speak(text);
+                updateSpeakButtons(true);
+                
+                // Add event listener for when speech ends
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.onend = () => {
+                    updateSpeakButtons(false);
+                };
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function updateSpeakButtons(isSpeaking) {
+            document.querySelectorAll('.speak-icon, .stop-icon').forEach(icon => {
+                icon.classList.toggle('hidden', icon.classList.contains('speak-icon') ? isSpeaking : !isSpeaking);
+            });
         }
