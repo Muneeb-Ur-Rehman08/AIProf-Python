@@ -112,53 +112,6 @@
             .trim();
     }
 
-    {#function processMarkdownWithMermaid(divElement, textChunk) {#}
-    {#    const existingMarkdown = divElement.getAttribute('data-raw') || '';#}
-    {#    const updatedMarkdown = existingMarkdown + textChunk;#}
-    {#    divElement.setAttribute('data-raw', updatedMarkdown);#}
-    {##}
-    {#    try {#}
-    {#        const mermaidRegex = /```mermaid\n([\s\S]*?)```/g;#}
-    {#        let mermaidIndex = 0;#}
-    {#        const mermaidCharts = [];#}
-    {##}
-    {#        const processedMarkdown = updatedMarkdown.replace(mermaidRegex, (match, mermaidCode) => {#}
-    {#            console.info(mermaidCode);#}
-    {#            const placeholder = `<div class="mermaid" id="mermaid-chart-${mermaidIndex}">${mermaidCode}</div>`;#}
-    {#            mermaidCharts.push({id: `mermaid-chart-${mermaidIndex}`, code: mermaidCode});#}
-    {#            mermaidIndex++;#}
-    {#            return placeholder;#}
-    {#        });#}
-    {##}
-    {#        const parsedHTML = marked.parse(processedMarkdown);#}
-    {#        divElement.innerHTML = parsedHTML;#}
-    {#console.log(parsedHTML)#}
-    {##}
-    {#        setTimeout(() => {#}
-    {#            mermaidCharts.forEach(chart => {#}
-    {#                const chartElement = document.getElementById(chart.id);#}
-    {#                if (chartElement) {#}
-    {#                    try {#}
-    {#                        console.warn("Rending chart with id ", chart.id);#}
-    {#                        mermaid.render(chart.id, chart.code, (svgCode) => {#}
-    {#                            console.log("SVG")#}
-    {#                            console.log(svgCode);#}
-    {#                            chartElement.innerHTML = svgCode;#}
-    {#                        }, chartElement);#}
-    {#                    } catch (err) {#}
-    {#                        console.error(`Error rendering Mermaid chart for ID ${chart.id}:`, err);#}
-    {#                    }#}
-    {#                } else {#}
-    {#                    console.error(`Chart element with ID ${chart.id} not found.`);#}
-    {#                }#}
-    {#            });#}
-    {#        }, 2000);#}
-    {##}
-    {#    } catch (e) {#}
-    {#        console.error('Error processing Markdown or rendering Mermaid diagrams:', e);#}
-    {#    }#}
-    {#}#}
-
 
         // default message
         // appendMessage('Hello! How can I assist you today?', true);
@@ -175,7 +128,7 @@
         `;
         }
 
-        function sendPayload() {
+        function sendPayload(assistant_id) {
             const promptInput = document.getElementById('prompt-input');
             const promptValue = promptInput.value.trim();
 
@@ -189,9 +142,8 @@
             promptInput.value = '';
 
             const payload = {
-                conversation_id: '{{ assistant.id }}',
                 message: promptValue,
-                id: '{{ assistant.id }}'
+                id: assistant_id
             };
 
             fetch('/assistantchat/chat/', {
