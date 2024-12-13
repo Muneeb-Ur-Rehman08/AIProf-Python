@@ -94,3 +94,65 @@ class Conversation(models.Model):
                         )
         except Exception as e:
             logger.error(f"Failed to save conversation: {str(e)}")
+
+
+
+class KnowledgeAssessment(models.Model):
+    """
+    Model to store user knowledge assessments for different assistants and subjects
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='knowledge_assessments')
+    assistant = models.ForeignKey(Assistant, on_delete=models.CASCADE, related_name='knowledge_assessments')
+    
+    # Assessment metadata
+    subject = models.CharField(max_length=100)
+    topic = models.CharField(max_length=100)
+    
+    # Knowledge level assessment
+    knowledge_level = models.CharField(
+        max_length=20, 
+        choices=[
+            ('unassessed', 'Unassessed'),
+            ('beginner', 'Beginner'),
+            ('intermediate', 'Intermediate'), 
+            ('advanced', 'Advanced')
+        ],
+        default='unassessed'
+    )
+    
+    # Diagnostic questions and user's responses
+    diagnostic_questions = models.JSONField(null=True, blank=True)
+    user_answers = models.JSONField(null=True, blank=True)
+    
+    # Assessment score and insights
+    assessment_score = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2, 
+        null=True, 
+        blank=True
+    )
+    assessment_insights = models.TextField(null=True, blank=True)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('user', 'assistant', 'subject', 'topic')
+        verbose_name_plural = 'Knowledge Assessments'
+    
+    def __str__(self):
+        return f"{self.user.username}'s {self.subject} Assessment for {self.assistant.name}"
+    
+    def update_assessment(self, knowledge_level, score=None, insights=None, answers=None):
+        """
+        Method to update the assessment with new results
+        """
+        self.knowledge_level = knowledge_level
+        if score is not None:
+            self.assessment_score = score
+        if insights is not None:
+            self.assessment_insights = insights
+        if answers is not None:
+            self.user_answers = answers
+        self.save()
