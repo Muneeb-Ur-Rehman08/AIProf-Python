@@ -284,7 +284,7 @@ def list_assistants(request):
     topics = request.GET.getlist('topic')      # Retrieve selected topics from checkboxes
 
     # Filter assistants based on subjects and topics
-    assistants = Assistant.objects.all()
+    assistants = Assistant.objects.all().order_by('-average_rating')
 
     # If subjects are selected, filter based on subjects
     if subjects:
