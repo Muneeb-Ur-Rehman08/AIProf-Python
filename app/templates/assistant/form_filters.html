@@ -1,35 +1,39 @@
-<form class="space-y-3" id="filter-form">
+<form class="space-y-4 p-4 bg-gradient-to-b from-purple-900 to-indigo-900 text-white rounded-lg shadow-md" id="filter-form">
   <!-- Accordion Item for Subjects -->
-  <div class="collapse collapse-arrow w-full border border-gray-300 rounded-md">
-    <input type="checkbox" class="peer" checked />
-    <div class="collapse-title peer-checked:bg-primary peer-checked:text-primary-content hover:underline hover:text-">
+  <div class="collapse collapse-arrow border border-gray-600 rounded-md shadow-lg">
+    <h2
+      class="collapse-title bg-purple-700 text-white font-semibold shadow-lg cursor-pointer"
+      _="on click toggle .open on #subject-section
+          then toggle .open on #topic-section"
+    >
       Subjects
-    </div>
-    <div class="collapse-content space-y-4 peer-checked:bg-primary peer-checked:text-primary-content">
+    </h2>
+    <div id="subject-section" class="collapse-content bg-purple-800 text-white p-4 open">
+      <!-- Search Input -->
       <div class="relative">
-        <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-2 top-4 h-4 w-4 text-muted-foreground" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4 opacity-70">
+        <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-3 h-5 w-5 text-gray-400" viewBox="0 0 16 16" fill="currentColor">
           <path fill-rule="evenodd" d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" clip-rule="evenodd" />
         </svg>
         <input
           type="text"
-          hx-push-url="true"
           placeholder="Search subjects..."
-          class="input input-bordered w-full bg-transparent pl-8"
+          class="input input-bordered w-full bg-purple-700 text-white pl-10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           id="subject-search"
           hx-trigger="keyup changed delay:300ms"
           onkeyup="filterSubjects()"
-          _="on keyup from #subject-search
-              send this.closest('div') to #assistants-list"
         />
       </div>
-      <div class="space-y-2 max-h-32 overflow-y-auto" id="subject-list">
+      <!-- Subject List -->
+      <div class="space-y-2 max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-purple-800 mt-4" id="subject-list">
         {% for subject in subjects_data %}
-        <div class="flex items-center space-x-2 subject-item">
+        <div
+          class="flex items-center space-x-3 subject-item cursor-pointer"
+          onclick="document.getElementById('subject-{{ subject.name }}').click();"
+        >
           <input
             type="checkbox"
-            hx-push-url="true"
             id="subject-{{ subject.name }}"
-            class="checkbox"
+            class="checkbox checkbox-primary"
             name="subject"
             value="{{ subject.name }}"
             hx-trigger="change"
@@ -37,7 +41,7 @@
             hx-target="#assistants-list"
             hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword']"
           />
-          <label for="subject-{{ subject.name }}" class="label cursor-pointer">
+          <label for="subject-{{ subject.name }}" class="text-sm font-medium cursor-pointer">
             {{ subject.name }}
           </label>
         </div>
@@ -47,37 +51,41 @@
   </div>
 
   <!-- Accordion Item for Topics -->
-  <div class="collapse collapse-arrow w-full border border-gray-300 rounded-md">
-    <input type="checkbox" class="peer" checked />
-    <div class="collapse-title peer-checked:bg-primary peer-checked:text-primary-content">
+  <div class="collapse collapse-arrow border border-gray-600 rounded-md shadow-lg">
+    <h2
+      class="collapse-title bg-purple-700 text-white font-semibold shadow-lg cursor-pointer"
+      _="on click toggle .open on #topic-section
+          then toggle .open on #subject-section"
+    >
       Topics
-    </div>
-    <div class="collapse-content space-y-4 peer-checked:bg-primary peer-checked:text-primary-content">
+    </h2>
+    <div id="topic-section" class="collapse-content bg-purple-800 text-white p-4">
+      <!-- Search Input -->
       <div class="relative">
-        <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-2 top-4 h-4 w-4 text-muted-foreground" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4 opacity-70">
-          <path fill-rule="evenodd" d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" clip-rule="evenodd" />
+        <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-3 h-5 w-5 text-gray-400" viewBox="0 0 16 16" fill="currentColor">
+          <path fill-rule="evenodd" d="M9.965 11.026a5 5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" clip-rule="evenodd" />
         </svg>
         <input
           type="text"
-          hx-push-url="true"
           placeholder="Search topics..."
-          class="input input-bordered bg-transparent w-full pl-8"
+          class="input input-bordered w-full bg-purple-700 text-white pl-10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           id="topic-search"
           hx-trigger="keyup changed delay:300ms"
           onkeyup="filterTopics()"
-          _="on keyup from #topic-search
-              send this.closest('div') to #assistants-list"
         />
       </div>
-      <div class="space-y-2 max-h-32 overflow-y-auto" id="topic-list">
+      <!-- Topic List -->
+      <div class="space-y-2 max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-purple-800 mt-4" id="topic-list">
         {% for topic in subjects_data %}
         {% for topic in topic.topics %}
-        <div class="flex items-center space-x-2 topic-item">
+        <div
+          class="flex items-center space-x-3 topic-item cursor-pointer"
+          onclick="document.getElementById('topic-{{ topic }}').click();"
+        >
           <input
             type="checkbox"
-            hx-push-url="true"
             id="topic-{{ topic }}"
-            class="checkbox"
+            class="checkbox checkbox-primary"
             name="topic"
             value="{{ topic }}"
             hx-trigger="change"
@@ -85,7 +93,7 @@
             hx-target="#assistants-list"
             hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword']"
           />
-          <label for="topic-{{ topic }}" class="label cursor-pointer">
+          <label for="topic-{{ topic }}" class="text-sm font-medium cursor-pointer">
             {{ topic }}
           </label>
         </div>
@@ -94,4 +102,4 @@
       </div>
     </div>
   </div>
-</form> 
+</form>
