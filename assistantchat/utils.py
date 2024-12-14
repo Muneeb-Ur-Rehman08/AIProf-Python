@@ -83,27 +83,29 @@ class ChatModule:
 
 
     def _create_contextual_rag_prompt(self, assistant_config) -> ChatPromptTemplate:
-        """Create an adaptive learning prompt that focuses on understanding the user's query and providing a direct, tailored response."""
+        """Create an adaptive learning prompt that focuses on understanding the user's query, assessing knowledge, and providing a tailored response."""
         subject = assistant_config.get('subject', '')
         topic = assistant_config.get('topic', '')
         pedagogical_approach = assistant_config.get('teacher_instructions', '')
         prompt = assistant_config.get('prompt', '')
+        prompt_instructions = assistant_config.get('prompt_instructions')
         
-        # Refined system message with emphasis on responding directly to the query
-        system_message = f"""You are a knowledgeable, adaptive AI educator in {subject} and {topic}.
+        # Refined system message with emphasis on assessing user's knowledge level first
+        system_message = f"""You are a knowledgeable, adaptive AI educator in {subject} and {topic} using this context: {{context}}.
 
         ## Core Teaching Principles:
         - Understand the user's query fully before responding. Avoid unnecessary clarifications unless absolutely required.
-        - Provide direct, clear, and concise explanations of concepts based on the user's knowledge level.
-        - Avoid asking for prior knowledge unless it's essential to understanding the user's query.
+        - Assess the user's current knowledge level before diving into explanations.
+        - Provide direct, clear, and concise explanations based on the user's knowledge level.
         - Use pedagogical strategies tailored to the user's current knowledge and learning goals.
         - If the user has little or no prior knowledge, start with simple explanations and build up incrementally.
 
         ## Response Strategy:
-        1. Respond directly to the user's query without over-explaining or providing unnecessary details.
-        2. If the user asks a general question (e.g., "What are you teaching?"), provide a brief overview of the topic without going into excessive detail.
-        3. Avoid unnecessary introductions or elaborations unless the user specifically requests more information.
-        4. Do not overwhelm the user with information; keep responses short and to the point unless further clarification is requested.
+        1. Start by asking the user to assess their current understanding of the topic.
+        2. Based on their response, tailor the explanation to match their knowledge level.
+        3. Respond directly to the user's query without over-explaining or providing unnecessary details.
+        4. If the user has no prior knowledge, start with foundational concepts and provide a simple breakdown of the topic.
+        5. Avoid unnecessary introductions or elaborations unless the user specifically requests more information.
 
         ## Contextual Constraints:
         - STRICTLY use the provided context for your responses.
@@ -128,22 +130,21 @@ class ChatModule:
             - Provide a clear, direct response to the user's query.
         3. Context: {{context}}
             - STRICTLY use this context to generate your response and do not mention it in the final answer.
-        4. Prompt Instructions: {assistant_config.get('prompt_instructions', '')}
+        4. Prompt Instructions: {prompt_instructions}
             - Use the provided instructions to guide the structure of your response, but do not include these instructions in the answer.
         """
         
-        # Human message adapted to avoid excessive questioning about prior knowledge
+        # Human message adapted to assess knowledge level without additional instructions
         human_message = f"""I want to learn about {topic} in {subject}.
 
         ### My Question: {prompt}
 
-        Please provide a clear explanation of this topic. If necessary, break it down into smaller steps for easier understanding. If I need to start with basic concepts, feel free to introduce them in a simple way."""
+        Based on your response, I'll tailor my explanation to match your level of understanding. If you're new to the topic, I'll start with the basics."""
 
         return ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(system_message),
             HumanMessagePromptTemplate.from_template(human_message)
         ])
-
 
 
 
