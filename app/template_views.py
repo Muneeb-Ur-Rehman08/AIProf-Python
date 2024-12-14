@@ -40,5 +40,12 @@ def auth_view(request):
 
 def assistant_chat_view(request, assistant_id):
     assistant = Assistant.objects.get(id=assistant_id)
-    return render(request, 'assistant/chat.html', {'assistant': assistant})
+    is_creator = request.user.id == assistant.user_id.id
+    chat_mode = True  # Set this based on your routing/URL logic
+
+    return render(request, 'assistant/chat_wrapper.html', {
+        'assistant': assistant, 
+        'is_creator': is_creator, 
+        'chat_mode': chat_mode
+    })
 

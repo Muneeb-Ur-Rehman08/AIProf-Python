@@ -135,7 +135,8 @@ def create_assistant(request, ass_id: Optional[str] = None):
                 'topic': assistant_data.topic,
                 'teacher_instructions': assistant_data.teacher_instructions,
                 'urls': urls,
-                'knowledge_base': pdfs
+                'knowledge_base': pdfs,
+                'chat_mode': False
             })
         else:
             return HttpResponseRedirect(f'/assistants')

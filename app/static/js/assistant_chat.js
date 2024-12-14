@@ -1,52 +1,3 @@
-{% extends 'base.html' %}
-{% load static %}
-
-{% block content %}
-<div id="chat" class="w-full h-screen flex flex-col justify-between">
-    <!-- Chat header -->
-    <div class="bg-black/30 p-3 md:p-4 w-full text-center" style="border-bottom: 1px solid var(--clr-main)">
-        <h2 class="text-lg font-bold">{{ assistant.name }}</h2>
-    </div>
-    <!-- Chat Container -->
-    <div class="flex-1 flex flex-col p-4 md:p-6 overflow-y-auto" id="chat-container">
-        <!-- Messages will be dynamically inserted here -->
-    </div>
-
-    <!-- Message Input Area -->
-    <div class="bg-black/30 p-3 md:p-4 w-full" style="border-top: 1px solid var(--clr-main)">
-        <div class="max-w-4xl mx-auto flex gap-2">
-            <!-- <button class="p-2 md:p-3 rounded bg-white/10 hover:bg-white/20 transition-colors text-white">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                </svg>
-            </button> -->
-
-            <input
-                    type="text"
-                    name="prompt"
-                    id="prompt-input"
-                    class="flex-1 bg-white/10 rounded px-3 md:px-4 py-2 md:py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
-                    placeholder="Type your message here..."
-                    onkeydown="if (event.key === 'Enter') { event.preventDefault(); sendPayload(); }"
-            >
-
-            <button
-                    class="p-2 md:p-3 rounded transition-colors duration-200"
-                    style="background: var(--clr-main); border: 1px solid var(--clr-main); color: white;"
-                    onmouseover="this.style.backgroundColor='#0890cc'"
-                    onmouseout="this.style.backgroundColor='var(--clr-main)'"
-                    onclick="sendPayload()"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                     stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-                </svg>
-            </button>
-        </div>
-    </div>
-</div>
-<script>
     window.addEventListener('resize', () => {
         if (window.innerWidth >= 768) {
             document.getElementById('assistantChat').classList.remove('hidden');
@@ -73,7 +24,7 @@
                 assistantMessageDiv = document.createElement('div');
                 assistantMessageDiv.className = `w-full text-left mb-4 assistant-message-pending`;
                 assistantMessageDiv.innerHTML = `
-                    <div class="inline-block bg-white/10 rounded-lg p-3 text-white max-w-[80%]">
+                    <div class="inline-block bg-white/10 rounded-lg p-3 text-white max-w-[80%] relative">
                         ${text}
                     </div>
                 `;
@@ -106,6 +57,23 @@
             
             const parsedHTML = marked.parse(processedMarkdown);
             divElement.innerHTML = parsedHTML;
+            
+            // Add speak button if this is the final chunk (no pending class)
+            if (!divElement.parentElement.classList.contains('assistant-message-pending')) {
+                const speakButton = `
+                    <button onclick="toggleSpeech(this.parentElement.getAttribute('data-raw') || this.parentElement.textContent, this)" 
+                            class="absolute top-2 right-2 p-1 rounded-full hover:bg-white/20 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 speak-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 stop-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                `;
+                divElement.insertAdjacentHTML('beforeend', speakButton);
+            }
             
             setTimeout(() => {
                 try {
@@ -161,53 +129,6 @@
             .trim();
     }
 
-    {#function processMarkdownWithMermaid(divElement, textChunk) {#}
-    {#    const existingMarkdown = divElement.getAttribute('data-raw') || '';#}
-    {#    const updatedMarkdown = existingMarkdown + textChunk;#}
-    {#    divElement.setAttribute('data-raw', updatedMarkdown);#}
-    {##}
-    {#    try {#}
-    {#        const mermaidRegex = /```mermaid\n([\s\S]*?)```/g;#}
-    {#        let mermaidIndex = 0;#}
-    {#        const mermaidCharts = [];#}
-    {##}
-    {#        const processedMarkdown = updatedMarkdown.replace(mermaidRegex, (match, mermaidCode) => {#}
-    {#            console.info(mermaidCode);#}
-    {#            const placeholder = `<div class="mermaid" id="mermaid-chart-${mermaidIndex}">${mermaidCode}</div>`;#}
-    {#            mermaidCharts.push({id: `mermaid-chart-${mermaidIndex}`, code: mermaidCode});#}
-    {#            mermaidIndex++;#}
-    {#            return placeholder;#}
-    {#        });#}
-    {##}
-    {#        const parsedHTML = marked.parse(processedMarkdown);#}
-    {#        divElement.innerHTML = parsedHTML;#}
-    {#console.log(parsedHTML)#}
-    {##}
-    {#        setTimeout(() => {#}
-    {#            mermaidCharts.forEach(chart => {#}
-    {#                const chartElement = document.getElementById(chart.id);#}
-    {#                if (chartElement) {#}
-    {#                    try {#}
-    {#                        console.warn("Rending chart with id ", chart.id);#}
-    {#                        mermaid.render(chart.id, chart.code, (svgCode) => {#}
-    {#                            console.log("SVG")#}
-    {#                            console.log(svgCode);#}
-    {#                            chartElement.innerHTML = svgCode;#}
-    {#                        }, chartElement);#}
-    {#                    } catch (err) {#}
-    {#                        console.error(`Error rendering Mermaid chart for ID ${chart.id}:`, err);#}
-    {#                    }#}
-    {#                } else {#}
-    {#                    console.error(`Chart element with ID ${chart.id} not found.`);#}
-    {#                }#}
-    {#            });#}
-    {#        }, 2000);#}
-    {##}
-    {#    } catch (e) {#}
-    {#        console.error('Error processing Markdown or rendering Mermaid diagrams:', e);#}
-    {#    }#}
-    {#}#}
-
 
         // default message
         // appendMessage('Hello! How can I assist you today?', true);
@@ -224,7 +145,7 @@
         `;
         }
 
-        function sendPayload() {
+        function sendPayload(assistant_id) {
             const promptInput = document.getElementById('prompt-input');
             const promptValue = promptInput.value.trim();
 
@@ -238,9 +159,8 @@
             promptInput.value = '';
 
             const payload = {
-                conversation_id: '{{ assistant.id }}',
                 message: promptValue,
-                id: '{{ assistant.id }}'
+                id: assistant_id
             };
 
             fetch('/assistantchat/chat/', {
@@ -256,10 +176,25 @@
 
                     function processStream({done, value}) {
                         if (done) {
-                            // Streaming complete - remove the loader
+                            // Streaming complete - remove the loader and add speak button
                             const pendingMessage = document.querySelector('.assistant-message-pending');
                             if (pendingMessage) {
                                 pendingMessage.classList.remove('assistant-message-pending');
+                                const messageDiv = pendingMessage.querySelector('div');
+                                const speakButton = `
+                                    <button onclick="toggleSpeech(this.parentElement.getAttribute('data-raw') || this.parentElement.textContent, this)" 
+                                            class="absolute top-2 right-2 p-1 rounded-full hover:bg-white/20 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 speak-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                  d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                        </svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 stop-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                  d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                `;
+                                messageDiv.insertAdjacentHTML('beforeend', speakButton);
                             }
                             return;
                         }
@@ -281,5 +216,26 @@
                     appendMessage('Error: Failed to get response', false);
                 });
         }
-</script>
-{% endblock %}
+
+        function toggleSpeech(text, buttonElement) {
+            if (window.speechSynthesis.speaking) {
+                stopSpeech();
+                updateSpeakButtons(false);
+            } else {
+                speak(text);
+                updateSpeakButtons(true);
+                
+                // Add event listener for when speech ends
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.onend = () => {
+                    updateSpeakButtons(false);
+                };
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function updateSpeakButtons(isSpeaking) {
+            document.querySelectorAll('.speak-icon, .stop-icon').forEach(icon => {
+                icon.classList.toggle('hidden', icon.classList.contains('speak-icon') ? isSpeaking : !isSpeaking);
+            });
+        }

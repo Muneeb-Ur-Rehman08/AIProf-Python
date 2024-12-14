@@ -1,0 +1,11 @@
+{% extends 'base.html' %} {% load static %}
+
+{% block content %}
+    {% if chat_mode %}
+        <div id="chat" class="w-full h-screen flex flex-col justify-between">
+            {% include 'assistant/assistant_chat.html' %}
+        </div>
+    {% else %}
+        {% include 'assistant/assistant_form.html' %}
+    {% endif %}
+{% endblock %}

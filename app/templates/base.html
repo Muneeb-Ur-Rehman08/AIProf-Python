@@ -167,6 +167,9 @@
 
     </style>
 
+    <!-- For TTS -->
+    <script src="{% static 'js/tts.js' %}"></script>
+
 </head>
 
 <body class="dark-theme landing-page-demo" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
@@ -238,6 +241,10 @@
         window.mermaid = mermaid;
         mermaid.initialize({ startOnLoad: false });
     </script>
+    <!-- For assistant chat -->
+    <script src="{% static 'js/assistant_chat.js' %}"></script>
+    <!-- For nuance -->
+    <script src="{% static 'js/nuance.js' %}"></script>
 
     <script>
         function showLoading() {
