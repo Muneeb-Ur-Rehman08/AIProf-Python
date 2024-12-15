@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="h-screen flex flex-col">
+<div class=" flex flex-col overflow-hidden">
 
   {% block navbar %}
     {% include 'modal/navbar.html' %}
@@ -8,7 +8,7 @@
 
   <div
     id="assistant-form"
-    class="flex flex-col md:flex-row flex-1 overflow-hidden"
+    class="flex flex-col md:flex-row flex-1 overflow-hidden h-screen"
     hx-replace-url="true"
   >
     <!-- Tab buttons for mobile -->
@@ -35,6 +35,7 @@
       hx-encoding="multipart/form-data"
       hx-swap="none"
       class="p-4 md:p-8 rounded-lg shadow-lg w-full md:w-1/2 overflow-y-auto"
+      style="max-height: calc(100vh - 50px);"
     >
       <!-- Image Picker Container -->
       <div
@@ -145,8 +146,8 @@
           rows="4"
         >{{ assistant.teacher_instructions|default:'' }}</textarea>
       </div>
-      <div class="mb-4">
-        <label class="block text-white text-lg font-bold mb-2">Files</label>
+      <div class="mb-4 flex items-center gap-2">
+        <label class="block text-white text-lg font-bold">Files</label>
         <label 
           for="fileInput" 
           class="inline-block cursor-pointer bg-white/10 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-white/20"
