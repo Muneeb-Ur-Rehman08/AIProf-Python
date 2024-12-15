@@ -18,7 +18,8 @@ from django.contrib.auth.decorators import login_required
 from app.utils.auth_backend import SupabaseBackend
 from app.utils.assistant_manager import AssistantManager
 from app.modals.assistants import AssistantConfig
-from users.models import Assistant, AssistantRating
+from users.models import Assistant, AssistantRating, Subject, Topic
+from django.db.models import Prefetch
 from typing import Optional
 from django.http import Http404
 from assistantchat.models import Conversation
@@ -209,77 +210,86 @@ def create_assistant(request):
 @require_http_methods(["GET"])
 def list_assistants(request):
      # Append subjects data to assistants
-    subjects_data = [
-        {
-            "name": "Mathematics",
-            "topics": [
-                "Arithmetic", "Addition", "Subtraction", "Multiplication", "Division",
-                "Fractions", "Decimals", "Percentages", "Algebra", "Linear Equations",
-                "Quadratic Equations", "Inequalities", "Polynomials", "Geometry", "Shapes",
-                "Angles", "Theorems", "Coordinate Geometry", "Trigonometry", "Sine",
-                "Cosine", "Tangent", "Pythagoras' Theorem", "Calculus", "Limits",
-                "Derivatives", "Integrals", "Differential Equations", "Statistics & Probability",
-                "Mean", "Median", "Mode", "Standard Deviation"
-            ]
-        },
-        {
-            "name": "Science",
-            "topics": [
-                "Physics", "Newton's Laws of Motion", "Electricity", "Magnetism",
-                "Thermodynamics", "Waves", "Quantum Mechanics", "Chemistry", "Periodic Table",
-                "Chemical Reactions", "Molecular Structure", "Acids and Bases", "Organic Chemistry",
-                "Biology", "Cell Structure", "Human Anatomy", "Genetics", "Ecology", "Evolution"
-            ]
-        },
-        {
-            "name": "English",
-            "topics": [
-                "Grammar", "Sentence Structure", "Tenses", "Vocabulary", "Writing Skills",
-                "Essay Writing", "Creative Writing", "Literature", "Poetry Analysis",
-                "Novel Studies", "Drama", "Research and Citation"
-            ]
-        },
-        {
-            "name": "History",
-            "topics": [
-                "Ancient Civilizations", "Greek and Roman History", "Middle Ages", "Renaissance",
-                "World Wars", "American Revolution", "Industrial Revolution", "Modern History",
-                "Cold War", "Civil Rights Movement"
-            ]
-        },
-        {
-            "name": "Geography",
-            "topics": [
-                "Physical Geography", "Landforms", "Weather and Climate", "Ecosystems",
-                "Human Geography", "Population Studies", "Urbanization", "Economic Geography",
-                "Global Trade"
-            ]
-        },
-        {
-            "name": "Computer Science",
-            "topics": [
-                "Programming Basics", "Algorithms", "Data Structures", "Databases",
-                "Web Development", "Networking", "Cybersecurity", "Artificial Intelligence",
-                "Machine Learning"
-            ]
-        },
-        {
-            "name": "Art",
-            "topics": [
-                "Drawing Techniques", "Painting Styles", "Sculpture", "Art History",
-                "Photography", "Digital Art", "Design Principles"
-            ]
-        },
-        {
-            "name": "Physical Education",
-            "topics": [
-                "Fitness Training", "Team Sports", "Individual Sports", "Health and Nutrition",
-                "Mental Well-being", "Exercise Physiology"
-            ]
-        }
-    ]
+    # subjects_data = [
+    #     {
+    #         "name": "Mathematics",
+    #         "topics": [
+    #             "Arithmetic", "Addition", "Subtraction", "Multiplication", "Division",
+    #             "Fractions", "Decimals", "Percentages", "Algebra", "Linear Equations",
+    #             "Quadratic Equations", "Inequalities", "Polynomials", "Geometry", "Shapes",
+    #             "Angles", "Theorems", "Coordinate Geometry", "Trigonometry", "Sine",
+    #             "Cosine", "Tangent", "Pythagoras' Theorem", "Calculus", "Limits",
+    #             "Derivatives", "Integrals", "Differential Equations", "Statistics & Probability",
+    #             "Mean", "Median", "Mode", "Standard Deviation"
+    #         ]
+    #     },
+    #     {
+    #         "name": "Science",
+    #         "topics": [
+    #             "Physics", "Newton's Laws of Motion", "Electricity", "Magnetism",
+    #             "Thermodynamics", "Waves", "Quantum Mechanics", "Chemistry", "Periodic Table",
+    #             "Chemical Reactions", "Molecular Structure", "Acids and Bases", "Organic Chemistry",
+    #             "Biology", "Cell Structure", "Human Anatomy", "Genetics", "Ecology", "Evolution"
+    #         ]
+    #     },
+    #     {
+    #         "name": "English",
+    #         "topics": [
+    #             "Grammar", "Sentence Structure", "Tenses", "Vocabulary", "Writing Skills",
+    #             "Essay Writing", "Creative Writing", "Literature", "Poetry Analysis",
+    #             "Novel Studies", "Drama", "Research and Citation"
+    #         ]
+    #     },
+    #     {
+    #         "name": "History",
+    #         "topics": [
+    #             "Ancient Civilizations", "Greek and Roman History", "Middle Ages", "Renaissance",
+    #             "World Wars", "American Revolution", "Industrial Revolution", "Modern History",
+    #             "Cold War", "Civil Rights Movement"
+    #         ]
+    #     },
+    #     {
+    #         "name": "Geography",
+    #         "topics": [
+    #             "Physical Geography", "Landforms", "Weather and Climate", "Ecosystems",
+    #             "Human Geography", "Population Studies", "Urbanization", "Economic Geography",
+    #             "Global Trade"
+    #         ]
+    #     },
+    #     {
+    #         "name": "Computer Science",
+    #         "topics": [
+    #             "Programming Basics", "Algorithms", "Data Structures", "Databases",
+    #             "Web Development", "Networking", "Cybersecurity", "Artificial Intelligence",
+    #             "Machine Learning"
+    #         ]
+    #     },
+    #     {
+    #         "name": "Art",
+    #         "topics": [
+    #             "Drawing Techniques", "Painting Styles", "Sculpture", "Art History",
+    #             "Photography", "Digital Art", "Design Principles"
+    #         ]
+    #     },
+    #     {
+    #         "name": "Physical Education",
+    #         "topics": [
+    #             "Fitness Training", "Team Sports", "Individual Sports", "Health and Nutrition",
+    #             "Mental Well-being", "Exercise Physiology"
+    #         ]
+    #     }
+    # ]
+    
 
-    keyword = request.GET.get('keyword')
+    # Fetch subjects from the database
+    subjects_data = Subject.objects.prefetch_related(
+        'topics'
+        ).all()
+    
+    
+
+
+    keyword = request.GET.get('keyword', '').strip()
     subjects = request.GET.getlist('subject')  # Retrieve selected subjects from checkboxes
     topics = request.GET.getlist('topic')      # Retrieve selected topics from checkboxes
 
