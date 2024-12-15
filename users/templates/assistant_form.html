@@ -1,16 +1,14 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="min-h-screen h-full">
+<div class="h-screen flex flex-col">
 
   {% block navbar %}
-
-  <div id="navbar" class="fixed top-0 left-0 right-0 z-20">
     {% include 'modal/navbar.html' %}
-</div>
-{% endblock %}
+  {% endblock %}
+
   <div
     id="assistant-form"
-    class="flex flex-col md:flex-row items-self-start pt-20"
+    class="flex flex-col md:flex-row flex-1 overflow-hidden"
     hx-replace-url="true"
   >
     <!-- Tab buttons for mobile -->
@@ -36,7 +34,7 @@
       id="assistantForm"
       hx-encoding="multipart/form-data"
       hx-swap="none"
-      class="p-4 md:p-8 rounded-lg shadow-lg w-full md:w-1/2 items-self-start min-h-screen"
+      class="p-4 md:p-8 rounded-lg shadow-lg w-full md:w-1/2 overflow-y-auto"
     >
       <!-- Image Picker Container -->
       <div
@@ -229,6 +227,7 @@
     {% include 'assistant/assistant_chat.html' with assistant=assistant %}
     </div>
   </div>
+</div>
 
 <script>
   const subjectsData = {
