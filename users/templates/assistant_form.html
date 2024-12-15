@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class=" flex flex-col overflow-hidden">
+<div class=" flex flex-col h-full min-h-screen">
 
   {% block navbar %}
     {% include 'modal/navbar.html' %}
@@ -8,7 +8,7 @@
 
   <div
     id="assistant-form"
-    class="flex flex-col md:flex-row flex-1 overflow-hidden h-screen"
+    class="flex flex-col md:flex-row flex-1"
     hx-replace-url="true"
   >
     <!-- Tab buttons for mobile -->
