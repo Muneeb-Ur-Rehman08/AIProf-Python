@@ -3,28 +3,27 @@
     <div class="flex-1">
         <a href="{% url 'index' %}">
                 <img class="w-24 font-sans" src="{% static 'assets/images/logo/logo.svg' %}" alt="AIPro Logo" />
-            </a>
-        </div>
-        <div class="flex-none">
-            <div class="dropdown dropdown-end">
-                <div class="flex items-center" _="on click toggle .hidden on #dropdownMenu">
+        </a>
+    </div>
+    <div class="flex-none z-50">
+        <div class="dropdown dropdown-end">
+            <div class="flex" _="on click toggle .hidden on #dropdownMenu">
                     <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
                         <div class="w-10 rounded-full">
                             <img alt="Tailwind CSS Navbar component" src="https://i.pravatar.cc/150?img=1" />
                         </div>
                     </div>
-                    <span tabindex="0" class="ml-2 text-white"><button>Your Name</button></span>
+                    <span tabindex="0" class="ml-2 text-white"><button>Profile Name</button></span>
                 </div>
-                <ul id="dropdownMenu" tabindex="0" class="menu menu-sm dropdown-content rounded-box mt-3 w-52 p-2 shadow hidden"
-                    style="background-color: var(--clr-dark-blue);color: white; z-index: 1000;">
+                <ul id="dropdownMenu" tabindex="0" class="menu menu-sm dropdown-content bg-gradient-to-b from-purple-500 via-purple-600 to-purple-900 rounded-box mt-3 w-52 p-2 shadow hidden">
                     <li>
-                        <a class="justify-between">
+                        <a class="justify-between hover:bg-purple-700">
                             Profile
                             <span class="badge">New</span>
                         </a>
                     </li>
-                    <li><a>Settings</a></li>
-                    <li><a>Logout</a></li>
+                    <li><a class="hover:bg-purple-700">Settings</a></li>
+                    <li><a class="hover:bg-purple-500">Logout</a></li>
                 </ul>
             </div>
         </div>

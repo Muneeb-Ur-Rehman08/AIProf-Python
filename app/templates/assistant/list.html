@@ -3,19 +3,20 @@
 {% block content %}
 <!-- Search Input -->
 <div class="h-full mx-5" style="min-height: 100vh;" hx-replace-url="{% url 'list_assistants' %}">
-
-  <div id="navbar" class="fixed top-0 left-0 right-0 z-20 mx-5">
+  {% block navbar %}
+  <div id="navbar" class="fixed top-0 left-0 right-0 mx-5 z-[100]">
     {% include 'modal/navbar.html' %}
   </div>
+  {% endblock %}
 
-  <div id="search-bar" class="sticky top-28 z-20">
+  <div id="search-bar" class="sticky top-28 z-[90]">
     <div class="grid grid-cols-12 gap-x-2.5 sm:gap-x-1.5 lg:gap-x-0">
 
       <div class="drawer inline-block w-auto col-span-2 sm:col-span-1 lg:hidden">
         <input id="my-drawer" type="checkbox" class="drawer-toggle" />
         <div class="drawer-content ">
           <!-- Page content here -->
-          <label for="my-drawer" class="btn drawer-button">
+          <label for="my-drawer" class="btn drawer-button bg-purple-600/40">
             <img src="{% static 'assets/images/filter.png' %}" class="w-6 h-6" alt="Filter">
           </label>
         </div>
@@ -54,7 +55,7 @@
     </div>
 
     <!-- Assistants list content -->
-    <div class="w-full lg:w-w-2/3" id="assistants-list" hx-get="{% url 'list_assistants' %}" hx-trigger="load"
+    <div class="w-full lg:w-w-2/3" style="z-index: 1;" id="assistants-list" hx-get="{% url 'list_assistants' %}" hx-trigger="load"
       hx-replace-url="false">
       <!-- Content loaded dynamically -->
     </div>
@@ -72,15 +73,15 @@
       searchBar.classList.remove('top-28');
       searchBar.classList.add('top-16');
       searchInput.classList.remove('bg-transparent');
-      searchInput.classList.add('bg-purple-500');
-      navbar.classList.add('bg-purple-500',"shadow-xl" , "overflow-hidden");
+      searchInput.classList.add('bg-purple-600');
+      navbar.classList.add('bg-purple-600',"shadow-xl" , "overflow-hidden");
     } else {
       searchBar.style.transition = 'top 0.3s ease';
       searchBar.classList.remove('top-16');
       searchBar.classList.add('top-28');
-      searchInput.classList.remove('bg-purple-500');
+      searchInput.classList.remove('bg-purple-600');
       searchInput.classList.add('bg-transparent');
-      navbar.classList.remove('bg-purple-500', "shadow-xl" , "overflow-hidden");
+      navbar.classList.remove('bg-purple-600', "shadow-xl" , "overflow-hidden");
     }
   }
 
