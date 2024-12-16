@@ -1,10 +1,14 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="min-h-screen h-full">
-  {% include 'modal/navbar.html' %}
+<div class=" flex flex-col h-full min-h-screen">
+
+  {% block navbar %}
+    {% include 'modal/navbar.html' %}
+  {% endblock %}
+
   <div
     id="assistant-form"
-    class="flex flex-col md:flex-row items-self-start h-[calc(100vh-5.5rem)]"
+    class="flex flex-col md:flex-row flex-1"
     hx-replace-url="true"
   >
     <!-- Tab buttons for mobile -->
@@ -30,8 +34,43 @@
       id="assistantForm"
       hx-encoding="multipart/form-data"
       hx-swap="none"
-      class="p-4 md:p-8 rounded-lg shadow-lg w-full md:w-1/2 items-self-start"
+      class="p-4 md:p-8 rounded-lg shadow-lg w-full md:w-1/2 overflow-y-auto pb-20"
+      style="max-height: calc(100vh - 50px);"
     >
+      <!-- Image Picker Container -->
+      <div
+        class="relative size-24 mx-auto rounded-full bg-gray-200 flex items-center justify-center border-2 border-dashed border-gray-400 cursor-pointer overflow-hidden"
+        onclick="document.getElementById('file-input').click()"
+      >
+        <!-- Plus Icon -->
+        <div id="icon-container" class="absolute flex items-center justify-center">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+            class="w-8 h-8 text-purple-600"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.75v14.5M4.75 12h14.5" />
+          </svg>
+        </div>
+        <!-- Image Preview -->
+        <img
+          id="image-preview"
+          class="hidden absolute inset-0 w-full h-full object-cover rounded-full"
+          alt="Selected Image"
+        />
+      </div>
+      <!-- Hidden File Input -->
+      <input
+        id="file-input"
+        type="file"
+        accept="image/*"
+        class="hidden"
+        onchange="previewImage(event)"
+      />
+    
       {% csrf_token %}
       <div class="mb-4">
         <label class="block text-white text-lg font-bold mb-2 mt-4">Name</label>
@@ -107,8 +146,8 @@
           rows="4"
         >{{ assistant.teacher_instructions|default:'' }}</textarea>
       </div>
-      <div class="mb-4">
-        <label class="block text-white text-lg font-bold mb-2">Files</label>
+      <div class="mb-4 flex items-center gap-2">
+        <label class="block text-white text-lg font-bold">Files</label>
         <label 
           for="fileInput" 
           class="inline-block cursor-pointer bg-white/10 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-white/20"
@@ -189,6 +228,7 @@
     {% include 'assistant/assistant_chat.html' with assistant=assistant %}
     </div>
   </div>
+</div>
 
 <script>
   const subjectsData = {
@@ -580,6 +620,38 @@
     const urlContainer = button.closest('.url-input-group');
     urlContainer.remove();
   }
+  
+  function previewImage(event) {
+    const input = event.target;
+    const preview = document.getElementById("image-preview");
+    const placeholder = input.previousElementSibling;
+
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        preview.src = e.target.result;
+        preview.classList.remove("hidden");
+        placeholder.classList.add("hidden");
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+  function previewImage(event) {
+    const input = event.target;
+    const preview = document.getElementById("image-preview");
+    const iconContainer = document.getElementById("icon-container");
+  console.log(input.files)
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        preview.src = e.target.result;
+        preview.classList.remove("hidden");
+        iconContainer.classList.add("hidden"); // Hide the plus icon
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
 </script>
 
 <style>
