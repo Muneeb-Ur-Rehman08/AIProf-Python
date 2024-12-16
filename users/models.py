@@ -82,7 +82,7 @@ class Assistant(models.Model):
     total_reviews = models.DecimalField(max_digits=3, decimal_places=1, default=Decimal('0.0')) 
     interactions = models.IntegerField(blank=True, null=True, default=0)
     is_published = models.BooleanField(default=False)
-    image = models.ImageField(upload_to='assistant_images/', null=True, blank=True)
+    image = models.BinaryField(null=True, blank=True)
 
 
     class Meta:

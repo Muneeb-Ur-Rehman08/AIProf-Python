@@ -43,7 +43,3 @@ urlpatterns = [
     path('assistant_detail/<str:assistant_id>/', assistant_detail, name='assistant_detail'),
 ]
 
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL,
-                          document_root=settings.MEDIA_ROOT)
