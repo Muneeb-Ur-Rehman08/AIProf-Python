@@ -134,7 +134,7 @@ class ChatModule:
         3. Context: {{context}}
             - Use this context strictly to generate your response without mentioning it in the final answer.
         4. Prompt Instructions: {prompt_instructions}
-            - Use these instructions to structure the response, but do not include them in the response.
+            - Use these instructions to draw diagrams in response, but do not include these instructions in the response.
         """
         
         # Human message prompting continued learning and exercises without unnecessary phrases
