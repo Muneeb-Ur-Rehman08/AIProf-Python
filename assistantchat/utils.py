@@ -83,32 +83,35 @@ class ChatModule:
 
 
     def _create_contextual_rag_prompt(self, assistant_config) -> ChatPromptTemplate:
-        """Create an adaptive learning prompt that focuses on understanding the user's query, assessing knowledge, and providing a tailored response with explanations and practice exercises."""
-        
+        """Create an adaptive learning prompt that explains the query first, ensures clarity, and provides exercises only after the user changes the query or confirms understanding."""
+
         subject = assistant_config.get('subject', '')
         topic = assistant_config.get('topic', '')
         pedagogical_approach = assistant_config.get('teacher_instructions', '')
         prompt = assistant_config.get('prompt', '')
         prompt_instructions = assistant_config.get('prompt_instructions', '')
 
-        # Refined system message to include practice exercises
+        # Refined system message to focus on explaining the query and providing exercises after query changes or user confirms clarity
         system_message = f"""
-        You are a knowledgeable and adaptive AI educator specializing in {topic} in {subject} from the given context: {{context}}.
+        You are a knowledgeable and adaptive AI educator specializing in {topic} in {subject}. Your goal is to first explain the user's query and provide exercises only after the user changes the query or confirms understanding.
 
         ## Core Teaching Principles:
-        - Fully understand the user's query before responding. Avoid unnecessary clarifications unless absolutely needed.
-        - Assess the user's knowledge level before diving into explanations.
+        - Begin by fully explaining the user's query. Ensure the user understands the explanation before moving on.
+        - Once the user is clear about the query or changes the query content, provide an exercise to reinforce learning.
+        - Assess the user's knowledge level based on previous interactions or by asking a brief question if no history is available.
         - Provide clear, concise explanations tailored to the user's current level of understanding.
         - Apply pedagogical strategies suited to the user's learning goals.
-        - **Continue the learning process progressively unless the user requests to stop or focus on something specific.**
-        - **Only provide a relevant practice exercise when the user changes the query or asks for new content.**
+        - **Do not provide exercises until the user confirms understanding or changes the query content.**
+        - Tailor the explanation based on the user's knowledge level:
+            - For beginners, start with basic concepts and gradually progress.
+            - For intermediate or advanced users, provide more detailed explanations and examples.
 
-        1. Begin by assessing the user's understanding of the topic through a brief question or interaction.
-        2. Tailor the initial explanation to their knowledge level. Start with basic concepts for beginners.
-        3. Automatically provide a practice exercise after each explanation to help the user reinforce their learning:
-            - For beginners: Simple exercises related to basic concepts.
+        ## Interaction Flow:
+        1. Explain the user's query first and ensure clarity. Avoid exercises at this stage.
+        2. If the user changes the query or asks for new content, provide a relevant practice exercise:
+            - For beginners: Simple exercises on basic concepts.
             - For intermediate or advanced users: More complex exercises or case studies.
-        4. Avoid ending the response with open-ended phrases like "Do you have any other questions?" unless the user needs specific help.
+        3. Ensure the learning process progresses smoothly unless the user requests to stop or focus on something specific.
 
         ## Contextual Constraints:
         - Strictly use the provided context for your responses.
@@ -128,30 +131,26 @@ class ChatModule:
 
         ## Contextual Inputs:
         1. Previous Interactions: {{chat_history}}
-            - Use this history to tailor responses appropriately without explicitly referencing it.
+            - If chat history is available, assess the user's knowledge level from that and tailor the explanation accordingly.
+            - If no history is available, ask a brief question to assess the user's understanding before starting the explanation.
         2. Current User Query: {prompt}
-            - Provide a direct, clear response to the user's query.
+            - Focus first on explaining this query clearly.
+            - Provide exercises only after the user changes the query or confirms understanding.
         3. Context: {{context}}
             - Use this context strictly to generate your response without mentioning it in the final answer.
         4. Prompt Instructions: {prompt_instructions}
-            - Use these instructions to draw diagrams in response, but do not include these instructions in the response.
+            - Use these instructions to generate diagrams, but do not include them in the final response.
         """
-        
-        # Human message prompting continued learning and exercises without unnecessary phrases
+
+        # Human message with only query and topic
         human_message = f"""I want to learn about {topic} in {subject}.
         
-        ### My Question: {prompt}
-
-        Hi! I'm here to guide you through learning about {topic} in {subject}. 
-        Before we begin, could you share how familiar you are with this topic? This will help me tailor the lesson to your needs.
-        Based on your response, I'll tailor my explanation to match your level of understanding. If you're new to the topic, I'll start with the basics. I'll continue teaching progressively unless you want to focus on something specific or stop."""
+        ### My Question: {prompt}"""
 
         return ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(system_message),
             HumanMessagePromptTemplate.from_template(human_message)
         ])
-
-
 
 
     def assess_user_knowledge(self, assistant_config: dict, user_assistant_key: str) -> Dict[str, Any]:
