@@ -1,234 +1,182 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class=" flex flex-col h-full min-h-screen">
 
-  {% block navbar %}
-    {% include 'modal/navbar.html' %}
-  {% endblock %}
+<!-- Tab buttons for mobile -->
+<div class="flex h-screen w-full flex-col items-center">
 
-  <div
-    id="assistant-form"
-    class="flex flex-col md:flex-row flex-1"
-    hx-replace-url="true"
-  >
-    <!-- Tab buttons for mobile -->
-    <div class="md:hidden flex border-b border-gray-800">
-      <button 
-        onclick="switchTab('form')" 
-        id="formTab"
-        class="flex-1 py-2 px-4 text-white border-b-2 border-transparent active-tab"
-      >
-        Create Assistant
-      </button>
-      <button 
-        onclick="switchTab('chat')" 
-        id="chatTab"
-        class="flex-1 py-2 px-4 text-white border-b-2 border-transparent"
-      >
-        Chat
-      </button>
-    </div>
+  {% include 'modal/navbar.html' %}
 
-    <!-- Form section -->
-    <form
-      id="assistantForm"
-      hx-encoding="multipart/form-data"
-      hx-swap="none"
-      class="p-4 md:p-8 rounded-lg shadow-lg w-full md:w-1/2 overflow-y-auto pb-20"
-      style="max-height: calc(100vh - 50px);"
-    >
-      <!-- Image Picker Container -->
-      <div
-        class="relative size-24 mx-auto rounded-full bg-gray-200 flex items-center justify-center border-2 border-dashed border-gray-400 cursor-pointer overflow-hidden"
-        onclick="document.getElementById('file-input').click()"
-      >
-        <!-- Plus Icon -->
-        <div id="icon-container" class="absolute flex items-center justify-center">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="2"
-            stroke="currentColor"
-            class="w-8 h-8 text-purple-600"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.75v14.5M4.75 12h14.5" />
-          </svg>
-        </div>
-        <!-- Image Preview -->
-        <img
-          id="image-preview"
-          class="hidden absolute inset-0 w-full h-full object-cover rounded-full"
-          alt="Selected Image"
-        />
-      </div>
-      <!-- Hidden File Input -->
-      <input
-        id="file-input"
-        type="file"
-        accept="image/*"
-        class="hidden"
-        onchange="previewImage(event)"
-      />
-    
-      {% csrf_token %}
-      <div class="mb-4">
-        <label class="block text-white text-lg font-bold mb-2 mt-4">Name</label>
-        <input
-          type="text"
-          name="assistant_name"
-          hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
-          hx-trigger="blur changed delay:1s"
-          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "assistant_name"}'
-          autocomplete="off"
-          hx-replace-url="false"
-          value="{{ assistant.name|default:'' }}"
-          placeholder="Name your ASSISTANT"
-          class="input w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
-        />
-      </div>
-      <div class="mb-4">
-        <label class="block text-white text-lg font-bold mb-2">Description</label>
-        <input
-          type="text"
-          name="description"
-          hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
-          hx-trigger="blur changed delay:1s"
-          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "description"}'
-          autocomplete="off"
-          hx-replace-url="false"
-          value="{{ assistant.description|default:'' }}"
-          placeholder="Add a short description about what this ASSISTANT does"
-          class="input w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
-        />
-      </div>
-      <div class="mb-4 flex gap-4">
-        <div class="flex-1">
-          <label class="block text-white text-lg font-bold mb-2">Subject</label>
-          <select
-            name="subject"
-            id="subjectSelect"
-            hx-post="{% url 'assistant' ass_id=assistant.id %}"
-            hx-trigger="blur changed delay:1s"
-            hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "subject"}'
-            hx-replace-url="false"
-            class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
-          >
-            <option value="" disabled>Select a subject</option>
-          </select>
-        </div>
-        <div class="flex-1">
-          <label class="block text-white text-lg font-bold mb-2">Topic</label>
-          <select
-            name="topic"
-            id="topicSelect"
-            hx-trigger="blur changed delay:1s"
-            hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
-            hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "topic"}'
-            hx-replace-url="false"
-            class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
-          >
-            <option value="" disabled>Select a topic</option>
-          </select>
-        </div>
-      </div>
-      <div class="mb-4">
-        <label class="block text-white text-lg font-bold mb-2">Instructions</label>
-        <textarea
-          name="teacher_instructions"
-          hx-trigger="blur changed delay:1s" 
-          hx-post="{% url 'assistant' ass_id=assistant.id %}"
-          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "teacher_instructions"}'
-          autocomplete="off"
-          hx-replace-url="false"
-          placeholder="What does this ASSISTANT do? How does it behave? What should it avoid doing?"
-          class="textarea w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
-          rows="4"
-        >{{ assistant.teacher_instructions|default:'' }}</textarea>
-      </div>
-      <div class="mb-4 flex items-center gap-2">
-        <label class="block text-white text-lg font-bold">Files</label>
-        <label 
-          for="fileInput" 
-          class="inline-block cursor-pointer bg-white/10 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-white/20"
-        >
-          Upload Files
-        </label>
-        <input
-          type="file"
-          name="file_picker"
-          id="fileInput"
-          multiple
-          onchange="onFileChange(event)"
-          class="sr-only"
-        />
-        <div class="flex flex-wrap gap-2 items-center mt-4" id="files-container">
-          {{ knowledge_base.all }}
-          {% for file in knowledge_base %}
-          <div class="flex items-center p-2 bg-gray-800 rounded-lg">
-            <svg class="w-5 h-5 mr-2 file-icon" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"></path>
-            </svg>
-            <span class="text-sm text-white">{{ file }}</span>
-            <button type="button" onclick="removeFile(this)" class="ml-2 text-gray-400 hover:text-red-500">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-      <div class="mb-4">
-        <label class="block text-white text-lg font-bold mb-2">URLs</label>
-        <div id="url-container">
-          {% for url in urls %}
-          <div class="url-input-group mb-2 flex items-center gap-2">
-            <input
-              type="url"
-              name="url"
-              value="{{ url }}"
-              disabled
-              class="input flex-1 bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 opacity-50"
-            />
-            <button type="button" onclick="removeUrl(this)" class="text-gray-400 hover:text-red-500">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
-          </div>
-          {% endfor %}
-          <div class="url-input-group mb-2 flex items-center gap-2">
-            <input
-              type="url"
-              name="url"
-              hx-post="{% url 'assistant' ass_id=assistant.id %}"
-              hx-trigger="blur"
-              hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "url"}'
-              placeholder="Enter a URL"
-              class="input flex-1 bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
-            />
-            <div class="loader hidden">
-              <svg class="w-5 h-5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+  <div id="assistant-form" class="relative flex w-full grow overflow-hidden" hx-replace-url="true">
+
+    <div id="assistantForm" hx-encoding="multipart/form-data" hx-swap="none"
+      class="flex w-full justify-center md:w-1/2">
+      <div class="h-full grow overflow-hidden">
+
+        <div class="h-full grow overflow-hidden">
+          <div class="flex h-full flex-col px-2 pt-2">
+
+            <div class="md:hidden flex w-full flex-row justify-center">
+              <button onclick="switchTab('form')" id="formTab"
+                class="flex-1 py-2 px-4 text-white border-b-2 border-transparent active-tab">
+                Create Assistant
+              </button>
+              <button onclick="switchTab('chat')" id="chatTab"
+                class="flex-1 py-2 px-4 text-white border-b-2 border-transparent">
+                Chat
+              </button>
+            </div>
+            <div class="grow overflow-hidden">
+              <div class="flex h-full grow overflow-y-auto px-2 pt-6 text-sm">
+                <div class="grow">
+
+
+                  {% csrf_token %}
+                  <div class="mb-6">
+                    <div
+                      class="relative size-20 mx-auto rounded-full bg-gray-200 flex items-center justify-center border-2 border-dashed border-gray-400 cursor-pointer overflow-hidden"
+                      onclick="document.getElementById('file-input').click()">
+                      <!-- Plus Icon -->
+                      <div id="icon-container" class="absolute flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                          stroke="currentColor" class="w-8 h-8 text-purple-600">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.75v14.5M4.75 12h14.5" />
+                        </svg>
+                      </div>
+                      <!-- Image Preview -->
+                      <img id="image-preview" class="hidden absolute inset-0 w-full h-full object-cover rounded-full"
+                        alt="Selected Image" />
+                        <input id="file-input" type="file" accept="image/*" class="hidden" onchange="previewImage(event)" />
+                    </div>
+                    <div>
+
+                      <label class="block text-white text-lg font-bold mb-2 mt-2">Name</label>
+                      <input type="text" name="assistant_name"
+                        hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}" hx-trigger="blur changed delay:1s"
+                        hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "assistant_name"}' autocomplete="off"
+                        hx-replace-url="false" value="{{ assistant.name|default:'' }}" placeholder="Name your ASSISTANT"
+                        class="input w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2" />
+
+                    </div>
+                  </div>
+                  <div class="mb-6">
+                    <label class="block text-white text-lg font-bold mb-2">Description</label>
+                    <input type="text" name="description" hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
+                      hx-trigger="blur changed delay:1s"
+                      hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "description"}' autocomplete="off"
+                      hx-replace-url="false" value="{{ assistant.description|default:'' }}"
+                      placeholder="Add a short description about what this ASSISTANT does"
+                      class="input w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2" />
+                  </div>
+                  <div class="mb-6 flex gap-4">
+                    <div class="flex-1">
+                      <label class="block text-white text-lg font-bold mb-2">Subject</label>
+                      <select name="subject" id="subjectSelect" hx-post="{% url 'assistant' ass_id=assistant.id %}"
+                        hx-trigger="blur changed delay:1s"
+                        hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "subject"}' hx-replace-url="false"
+                        class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2">
+                        <option value="" disabled>Select a subject</option>
+                      </select>
+                    </div>
+                    <div class="flex-1">
+                      <label class="block text-white text-lg font-bold mb-2">Topic</label>
+                      <select name="topic" id="topicSelect" hx-trigger="blur changed delay:1s"
+                        hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
+                        hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "topic"}' hx-replace-url="false"
+                        class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2">
+                        <option value="" disabled>Select a topic</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="mb-6">
+                    <label class="block text-white text-lg font-bold mb-2">Instructions</label>
+                    <textarea name="teacher_instructions" hx-trigger="blur changed delay:1s"
+                      hx-post="{% url 'assistant' ass_id=assistant.id %}"
+                      hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "teacher_instructions"}'
+                      autocomplete="off" hx-replace-url="false"
+                      placeholder="What does this ASSISTANT do? How does it behave? What should it avoid doing?"
+                      class="textarea w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
+                      rows="4">{{ assistant.teacher_instructions|default:'' }}</textarea>
+                  </div>
+                  <div class="mb-6">
+                    <label class="block text-white text-lg font-bold mb-2">URLs</label>
+                    <div id="url-container">
+                      {% for url in urls %}
+                      <div class="url-input-group mb-2 flex items-center gap-2">
+                        <input type="url" name="url" value="{{ url }}" disabled
+                          class="input flex-1 bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 opacity-50" />
+                        <button type="button" onclick="removeUrl(this)" class="text-gray-400 hover:text-red-500">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12">
+                            </path>
+                          </svg>
+                        </button>
+                      </div>
+                      {% endfor %}
+                      <div class="url-input-group mb-2 flex items-center gap-2">
+                        <input type="url" name="url" hx-post="{% url 'assistant' ass_id=assistant.id %}"
+                          hx-trigger="blur" hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "url"}'
+                          placeholder="Enter a URL"
+                          class="input flex-1 bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2" />
+                        <div class="loader hidden">
+                          <svg class="w-5 h-5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="pb-6 flex items-center gap-2">
+                    <label class="block text-white text-lg font-bold">Files</label>
+                    <label for="fileInput"
+                      class="inline-block cursor-pointer bg-white/10 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-white/20">
+                      Upload Files
+                    </label>
+                    <input type="file" name="file_picker" id="fileInput" multiple onchange="onFileChange(event)"
+                      class="sr-only" />
+                    <div class="flex flex-wrap gap-2 items-center mt-4" id="files-container">
+                      {{ knowledge_base.all }}
+                      {% for file in knowledge_base %}
+                      <div class="flex items-center p-2 bg-gray-800 rounded-lg">
+                        <svg class="w-5 h-5 mr-2 file-icon" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z">
+                          </path>
+                        </svg>
+                        <span class="text-sm text-white">{{ file }}</span>
+                        <button type="button" onclick="removeFile(this)" class="ml-2 text-gray-400 hover:text-red-500">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12">
+                            </path>
+                          </svg>
+                        </button>
+                      </div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                 
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </form>
 
-    <div class="hidden md:block w-[1px] bg-gray-800"></div>
+    </div>
 
     <!-- Chat section -->
-    <div id="assistantChat" class="hidden w-full md:w-1/2 flex flex-col justify-between"
-    _="on load if window.innerWidth > 768 then remove .hidden from me end"
->
-    {% include 'assistant/assistant_chat.html' with assistant=assistant %}
+    <div id="assistantChat" class="hidden w-full md:w-1/2 justify-center border-l border-gray-700 bg-gray-900 pt-4 md:flex"
+      _="on load if window.innerWidth > 768 then remove .hidden from me end">
+      {% include 'assistant/assistant_chat.html' with assistant=assistant %}
     </div>
   </div>
 </div>
+
 
 <script>
   const subjectsData = {
@@ -428,7 +376,7 @@
   }
 
   // Set initial values
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function () {
     const savedSubject = "{{ assistant.subject }}";
     const savedTopic = "{{ assistant.topic }}";
 
@@ -436,7 +384,7 @@
       subjectSelect.value = savedSubject;
       const event = new Event('change');
       subjectSelect.dispatchEvent(event);
-      
+
       setTimeout(() => {
         if (savedTopic) {
           topicSelect.value = savedTopic || '';
@@ -514,14 +462,14 @@
       htmx.process(uploadForm);
 
       // Events for this specific form
-      uploadForm.addEventListener('htmx:beforeRequest', function(evt) {
+      uploadForm.addEventListener('htmx:beforeRequest', function (evt) {
         const loader = fileContainer.querySelector('.loader-indicator');
         const fileIcon = fileContainer.querySelector('.file-icon');
         if (loader) loader.style.display = 'block';
         if (fileIcon) fileIcon.style.display = 'none';
       });
 
-      uploadForm.addEventListener('htmx:afterRequest', function(evt) {
+      uploadForm.addEventListener('htmx:afterRequest', function (evt) {
         const loader = fileContainer.querySelector('.loader-indicator');
         const fileIcon = fileContainer.querySelector('.file-icon');
         if (loader) loader.style.display = 'none';
@@ -566,7 +514,7 @@
   }
 
   // Add HTMX event listeners for URL inputs
-  document.addEventListener('htmx:beforeRequest', function(evt) {
+  document.addEventListener('htmx:beforeRequest', function (evt) {
     if (evt.detail.elt.name === 'url') {
       const inputGroup = evt.detail.elt.closest('.url-input-group');
       const loader = inputGroup.querySelector('.loader');
@@ -575,13 +523,13 @@
     }
   });
 
-  document.addEventListener('htmx:afterRequest', function(evt) {
+  document.addEventListener('htmx:afterRequest', function (evt) {
     if (evt.detail.elt.name === 'url') {
       const inputGroup = evt.detail.elt.closest('.url-input-group');
       const loader = inputGroup.querySelector('.loader');
       const input = inputGroup.querySelector('input');
       loader.classList.add('hidden');
-      
+
       if (evt.detail.successful) {
         input.disabled = true;
         input.classList.add('opacity-50');
@@ -595,16 +543,16 @@
     if (chatNameElement && field === 'assistant_name') {
       chatNameElement.textContent = value;
     }
-    
+
     // You can add more field updates here as needed
   }
 
-  document.addEventListener('htmx:afterRequest', function(evt) {
+  document.addEventListener('htmx:afterRequest', function (evt) {
     // Check if the request was successful
     if (evt.detail.successful) {
       const field = evt.detail.requestConfig.parameters?.field;
       const value = evt.detail.elt.value;
-      
+
       if (field) {
         updateLocalAssistantData(field, value);
       }
@@ -620,7 +568,7 @@
     const urlContainer = button.closest('.url-input-group');
     urlContainer.remove();
   }
-  
+
   function previewImage(event) {
     const input = event.target;
     const preview = document.getElementById("image-preview");
@@ -640,7 +588,7 @@
     const input = event.target;
     const preview = document.getElementById("image-preview");
     const iconContainer = document.getElementById("icon-container");
-  console.log(input.files)
+    console.log(input.files)
     if (input.files && input.files[0]) {
       const reader = new FileReader();
       reader.onload = function (e) {
@@ -658,23 +606,29 @@
   .active-tab {
     border-color: var(--clr-main);
   }
+
   .htmx-indicator {
     display: none;
   }
+
   .htmx-request .htmx-indicator {
     display: block;
   }
+
   .htmx-request .htmx-indicator-hide {
     display: none;
   }
 
   select option {
-    background-color: #1a1a1a;  /* Dark background */
-    color: white;               /* White text */
+    background-color: #1a1a1a;
+    /* Dark background */
+    color: white;
+    /* White text */
   }
 
   select {
-    background-color: rgba(255, 255, 255, 0.1);  /* Matches the input background */
+    background-color: rgba(255, 255, 255, 0.1);
+    /* Matches the input background */
     color: white;
   }
 
@@ -694,7 +648,8 @@
   select option:active,
   select option:checked {
     background: linear-gradient(#2d3748, #2d3748);
-    background-color: #2d3748 !important; /* Darker highlight color */
+    background-color: #2d3748 !important;
+    /* Darker highlight color */
   }
 </style>
 {% endblock %}
