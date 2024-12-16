@@ -4,6 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 import json
 import uuid
+import base64
 from typing import Dict, Any, Optional
 import logging
 from django.conf import settings
@@ -136,7 +137,8 @@ def create_assistant(request, ass_id: Optional[str] = None):
                 'teacher_instructions': assistant_data.teacher_instructions,
                 'urls': urls,
                 'knowledge_base': pdfs,
-                'chat_mode': False
+                'chat_mode': False,
+                'image_url': assistant_data.image.url if assistant_data.image else None
             })
         else:
             return HttpResponseRedirect(f'/assistants')
@@ -199,6 +201,32 @@ def create_assistant(request, ass_id: Optional[str] = None):
         }
 
         changes_made = False
+
+        
+        
+        # Handle image upload
+        image_file = request.FILES.get('image')
+        if image_file:
+            try:
+                # Validate image size (max 5MB)
+                if image_file.size > 5 * 1024 * 1024:
+                    return format_response(error="Image size too large. Maximum 5MB allowed.", status=400)
+                
+                # Read file content as blob
+                image_blob = image_file.read()
+                
+                # Update assistant with blob data
+                assistant.image_blob = image_blob
+                assistant.save()
+                
+                return format_response(data={
+                    "message": "Image uploaded successfully"
+                })
+            
+            except Exception as e:
+                logger.error(f"Image upload error: {e}")
+                return format_response(error=f"Image upload failed: {str(e)}", status=500)
+
 
         # Update fields dynamically
         for request_field, model_field in field_mapping.items():
@@ -282,6 +310,8 @@ def create_assistant(request, ass_id: Optional[str] = None):
                     "topic": assistant.topic,
                     "teacher_instructions": assistant.teacher_instructions,
                     "is_published": assistant.is_published,
+                    # "image": base64.b64encode(assistant.image_blob).decode('utf-8') if assistant.image_blob else None,
+                    "image_url": assistant.image if assistant.image else None,
                     "message": "Assistant updated successfully"
                 }
                 return format_response(data=response_data)
@@ -293,6 +323,7 @@ def create_assistant(request, ass_id: Optional[str] = None):
         # No changes scenario
         return format_response(data={
             "ass_id": str(assistant.id),
+            "image_url": assistant.image.url if assistant.image else None,
             "message": "No changes detected"
         })
 

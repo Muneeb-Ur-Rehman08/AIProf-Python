@@ -70,26 +70,26 @@
         />
       </div>
       <div class="space-y-2 max-h-32 overflow-y-auto" id="topic-list">
-        {% for topic in subjects_data %}
-        {% for topic in topic.topics %}
-        <div class="flex items-center space-x-2 topic-item">
-          <input
-            type="checkbox"
-            hx-push-url="true"
-            id="topic-{{ topic }}"
-            class="checkbox"
-            name="topic"
-            value="{{ topic }}"
-            hx-trigger="change"
-            hx-get="{% url 'list_assistants' %}"
-            hx-target="#assistants-list"
-            hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword']"
-          />
-          <label for="topic-{{ topic }}" class="label cursor-pointer">
-            {{ topic }}
-          </label>
-        </div>
-        {% endfor %}
+        {% for subject in subjects_data %}
+          {% for topic in subject.topics.all %}
+            <div class="flex items-center space-x-2 topic-item">
+              <input
+                type="checkbox"
+                hx-push-url="true"
+                id="topic-{{ topic.id }}"
+                class="checkbox"
+                name="topic"
+                value="{{ topic.name }}"
+                hx-trigger="change"
+                hx-get="{% url 'list_assistants' %}"
+                hx-target="#assistants-list"
+                hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword']"
+              />
+              <label for="topic-{{ topic.id }}" class="label cursor-pointer">
+                {{ topic.name }}
+              </label>
+            </div>
+          {% endfor %}
         {% endfor %}
       </div>
     </div>
