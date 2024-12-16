@@ -1,29 +1,39 @@
+# Standard library imports
+import json
+import os
+import time
+import uuid
+from decimal import Decimal, InvalidOperation
+from typing import Optional
 from venv import logger
-from django.http import JsonResponse, StreamingHttpResponse
+
+# Django core imports
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from django.http import Http404, HttpResponse, JsonResponse, StreamingHttpResponse
+from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from app.modals.chat import get_chat_completion
+
+
+# Local/project imports
 from app.modals.anon_conversation import save_conversation, fetch_conversation_history
-from app.utils.conversations import get_user_id
-from app.utils.vector_store import store_embedding_vectors_in_supabase, get_answer, is_valid_uuid
-import json
-import time
-import os
-import uuid
-from app.template_views import index_view   # Import the moved methods
-from django.shortcuts import render, redirect
-from django.contrib.auth import login, authenticate
-from app.modals.supabase_auth import login_with_supabase
-from django.contrib.auth.decorators import login_required
-from app.utils.auth_backend import SupabaseBackend
-from app.utils.assistant_manager import AssistantManager
 from app.modals.assistants import AssistantConfig
-from users.models import Assistant, AssistantRating, Subject, Topic
-from django.db.models import Prefetch
-from typing import Optional
-from django.http import Http404
+from app.modals.chat import get_chat_completion
+from app.modals.supabase_auth import login_with_supabase
+from app.template_views import index_view
+from app.utils.assistant_manager import AssistantManager
+from app.utils.auth_backend import SupabaseBackend
+from app.utils.conversations import get_user_id
+from app.utils.vector_store import (
+    store_embedding_vectors_in_supabase, 
+    get_answer, 
+    is_valid_uuid
+)
 from assistantchat.models import Conversation
-import random
+from users.models import Assistant, AssistantRating, Subject, Topic
+
 # Ensure the GROQ_API_KEY is loaded from the environment
 api_key = os.getenv('GROQ_API_KEY')
 if not api_key:
@@ -293,6 +303,16 @@ def list_assistants(request):
     subjects = request.GET.getlist('subject')  # Retrieve selected subjects from checkboxes
     topics = request.GET.getlist('topic')      # Retrieve selected topics from checkboxes
 
+
+    # Rating filter parameters
+    min_rating = request.GET.get('min_rating')
+    max_rating = request.GET.get('max_rating')
+    
+    # Interactions filter parameters
+    min_interactions = request.GET.get('min_interactions')
+    max_interactions = request.GET.get('max_interactions')
+
+
     # Filter assistants based on subjects and topics
     assistants = Assistant.objects.all().order_by('-average_rating')
 
@@ -306,16 +326,45 @@ def list_assistants(request):
 
     # If keyword is provided, filter based on assistant name
     if keyword and len(keyword) > 2:
-        assistants = assistants.filter(name__icontains=keyword)    
+        assistants = assistants.filter(
+            Q(name__icontains=keyword) | 
+            Q(description__icontains=keyword)
+        )    
 
-    # # # # # # # # #  adding random interaction count to each assistant due to conversation count taking too much time # # # # # # # # # 
-    # conversation = Conversation.objects.all()
+
+    # Rating filter
+    if min_rating:
+        try:
+            min_rating = Decimal(min_rating)
+            assistants = assistants.filter(average_rating__gte=min_rating)
+        except (ValueError, InvalidOperation):
+            pass  # Ignore invalid input
+    
+    if max_rating:
+        try:
+            max_rating = Decimal(max_rating)
+            assistants = assistants.filter(average_rating__lte=max_rating)
+        except (ValueError, InvalidOperation):
+            pass  # Ignore invalid input
+    
+    # Interactions filter
+    if min_interactions:
+        try:
+            min_interactions = int(min_interactions)
+            assistants = assistants.filter(interactions__gte=min_interactions)
+        except ValueError:
+            pass  # Ignore invalid input
+    
+    if max_interactions:
+        try:
+            max_interactions = int(max_interactions)
+            assistants = assistants.filter(interactions__lte=max_interactions)
+        except ValueError:
+            pass  # Ignore invalid input
 
     # Prepare the data for rendering
     assistants_data = [{"id": str(assistant.id), "name": assistant.name, "subject": assistant.subject, "topic": assistant.topic, "description": assistant.description, "created_at": assistant.created_at, "interactions": assistant.interactions, "average_rating": assistant.average_rating, "total_reviews": assistant.total_reviews} for assistant in assistants]
     
-    # for assistant in assistants_data:
-    #     assistant["interaction"] = conversation.filter(assistant_id=assistant["id"]).count()
 
     if request.htmx:
         return render(request, 'assistant/list_partials.html', {"assistants": assistants_data})

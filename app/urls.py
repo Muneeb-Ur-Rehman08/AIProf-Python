@@ -18,6 +18,11 @@ from django.contrib import admin
 from django.urls import path, include
 from .views import chat_view, upload_doc, get_rag_answer, create_assistant, custom_login, logout, list_assistants,assistant_detail
 from .template_views import auth_view, index_view, assistant_chat_view
+from django.conf import settings
+from django.conf.urls.static import static
+
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/chat/', chat_view, name='chat'),
@@ -37,3 +42,8 @@ urlpatterns = [
     path('accounts/', include('authentication.urls')),
     path('assistant_detail/<str:assistant_id>/', assistant_detail, name='assistant_detail'),
 ]
+
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL,
+                          document_root=settings.MEDIA_ROOT)
