@@ -23,8 +23,7 @@ from django.shortcuts import render
 from .add import populate_subjects_and_topics
 from .utils import generate_instruction_stream
 from app.modals.chat import get_llm
-from langchain_community.chains import LLMChain
-from langchain.prompts import PromptTemplate
+
 
 
 

@@ -2,7 +2,8 @@ from app.modals.chat import get_llm
 from venv import logger
 from typing import Any, Generator
 
-from langchain.schema import HumanMessage, AIMessage
+from langchain_core.prompts import PromptTemplate
+from langchain_core.messages import HumanMessage
 
 import json
 import time

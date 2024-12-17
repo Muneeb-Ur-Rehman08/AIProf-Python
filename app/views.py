@@ -296,14 +296,14 @@ def list_assistants(request):
         'topics'
         ).all()
     
-    
+    # Fetch Assistants from the database
+    assistants = Assistant.objects.all().order_by('-average_rating')
 
-
+    # Retrieve filter parameters
     keyword = request.GET.get('keyword', '').strip()
-    subjects = request.GET.getlist('subject')  # Retrieve selected subjects from checkboxes
-    topics = request.GET.getlist('topic')      # Retrieve selected topics from checkboxes
-
-
+    subjects = request.GET.getlist('subject')
+    topics = request.GET.getlist('topic')
+    
     # Rating filter parameters
     min_rating = request.GET.get('min_rating')
     max_rating = request.GET.get('max_rating')
@@ -311,65 +311,102 @@ def list_assistants(request):
     # Interactions filter parameters
     min_interactions = request.GET.get('min_interactions')
     max_interactions = request.GET.get('max_interactions')
-
-
-    # Filter assistants based on subjects and topics
-    assistants = Assistant.objects.all().order_by('-average_rating')
-
-    # If subjects are selected, filter based on subjects
-    if subjects:
-        assistants = assistants.filter(subject__in=subjects)
-
-    # If topics are selected, filter based on topics
-    if topics:
-        assistants = assistants.filter(topic__in=topics)
-
-    # If keyword is provided, filter based on assistant name
+    
+    # Sorting parameter
+    sort_by = request.GET.get('sort_by', '-created_at')  # Default to newest first
+    
+    
+    # Filtering logic
+    # Keyword search
     if keyword and len(keyword) > 2:
         assistants = assistants.filter(
             Q(name__icontains=keyword) | 
             Q(description__icontains=keyword)
-        )    
-
-
-    # Rating filter
+        )
+    
+    # Subject and Topic Filtering
+    if subjects:
+        assistants = assistants.filter(subject__id__in=subjects)
+    
+    if topics:
+        assistants = assistants.filter(topic__id__in=topics)
+    
+    # Rating Filter
     if min_rating:
         try:
             min_rating = Decimal(min_rating)
             assistants = assistants.filter(average_rating__gte=min_rating)
         except (ValueError, InvalidOperation):
-            pass  # Ignore invalid input
+            pass
     
     if max_rating:
         try:
             max_rating = Decimal(max_rating)
             assistants = assistants.filter(average_rating__lte=max_rating)
         except (ValueError, InvalidOperation):
-            pass  # Ignore invalid input
+            pass
     
-    # Interactions filter
+    # Interactions Filter
     if min_interactions:
         try:
             min_interactions = int(min_interactions)
             assistants = assistants.filter(interactions__gte=min_interactions)
         except ValueError:
-            pass  # Ignore invalid input
+            pass
     
     if max_interactions:
         try:
             max_interactions = int(max_interactions)
             assistants = assistants.filter(interactions__lte=max_interactions)
         except ValueError:
-            pass  # Ignore invalid input
-
-    # Prepare the data for rendering
-    assistants_data = [{"id": str(assistant.id), "name": assistant.name, "subject": assistant.subject, "topic": assistant.topic, "description": assistant.description, "created_at": assistant.created_at, "interactions": assistant.interactions, "average_rating": assistant.average_rating, "total_reviews": assistant.total_reviews} for assistant in assistants]
+            pass
     
-
+    # Sorting Options
+    sorting_options = {
+        '-created_at': 'Newest First',
+        'created_at': 'Oldest First',
+        '-interactions': 'Highest Interactions',
+        'interactions': 'Lowest Interactions',
+        '-average_rating': 'Highest Rated',
+        'average_rating': 'Lowest Rated',
+        'name': 'Name (A-Z)',
+        '-name': 'Name (Z-A)'
+    }
+    
+    # Validate and apply sorting
+    if sort_by not in sorting_options:
+        sort_by = '-created_at'
+    
+    assistants = assistants.order_by(sort_by)
+    
+    # Prepare the data for rendering
+    assistants_data = [
+        {
+            "id": str(assistant.id),
+            "name": assistant.name,
+            "subject": assistant.subject.name if assistant.subject else None,
+            "topic": assistant.topic.name if assistant.topic else None,
+            "description": assistant.description,
+            "created_at": assistant.created_at,
+            "interactions": assistant.interactions,
+            "average_rating": assistant.average_rating,
+            "total_reviews": assistant.total_reviews
+        } for assistant in assistants
+    ]
+    
+    # Context for template
+    context = {
+        "subjects_data": subjects_data,
+        "filtered_assistants": assistants_data,
+        "sorting_options": sorting_options,
+        "current_sort": sort_by
+    }
+    
+    # HTMX partial rendering
     if request.htmx:
-        return render(request, 'assistant/list_partials.html', {"assistants": assistants_data})
+        return render(request, 'assistant/list_partials.html', {'assistants': assistants_data})
     else:
-        return render(request, 'assistant/list.html', {"subjects_data": subjects_data, "filtered_assistants": assistants_data})
+        return render(request, 'assistant/list.html', context)
 
 
 @csrf_exempt
