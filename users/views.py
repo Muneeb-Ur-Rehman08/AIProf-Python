@@ -1,5 +1,5 @@
 import os
-from django.http import JsonResponse, HttpResponseRedirect
+from django.http import JsonResponse, HttpResponseRedirect, StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 import json
@@ -21,6 +21,10 @@ from django.template.loader import TemplateDoesNotExist
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from .add import populate_subjects_and_topics
+from .utils import generate_instruction_stream
+from app.modals.chat import get_llm
+from langchain_community.chains import LLMChain
+from langchain.prompts import PromptTemplate
 
 
 
@@ -372,6 +376,68 @@ def delete_assistant(request, ass_id):
         return format_response(error="Internal server error", status=500)
     
 
+
+@login_required
+@require_http_methods(["POST"])
+def generate_instructions(request) -> StreamingHttpResponse:
+    """
+    Streaming view for generating AI assistant instructions
+    
+    Returns:
+        StreamingHttpResponse with instruction generation progress
+    """
+    try:
+        # Extract request data
+        data = request.POST
+        assistant_id = data.get('assistant_id')
+        
+        if not assistant_id:
+            return StreamingHttpResponse(
+                json.dumps({'error': 'Assistant ID is required'}),
+                content_type='application/json'
+            )
+
+        # Retrieve assistant
+        try:
+            assistant = Assistant.objects.get(id=assistant_id, user_id=request.user)
+        except Assistant.DoesNotExist:
+            return StreamingHttpResponse(
+                json.dumps({'error': 'Assistant not found or unauthorized'}),
+                content_type='application/json'
+            )
+
+        # Extract context details
+        subject = data.get('subject', assistant.subject or '')
+        topic = data.get('topic', assistant.topic or '')
+        description = data.get('description', assistant.description or '')
+        current_instructions = data.get('teacher_instructions', 
+                                        assistant.teacher_instructions or '')
+
+        # Create streaming response
+        response = StreamingHttpResponse(
+            generate_instruction_stream(
+                subject, 
+                topic, 
+                current_instructions,
+                description
+            ),
+            content_type='text/event-stream'
+        )
+        
+        # Set headers for streaming
+        response['Cache-Control'] = 'no-cache'
+        response['X-Accel-Buffering'] = 'no'
+        
+        return response
+
+    except Exception as e:
+        logger.error(f"Instruction generation error: {e}")
+        return StreamingHttpResponse(
+            json.dumps({'error': str(e)}),
+            content_type='application/json',
+            status=500
+        )
+    
 
 @login_required(login_url='accounts/login/')
 def create_assistant_view(request, ass_id):
