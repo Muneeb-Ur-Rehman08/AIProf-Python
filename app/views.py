@@ -10,7 +10,7 @@ from venv import logger
 # Django core imports
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.http import Http404, HttpResponse, JsonResponse, StreamingHttpResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
@@ -305,16 +305,74 @@ def list_assistants(request):
     topics = request.GET.getlist('topic')
     
     # Rating filter parameters
-    filter_rating = request.GET.get('filter_rating')
-    
+    if request.GET.getlist('filter_rating'):
+        rating_filters = request.GET.getlist('filter_rating')
+        rating_q = Q()
+        for rating in rating_filters:
+            try:
+                rating = Decimal(rating)
+                rating_q |= Q(
+                    average_rating__gte=rating,
+                    average_rating__lt=rating + Decimal('1')
+                )
+            except (ValueError, InvalidOperation):
+                continue
+        if rating_q:
+            assistants = assistants.filter(rating_q)
     
     # Interactions filter parameters
     min_interactions = request.GET.get('min_interactions')
     max_interactions = request.GET.get('max_interactions')
     
-    # Sorting parameter
-    sort_by = request.GET.get('sort_by', '-created_at')  # Default to newest first
+    # Sorting Options - Map labels to values
+    sorting_options = {
+        'newest_first': {
+            'label': 'Newest First',
+            'value': '-created_at'
+        },
+        'oldest_first': {
+            'label': 'Oldest First',
+            'value': 'created_at'
+        },
+        'most_interactions': {
+            'label': 'Most Interactions',
+            'value': '-interactions'
+        },
+        'least_interactions': {
+            'label': 'Least Interactions',
+            'value': 'interactions'
+        },
+        'most_reviews': {
+            'label': 'Most Reviews',
+            'value': '-total_reviews'
+        },
+        'least_reviews': {
+            'label': 'Least Reviews',
+            'value': 'total_reviews'
+        },
+        'name_asc': {
+            'label': 'Name (A-Z)',
+            'value': 'name'
+        },
+        'name_desc': {
+            'label': 'Name (Z-A)',
+            'value': '-name'
+        }
+    }
     
+    # Get sort parameter from request, default to 'Newest First'
+    sort_label = request.GET.get('sort', 'Newest First')
+    
+    # Find the sorting value that matches the label
+    sort_value = '-created_at'  # default value
+    for sort_option in sorting_options.values():
+        if sort_option['label'] == sort_label:
+            sort_value = sort_option['value']
+            break
+    
+    logger.info(f"current sort: {sort_value}")
+    # Apply sorting
+    assistants = assistants.order_by(sort_value)
     
     # Filtering logic
     # Keyword search
@@ -331,19 +389,6 @@ def list_assistants(request):
     if topics:
         assistants = assistants.filter(topic__in=topics)
     
-    # Rating Filter
-    # Rating Filter
-    if filter_rating:
-        try:
-            filter_rating = Decimal(filter_rating)
-            # Filter ratings from the specified rating (inclusive) up to the next rating (exclusive)
-            assistants = assistants.filter(
-                average_rating__gte=filter_rating,
-                average_rating__lt=filter_rating + Decimal('0.1')
-            )
-        except (ValueError, InvalidOperation):
-            pass
-    
     # Interactions Filter
     if min_interactions:
         try:
@@ -358,24 +403,6 @@ def list_assistants(request):
             assistants = assistants.filter(interactions__lte=max_interactions)
         except ValueError:
             pass
-    
-    # Sorting Options
-    sorting_options = {
-        '-created_at': 'Newest First',
-        'created_at': 'Oldest First',
-        '-interactions': 'Highest Interactions',
-        'interactions': 'Lowest Interactions',
-        '-average_rating': 'Highest Rated',
-        'average_rating': 'Lowest Rated',
-        'name': 'Name (A-Z)',
-        '-name': 'Name (Z-A)'
-    }
-    
-    # Validate and apply sorting
-    if sort_by not in sorting_options:
-        sort_by = '-created_at'
-    
-    assistants = assistants.order_by(sort_by)
     
     # Prepare the data for rendering
     assistants_data = [
@@ -392,17 +419,48 @@ def list_assistants(request):
         } for assistant in assistants
     ]
     
+    # Get rating counts
+    rating_counts = AssistantRating.objects.values('rating').annotate(
+        count=Count('id')
+    ).order_by('-rating')
+
+    # Format rating counts for template
+    formatted_rating_counts = {
+        5: 0, 4: 0, 3: 0, 2: 0, 1: 0
+    }
+    
+    for rating in rating_counts:
+        if rating['rating'] is not None:
+            # Get the rating value
+            rating_value = float(rating['rating'])
+            
+            # Determine which bucket this rating belongs in
+            if rating_value >= 4.8:
+                formatted_rating_counts[5] += rating['count']
+            elif 4.0 <= rating_value < 4.8:
+                formatted_rating_counts[4] += rating['count']
+            elif 3.0 <= rating_value < 4.0:
+                formatted_rating_counts[3] += rating['count']
+            elif 2.0 <= rating_value < 3.0:
+                formatted_rating_counts[2] += rating['count']
+            elif 1.0 <= rating_value < 2.0:
+                formatted_rating_counts[1] += rating['count']
+
     # Context for template
     context = {
         "subjects_data": subjects_data,
         "filtered_assistants": assistants_data,
-        "sorting_options": sorting_options,
-        "current_sort": sort_by
+        "sorting_options": {opt['value']: opt['label'] for opt in sorting_options.values()},
+        "current_sort": sort_label,
+        "rating_counts": formatted_rating_counts
     }
     
     # HTMX partial rendering
     if request.htmx:
-        return render(request, 'assistant/list_partials.html', {'assistants': assistants_data})
+        return render(request, 'assistant/list_partials.html', {
+            'assistants': assistants_data,
+            'current_sort': sort_label
+        })
     else:
         return render(request, 'assistant/list.html', context)
 
