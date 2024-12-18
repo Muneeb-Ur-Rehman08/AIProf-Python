@@ -305,8 +305,8 @@ def list_assistants(request):
     topics = request.GET.getlist('topic')
     
     # Rating filter parameters
-    min_rating = request.GET.get('min_rating')
-    max_rating = request.GET.get('max_rating')
+    filter_rating = request.GET.get('filter_rating')
+    
     
     # Interactions filter parameters
     min_interactions = request.GET.get('min_interactions')
@@ -326,23 +326,21 @@ def list_assistants(request):
     
     # Subject and Topic Filtering
     if subjects:
-        assistants = assistants.filter(subject__id__in=subjects)
+        assistants = assistants.filter(subject__in=subjects)
     
     if topics:
-        assistants = assistants.filter(topic__id__in=topics)
+        assistants = assistants.filter(topic__in=topics)
     
     # Rating Filter
-    if min_rating:
+    # Rating Filter
+    if filter_rating:
         try:
-            min_rating = Decimal(min_rating)
-            assistants = assistants.filter(average_rating__gte=min_rating)
-        except (ValueError, InvalidOperation):
-            pass
-    
-    if max_rating:
-        try:
-            max_rating = Decimal(max_rating)
-            assistants = assistants.filter(average_rating__lte=max_rating)
+            filter_rating = Decimal(filter_rating)
+            # Filter ratings from the specified rating (inclusive) up to the next rating (exclusive)
+            assistants = assistants.filter(
+                average_rating__gte=filter_rating,
+                average_rating__lt=filter_rating + Decimal('0.1')
+            )
         except (ValueError, InvalidOperation):
             pass
     
