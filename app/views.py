@@ -384,8 +384,8 @@ def list_assistants(request):
         {
             "id": str(assistant.id),
             "name": assistant.name,
-            "subject": assistant.subject.name if assistant.subject else None,
-            "topic": assistant.topic.name if assistant.topic else None,
+            "subject": assistant.subject if assistant.subject else None,
+            "topic": assistant.topic if assistant.topic else None,
             "description": assistant.description,
             "created_at": assistant.created_at,
             "interactions": assistant.interactions,
