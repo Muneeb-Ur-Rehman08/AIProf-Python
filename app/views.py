@@ -33,6 +33,9 @@ from app.utils.vector_store import (
 )
 from assistantchat.models import Conversation
 from users.models import Assistant, AssistantRating, Subject, Topic
+from users.add import populate_subjects_and_topics
+
+# populate_subjects_and_topics()
 
 # Ensure the GROQ_API_KEY is loaded from the environment
 api_key = os.getenv('GROQ_API_KEY')
@@ -219,98 +222,32 @@ def create_assistant(request):
 @csrf_exempt
 @require_http_methods(["GET"])
 def list_assistants(request):
-     # Append subjects data to assistants
-    # subjects_data = [
-    #     {
-    #         "name": "Mathematics",
-    #         "topics": [
-    #             "Arithmetic", "Addition", "Subtraction", "Multiplication", "Division",
-    #             "Fractions", "Decimals", "Percentages", "Algebra", "Linear Equations",
-    #             "Quadratic Equations", "Inequalities", "Polynomials", "Geometry", "Shapes",
-    #             "Angles", "Theorems", "Coordinate Geometry", "Trigonometry", "Sine",
-    #             "Cosine", "Tangent", "Pythagoras' Theorem", "Calculus", "Limits",
-    #             "Derivatives", "Integrals", "Differential Equations", "Statistics & Probability",
-    #             "Mean", "Median", "Mode", "Standard Deviation"
-    #         ]
-    #     },
-    #     {
-    #         "name": "Science",
-    #         "topics": [
-    #             "Physics", "Newton's Laws of Motion", "Electricity", "Magnetism",
-    #             "Thermodynamics", "Waves", "Quantum Mechanics", "Chemistry", "Periodic Table",
-    #             "Chemical Reactions", "Molecular Structure", "Acids and Bases", "Organic Chemistry",
-    #             "Biology", "Cell Structure", "Human Anatomy", "Genetics", "Ecology", "Evolution"
-    #         ]
-    #     },
-    #     {
-    #         "name": "English",
-    #         "topics": [
-    #             "Grammar", "Sentence Structure", "Tenses", "Vocabulary", "Writing Skills",
-    #             "Essay Writing", "Creative Writing", "Literature", "Poetry Analysis",
-    #             "Novel Studies", "Drama", "Research and Citation"
-    #         ]
-    #     },
-    #     {
-    #         "name": "History",
-    #         "topics": [
-    #             "Ancient Civilizations", "Greek and Roman History", "Middle Ages", "Renaissance",
-    #             "World Wars", "American Revolution", "Industrial Revolution", "Modern History",
-    #             "Cold War", "Civil Rights Movement"
-    #         ]
-    #     },
-    #     {
-    #         "name": "Geography",
-    #         "topics": [
-    #             "Physical Geography", "Landforms", "Weather and Climate", "Ecosystems",
-    #             "Human Geography", "Population Studies", "Urbanization", "Economic Geography",
-    #             "Global Trade"
-    #         ]
-    #     },
-    #     {
-    #         "name": "Computer Science",
-    #         "topics": [
-    #             "Programming Basics", "Algorithms", "Data Structures", "Databases",
-    #             "Web Development", "Networking", "Cybersecurity", "Artificial Intelligence",
-    #             "Machine Learning"
-    #         ]
-    #     },
-    #     {
-    #         "name": "Art",
-    #         "topics": [
-    #             "Drawing Techniques", "Painting Styles", "Sculpture", "Art History",
-    #             "Photography", "Digital Art", "Design Principles"
-    #         ]
-    #     },
-    #     {
-    #         "name": "Physical Education",
-    #         "topics": [
-    #             "Fitness Training", "Team Sports", "Individual Sports", "Health and Nutrition",
-    #             "Mental Well-being", "Exercise Physiology"
-    #         ]
-    #     }
-    # ]
-    
-
-    # Fetch subjects from the database
-    subjects_data = Subject.objects.prefetch_related(
-        'topics'
-        ).all()
-    
-
+    # Fetch subjects with topics in a single query using select_related/prefetch_related
+    subjects_data = Subject.objects.prefetch_related('topics').all()
     # Fetch Assistants from the database with conversation counts
     assistants = Assistant.objects.all()
-
-
-    # Retrieve filter parameters
+    
+    # Apply filters
+    filters = Q()
+    
+    # Keyword search (only if keyword is long enough)
     keyword = request.GET.get('keyword', '').strip()
+    if keyword and len(keyword) > 2:
+        filters &= Q(name__icontains=keyword) | Q(description__icontains=keyword)
+    
+    # Subject and Topic filtering
     subjects = request.GET.getlist('subject')
     topics = request.GET.getlist('topic')
     
-    # Rating filter parameters
+    if subjects:
+        filters &= Q(subject__in=subjects)
+    if topics:
+        filters &= Q(topic__in=topics)
+    
+    # Rating filter
     if request.GET.getlist('filter_rating'):
-        rating_filters = request.GET.getlist('filter_rating')
         rating_q = Q()
-        for rating in rating_filters:
+        for rating in request.GET.getlist('filter_rating'):
             try:
                 rating = Decimal(rating)
                 rating_q |= Q(
@@ -320,8 +257,11 @@ def list_assistants(request):
             except (ValueError, InvalidOperation):
                 continue
         if rating_q:
-            assistants = assistants.filter(rating_q)
+            filters &= rating_q
     
+    # Apply all filters at once
+    if filters:
+        assistants = assistants.filter(filters)
     
     # Sorting Options - Map labels to values
     sorting_options = {
@@ -361,65 +301,27 @@ def list_assistants(request):
     
     # Get sort parameter from request, default to 'Newest First'
     sort_label = request.GET.get('sort', 'Newest First')
-
-    # Find the sorting value that matches the label
-    sort_value = '-created_at'  # default value
-    for sort_option in sorting_options.values():
-        if sort_option['label'] == sort_label:
-            sort_value = sort_option['value']
-            break
+    sort_value = next(
+        (opt['value'] for opt in sorting_options.values() if opt['label'] == sort_label),
+        '-created_at'
+    )
     
-    logger.info(f"current sort: {sort_value}")
     # Apply sorting
     assistants = assistants.order_by(sort_value)
     
-    # Filtering logic
-    # Keyword search
-    if keyword and len(keyword) > 2:
-        assistants = assistants.filter(
-            Q(name__icontains=keyword) | 
-            Q(description__icontains=keyword)
-        )
+    # Get rating counts in a single query
+    rating_counts = (
+        AssistantRating.objects
+        .values('rating')
+        .annotate(count=Count('id'))
+        .order_by('-rating')
+    )
     
-    # Subject and Topic Filtering
-    if subjects:
-        assistants = assistants.filter(subject__in=subjects)
-    
-    if topics:
-        assistants = assistants.filter(topic__in=topics)
-    
-    
-    # Prepare the data for rendering
-    assistants_data = [
-        {
-            "id": str(assistant.id),
-            "name": assistant.name,
-            "subject": assistant.subject if assistant.subject else None,
-            "topic": assistant.topic if assistant.topic else None,
-            "description": assistant.description,
-            "created_at": assistant.created_at,
-            "interactions": assistant.interactions,
-            "average_rating": assistant.average_rating,
-            "total_reviews": assistant.total_reviews
-        } for assistant in assistants
-    ]
-    
-    # Get rating counts
-    rating_counts = AssistantRating.objects.values('rating').annotate(
-        count=Count('id')
-    ).order_by('-rating')
-
-    # Format rating counts for template
-    formatted_rating_counts = {
-        5: 0, 4: 0, 3: 0, 2: 0, 1: 0
-    }
-    
+    # Format rating counts
+    formatted_rating_counts = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
     for rating in rating_counts:
         if rating['rating'] is not None:
-            # Get the rating value
             rating_value = float(rating['rating'])
-            
-            # Determine which bucket this rating belongs in
             if rating_value >= 4.8:
                 formatted_rating_counts[5] += rating['count']
             elif 4.0 <= rating_value < 4.8:
@@ -430,24 +332,37 @@ def list_assistants(request):
                 formatted_rating_counts[2] += rating['count']
             elif 1.0 <= rating_value < 2.0:
                 formatted_rating_counts[1] += rating['count']
-
-    # Context for template
+    
+    # Prepare context
     context = {
         "subjects_data": subjects_data,
-        "filtered_assistants": assistants_data,
+        "filtered_assistants": [
+            {
+                "id": str(a.id),
+                "name": a.name,
+                "subject": a.subject,
+                "topic": a.topic,
+                "description": a.description,
+                "created_at": a.created_at,
+                "interactions": a.interactions,
+                "average_rating": a.average_rating,
+                "total_reviews": a.total_reviews
+            }
+            for a in assistants
+        ],
         "sorting_options": {opt['value']: opt['label'] for opt in sorting_options.values()},
         "current_sort": sort_label,
         "rating_counts": formatted_rating_counts
     }
     
-    # HTMX partial rendering
+    # Return appropriate template
     if request.htmx:
         return render(request, 'assistant/list_partials.html', {
-            'assistants': assistants_data,
+            'assistants': context["filtered_assistants"],
             'current_sort': sort_label
         })
-    else:
-        return render(request, 'assistant/list.html', context)
+    
+    return render(request, 'assistant/list.html', context)
 
 
 @csrf_exempt
