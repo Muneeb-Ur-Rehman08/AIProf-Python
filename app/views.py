@@ -296,8 +296,10 @@ def list_assistants(request):
         'topics'
         ).all()
     
-    # Fetch Assistants from the database
-    assistants = Assistant.objects.all().order_by('-average_rating')
+
+    # Fetch Assistants from the database with conversation counts
+    assistants = Assistant.objects.all()
+
 
     # Retrieve filter parameters
     keyword = request.GET.get('keyword', '').strip()
@@ -320,9 +322,6 @@ def list_assistants(request):
         if rating_q:
             assistants = assistants.filter(rating_q)
     
-    # Interactions filter parameters
-    min_interactions = request.GET.get('min_interactions')
-    max_interactions = request.GET.get('max_interactions')
     
     # Sorting Options - Map labels to values
     sorting_options = {
@@ -334,12 +333,12 @@ def list_assistants(request):
             'label': 'Oldest First',
             'value': 'created_at'
         },
-        'most_interactions': {
-            'label': 'Most Interactions',
+        'highest_interactions': {
+            'label': 'Highest Interactions',
             'value': '-interactions'
         },
-        'least_interactions': {
-            'label': 'Least Interactions',
+        'lowest_interactions': {
+            'label': 'Lowest Interactions',
             'value': 'interactions'
         },
         'most_reviews': {
@@ -362,7 +361,7 @@ def list_assistants(request):
     
     # Get sort parameter from request, default to 'Newest First'
     sort_label = request.GET.get('sort', 'Newest First')
-    
+
     # Find the sorting value that matches the label
     sort_value = '-created_at'  # default value
     for sort_option in sorting_options.values():
@@ -389,20 +388,6 @@ def list_assistants(request):
     if topics:
         assistants = assistants.filter(topic__in=topics)
     
-    # Interactions Filter
-    if min_interactions:
-        try:
-            min_interactions = int(min_interactions)
-            assistants = assistants.filter(interactions__gte=min_interactions)
-        except ValueError:
-            pass
-    
-    if max_interactions:
-        try:
-            max_interactions = int(max_interactions)
-            assistants = assistants.filter(interactions__lte=max_interactions)
-        except ValueError:
-            pass
     
     # Prepare the data for rendering
     assistants_data = [
