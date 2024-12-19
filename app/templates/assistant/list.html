@@ -55,7 +55,7 @@
           hx-push-url="true"
           hx-target="#assistants-list"
           hx-trigger="change"
-          hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword'],[name='sort']"
+          hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']"
         >
           {% for value, label in sorting_options.items %}
             <option value="{{ label }}" {% if label == current_sort %}selected{% endif %}>
