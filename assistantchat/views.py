@@ -28,116 +28,95 @@ def chat_query(request, ass_id: Optional[str] = None):
     """
     Endpoint to process chat queries and save conversations.
     """
-
-    def generate_response():
+    try:
+        # Parse request body
+        data = json.loads(request.body)
         try:
-            # Parse request body
-            data = json.loads(request.body)
-            try:
+            prompt = data.get('message')
+            assistant_id = data.get('id')
+            if not prompt:
+                return StreamingHttpResponse("Prompt is required", content_type='text/plain')
 
-                prompt = data.get('message')
-                assistant_id = data.get('id')
-                if not prompt:
-                    yield "Prompt is required"
-                    return
+        except json.JSONDecodeError:
+            return StreamingHttpResponse("Invalid JSON body", content_type='text/plain')
 
-            except json.JSONDecodeError:
-                yield "Invalid JSON body"
-                return
+        # User authentication check
+        if not request.user.is_authenticated:
+            return StreamingHttpResponse("User not authenticated", content_type='text/plain')
 
-            # User authentication check
-            if not request.user.is_authenticated:
-                yield "User not authenticated"
-                return
+        try:
+            user = User.objects.get(id=request.user.id)
+            user_id = str(user.id)
+        except (SupabaseUser.DoesNotExist, ValueError):
+            return StreamingHttpResponse("Invalid user authentication", content_type='text/plain')
 
-            try:
-                user = User.objects.get(id=request.user.id)
-                user_id = str(user.id)
-            except (SupabaseUser.DoesNotExist, ValueError):
-                yield "Invalid user authentication"
-                return
+        # Assistant validation
+        if not assistant_id:
+            return StreamingHttpResponse("Assistant ID is required", content_type='text/plain')
 
-            # Assistant validation
-            if not assistant_id:
-                yield "Assistant ID is required"
-                return
+        try:
+            assistant = Assistant.objects.get(id=assistant_id)
+        except (ValueError, TypeError):
+            return StreamingHttpResponse("Invalid assistant ID format", content_type='text/plain')
+        except Assistant.DoesNotExist:
+            return StreamingHttpResponse("Assistant not found", content_type='text/plain')
 
-            try:
-                assistant = Assistant.objects.get(id=assistant_id)
-            except (ValueError, TypeError):
-                yield "Invalid assistant ID format"
-                return
-            except Assistant.DoesNotExist:
-                yield "Assistant not found"
-                return
-
-            assist_instructions = assistant.teacher_instructions or ""
-            mermaid_instructions = '''
-                Help me with short and to the point diagrams wherever you see fit using 
-                mermaid.js code, as example given below. Double make sure the code error-free 
-                and provide one graph per block:\n
+        assist_instructions = assistant.teacher_instructions or ""
+        mermaid_instructions = '''
+            Help me with short and to the point diagrams wherever you see fit using 
+            mermaid.js code, as example given below. Double make sure the code error-free 
+            and provide one graph per block:\n
+            
+            note: pie is always in percentage without mentioning %
+            
+            ```mermaid
+            pie title NETFLIX
+                 "Time spent looking for movie" : 90
+                 "Time spent watching it" : 10
                 
-                note: pie is always in percentage without mentioning %
-                
-                ```mermaid
-                pie title NETFLIX
-                     "Time spent looking for movie" : 90
-                     "Time spent watching it" : 10
-                    
-                sequenceDiagram
-                    Alice ->> Bob: Hello Bob, how are you?
-                    Bob-->>John: How about you John?
-                    Bob--x Alice: I am good thanks!
-                    Bob-x John: I am good thanks!
-                    Note right of John: Bob thinks a long<br/>long time, so long<br/>that the text does<br/>not fit on a row.
-                
-                    Bob-->Alice: Checking with John...
-                    Alice->John: Yes... John, how are you?
-                    
-                ```
-            '''
-            final_instructions = assist_instructions + "\n" + mermaid_instructions
+            sequenceDiagram
+                Alice ->> Bob: Hello Bob, how are you?
+                Bob-->>John: How about you John?
+                Bob--x Alice: I am good thanks!
+                Bob-x John: I am good thanks!
+                Note right of John: Bob thinks a long<br/>long time, so long<br/>that the text does<br/>not fit on a row.
+            
+                Bob-->Alice: Checking with John...
+                Alice->John: Yes... John, how are you?
+            
+            ```
+        '''
+        final_instructions = assist_instructions + "\n" + mermaid_instructions
 
-            assistant_config = {
-                "subject": assistant.subject,
-                "topic": assistant.topic,
-                "teacher_instructions": assistant.teacher_instructions,
-                "prompt_instructions": mermaid_instructions,
-                "prompt": prompt,
-            }
+        assistant_config = {
+            "subject": assistant.subject,
+            "topic": assistant.topic,
+            "teacher_instructions": assistant.teacher_instructions,
+            "prompt_instructions": mermaid_instructions,
+            "prompt": prompt,
+        }
 
+        # Initialize chat module and process message
+        chat_module = ChatModule()
+        response = chat_module.process_message(
+            prompt=prompt,
+            assistant_id=assistant.id,
+            user_id=user_id,
+            assistant_config=assistant_config,
+        )
 
-            # Check if a rating already exists for this user and assistant
-            # AssistantRating.objects.update_or_create(
-            #     assistant=assistant,
-            #     user=user,
-            #     defaults={
-            #         'rating': 4.0,
-            #         'review': "Great assistant, very helpful in explaining the topic!"
-            #     }
-            # )
+        # Streaming the response
+        def response_stream():
+            try:
+                for chunk in response:
+                    if chunk:
+                        yield chunk
+            except Exception as e:
+                logger.error(f"Error in chat query response: {e}")
+                yield "Failed to process chat query"
 
+        return StreamingHttpResponse(response_stream(), content_type='text/plain')
 
-            # Initialize chat module and process message
-            chat_module = ChatModule()
-            response = chat_module.process_message(
-                prompt=prompt,
-                assistant_id=assistant.id,
-                user_id=user_id,
-                assistant_config=assistant_config,
-            )
-
-            # Collect and yield responses
-            for chunk in response:
-                if chunk:
-                    yield chunk
-
-        except Exception as e:
-            logger.error(f"Error in chat query endpoint: {e}")
-            yield "Failed to process chat query"
-
-    # Return a StreamingHttpResponse with the generator
-    return StreamingHttpResponse(
-        generate_response(),
-        content_type='text/plain'
-    )
+    except Exception as e:
+        logger.error(f"Error in chat query endpoint: {e}")
+        return StreamingHttpResponse("Failed to process chat query", content_type='text/plain')
