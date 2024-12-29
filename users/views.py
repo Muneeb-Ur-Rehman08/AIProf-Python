@@ -141,7 +141,7 @@ def create_assistant(request, ass_id: Optional[str] = None):
                 'urls': urls,
                 'knowledge_base': pdfs,
                 'chat_mode': False,
-                'image_url': assistant_data.image.url if assistant_data.image else None
+                'image_url': assistant_data.image if assistant_data.image else None
             })
         else:
             return HttpResponseRedirect(f'/assistants')
