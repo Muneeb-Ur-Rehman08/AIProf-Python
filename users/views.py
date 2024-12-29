@@ -1,9 +1,10 @@
 import os
-from django.http import JsonResponse, HttpResponseRedirect
+from django.http import JsonResponse, HttpResponseRedirect, StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 import json
 import uuid
+import base64
 from typing import Dict, Any, Optional
 import logging
 from django.conf import settings
@@ -20,6 +21,9 @@ from django.template.loader import TemplateDoesNotExist
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from .add import populate_subjects_and_topics
+from .utils import generate_instruction_stream
+from app.modals.chat import get_llm
+
 
 
 
@@ -136,7 +140,8 @@ def create_assistant(request, ass_id: Optional[str] = None):
                 'teacher_instructions': assistant_data.teacher_instructions,
                 'urls': urls,
                 'knowledge_base': pdfs,
-                'chat_mode': False
+                'chat_mode': False,
+                'image_url': assistant_data.image.url if assistant_data.image else None
             })
         else:
             return HttpResponseRedirect(f'/assistants')
@@ -199,6 +204,32 @@ def create_assistant(request, ass_id: Optional[str] = None):
         }
 
         changes_made = False
+
+        
+        
+        # Handle image upload
+        image_file = request.FILES.get('image')
+        if image_file:
+            try:
+                # Validate image size (max 5MB)
+                if image_file.size > 5 * 1024 * 1024:
+                    return format_response(error="Image size too large. Maximum 5MB allowed.", status=400)
+                
+                # Read file content as blob
+                image_blob = image_file.read()
+                
+                # Update assistant with blob data
+                assistant.image_blob = image_blob
+                assistant.save()
+                
+                return format_response(data={
+                    "message": "Image uploaded successfully"
+                })
+            
+            except Exception as e:
+                logger.error(f"Image upload error: {e}")
+                return format_response(error=f"Image upload failed: {str(e)}", status=500)
+
 
         # Update fields dynamically
         for request_field, model_field in field_mapping.items():
@@ -282,6 +313,8 @@ def create_assistant(request, ass_id: Optional[str] = None):
                     "topic": assistant.topic,
                     "teacher_instructions": assistant.teacher_instructions,
                     "is_published": assistant.is_published,
+                    # "image": base64.b64encode(assistant.image_blob).decode('utf-8') if assistant.image_blob else None,
+                    "image_url": assistant.image if assistant.image else None,
                     "message": "Assistant updated successfully"
                 }
                 return format_response(data=response_data)
@@ -293,6 +326,7 @@ def create_assistant(request, ass_id: Optional[str] = None):
         # No changes scenario
         return format_response(data={
             "ass_id": str(assistant.id),
+            "image_url": assistant.image.url if assistant.image else None,
             "message": "No changes detected"
         })
 
@@ -341,6 +375,68 @@ def delete_assistant(request, ass_id):
         return format_response(error="Internal server error", status=500)
     
 
+
+@login_required
+@require_http_methods(["POST"])
+def generate_instructions(request) -> StreamingHttpResponse:
+    """
+    Streaming view for generating AI assistant instructions
+    
+    Returns:
+        StreamingHttpResponse with instruction generation progress
+    """
+    try:
+        # Extract request data
+        data = request.POST
+        assistant_id = data.get('assistant_id')
+        
+        if not assistant_id:
+            return StreamingHttpResponse(
+                json.dumps({'error': 'Assistant ID is required'}),
+                content_type='application/json'
+            )
+
+        # Retrieve assistant
+        try:
+            assistant = Assistant.objects.get(id=assistant_id, user_id=request.user)
+        except Assistant.DoesNotExist:
+            return StreamingHttpResponse(
+                json.dumps({'error': 'Assistant not found or unauthorized'}),
+                content_type='application/json'
+            )
+
+        # Extract context details
+        subject = data.get('subject', assistant.subject or '')
+        topic = data.get('topic', assistant.topic or '')
+        description = data.get('description', assistant.description or '')
+        current_instructions = data.get('teacher_instructions', 
+                                        assistant.teacher_instructions or '')
+
+        # Create streaming response
+        response = StreamingHttpResponse(
+            generate_instruction_stream(
+                subject, 
+                topic, 
+                current_instructions,
+                description
+            ),
+            content_type='text/event-stream'
+        )
+        
+        # Set headers for streaming
+        response['Cache-Control'] = 'no-cache'
+        response['X-Accel-Buffering'] = 'no'
+        
+        return response
+
+    except Exception as e:
+        logger.error(f"Instruction generation error: {e}")
+        return StreamingHttpResponse(
+            json.dumps({'error': str(e)}),
+            content_type='application/json',
+            status=500
+        )
+    
 
 @login_required(login_url='accounts/login/')
 def create_assistant_view(request, ass_id):
