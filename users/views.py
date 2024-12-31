@@ -398,6 +398,7 @@ def generate_instructions(request, assistant_id: Optional[str]) -> StreamingHttp
 
 
         subject = assistant.subject
+        name = assistant.name
         topic = assistant.topic
         description = assistant.description
         current_instructions = assistant.teacher_instructions
@@ -405,6 +406,7 @@ def generate_instructions(request, assistant_id: Optional[str]) -> StreamingHttp
         # Create streaming response
         response = StreamingHttpResponse(
             generate_instruction_stream(
+                name,
                 subject, 
                 topic, 
                 current_instructions,

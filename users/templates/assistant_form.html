@@ -151,7 +151,10 @@
           <!-- <svg class="absolute top-4 right-2 w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"></path>
           </svg> -->
-          <svg id="generate-instructions" hx-get="{% url 'generate_instructions' assistant_id=assistant.id %}" hx-replace-url="false" hx-target="#teacher_instructions" hx-vals='{"assistant_id": "{{ assistant.id }}"}' class="w-4 h-4 fill-[#8e8e8e] absolute top-3 right-2 text-white" viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg">
+          <svg id="generate-instructions" 
+            data-url="{% url 'generate_instructions' assistant_id=assistant.id %}"
+            class="w-4 h-4 fill-[#8e8e8e] absolute top-3 right-2 text-white cursor-pointer hover:fill-white transition-colors"
+            viewBox="0 0 448 512">
 
             <!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
             <path d="M398.5 373.6c95.9-122.1 17.2-233.1 17.2-233.1 45.4 85.8-41.4 170.5-41.4 170.5 105-171.5-60.5-271.5-60.5-271.5 96.9 72.7-10.1 190.7-10.1 190.7 85.8 158.4-68.6 230.1-68.6 230.1s-.4-16.9-2.2-85.7c4.3 4.5 34.5 36.2 34.5 36.2l-24.2-47.4 62.6-9.1-62.6-9.1 20.2-55.5-31.4 45.9c-2.2-87.7-7.8-305.1-7.9-306.9v-2.4 1-1 2.4c0 1-5.6 219-7.9 306.9l-31.4-45.9 20.2 55.5-62.6 9.1 62.6 9.1-24.2 47.4 34.5-36.2c-1.8 68.8-2.2 85.7-2.2 85.7s-154.4-71.7-68.6-230.1c0 0-107-118.1-10.1-190.7 0 0-165.5 99.9-60.5 271.5 0 0-86.8-84.8-41.4-170.5 0 0-78.7 111 17.2 233.1 0 0-26.2-16.1-49.4-77.7 0 0 16.9 183.3 222 185.7h4.1c205-2.4 222-185.7 222-185.7-23.6 61.5-49.9 77.7-49.9 77.7z"></path>
@@ -664,6 +667,82 @@
       reader.readAsDataURL(input.files[0]);
     }
   }
+
+  // Add event listener for the generate instructions icon
+  document.getElementById('generate-instructions').addEventListener('click', function(e) {
+    e.preventDefault();
+    
+    const textarea = document.getElementById('teacher_instructions');
+    textarea.value = ''; // Clear existing content
+    
+    const url = this.dataset.url;
+    if (!url) {
+        console.error('Generate instructions URL not found');
+        return;
+    }
+    
+    fetch(url)
+        .then(response => {
+            const reader = response.body.getReader();
+            let accumulatedContent = '';
+            
+            function processStream({ done, value }) {
+                if (done) {
+                    // Change this to focus after a small delay and return
+                    setTimeout(() => {
+                        const textarea = document.getElementById('teacher_instructions');
+                        textarea.focus();
+                        // Optional: Move cursor to end of text
+                        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+                    }, 100);
+                    return;
+                }
+                
+                // Convert the chunk to text
+                const chunk = new TextDecoder().decode(value);
+                
+                // Split by newlines in case multiple JSON objects arrived together
+                const lines = chunk.split('\n');
+                
+                lines.forEach(line => {
+                    if (!line.trim()) return;
+                    
+                    try {
+                        const data = JSON.parse(line);
+                        
+                        switch(data.status) {
+                            case 'start':
+                                textarea.value = 'Starting...';
+                                break;
+                            case 'progress':
+                                textarea.value = data.message;
+                                break;
+                            case 'generating':
+                                accumulatedContent += data.partial_content;
+                                textarea.value = accumulatedContent;
+                                textarea.scrollTop = textarea.scrollHeight;
+                                break;
+                            case 'complete':
+                                textarea.value = data.full_content;
+                                break;
+                        }
+                    } catch (e) {
+                        console.error('Error parsing JSON:', e);
+                    }
+                });
+                
+                // Continue reading
+                return reader.read().then(processStream);
+            }
+            
+            // Start reading the stream
+            return reader.read().then(processStream);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            textarea.value = 'Error generating instructions. Please try again.';
+        });
+  });
 
 </script>
 

@@ -10,6 +10,7 @@ import time
 
 
 def generate_instruction_stream(
+    name: str,
     subject: str, 
     topic: str, 
     current_instructions: str,
@@ -44,27 +45,64 @@ def generate_instruction_stream(
         llm = get_llm()
 
         # Construct detailed prompt
+        # full_prompt = f"""
+        # Context:
+        # - Subject: {subject}
+        # - Topic: {topic}
+        # - Description: {description}
+        # - Current Instructions: {current_instructions}
+
+        # Generate comprehensive AI assistant instructions that:
+        # 1. Capture the educational essence of the subject
+        # 2. Provide clear, adaptive communication guidelines
+        # 3. Ensure pedagogically sound interaction
+        # 4. Create a framework for engaging and effective learning
+
+        # Focus on:
+        # - Precise communication strategies
+        # - Subject-specific explanation techniques
+        # - Adaptive learning support
+        # - Motivation and engagement methods
+
+        # Generated Instructions:
+        # """
+
         full_prompt = f"""
         Context:
+        - Teacher: {name}
         - Subject: {subject}
         - Topic: {topic}
         - Description: {description}
         - Current Instructions: {current_instructions}
 
-        Generate comprehensive AI assistant instructions that:
-        1. Capture the educational essence of the subject
-        2. Provide clear, adaptive communication guidelines
-        3. Ensure pedagogically sound interaction
-        4. Create a framework for engaging and effective learning
+        Task:
+        Use the above context to generate a thorough set of AI assistant instructions that:
 
-        Focus on:
-        - Precise communication strategies
-        - Subject-specific explanation techniques
-        - Adaptive learning support
-        - Motivation and engagement methods
+        1. Capture the educational goals and essential concepts of the subject and topic.
+        2. Provide clear, adaptive communication guidelines for different learning levels and styles.
+        3. Incorporate pedagogically sound methods for knowledge scaffolding, feedback, and assessment.
+        4. Outline a structured framework for engaging and effective learning experiences.
+
+        Areas of Focus:
+        - Clear, context-sensitive communication strategies
+        - Subject-specific explanation techniques for deeper understanding
+        - Adaptive support for different learner needs and paces
+        - Motivational and engagement tactics to sustain learner interest
+
+        Constraints & Requirements:
+        - Output only the final instructions as plain text.
+        - Do not include or restate the context in the output.
+        - Integrate or refine any relevant parts of the current instructions where appropriate.
+        - Instructions must be detailed enough to guide AI teaching, interactions, and learner support.
+        - Exclude headings, markdown, disclaimers, or any extra explanations.
+
+        Output Format:
+        Provide only the instructions in plain text (with or without line breaks). No additional text or formatting is allowed.
 
         Generated Instructions:
         """
+
+
 
         # Initialize message 
         messages = [HumanMessage(content=full_prompt)]
