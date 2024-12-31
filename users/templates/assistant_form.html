@@ -8,28 +8,28 @@
 
   <div id="assistant-form" class="relative flex w-full grow overflow-hidden" hx-replace-url="true">
 
+    <!-- Tab buttons for mobile - Moved outside -->
+    <div class="md:hidden fixed top-14 left-0 right-0 z-10 flex justify-center py-2 bg-gray-900">
+      <div class="flex w-11/12 overflow-hidden p-1.5 self-center outline-none bg-gray-800/50 rounded-lg mb-4">
+        <button onclick="switchTab('form')" id="formTab"
+          class="flex-1 py-2 px-4 text-white rounded-lg transition-all duration-300 hover:bg-purple-400">
+          Create Assistant
+        </button>
+        <button onclick="switchTab('chat')" id="chatTab" 
+          class="flex-1 py-2 px-4 text-white rounded-lg transition-all duration-300 hover:bg-purple-400">
+          Chat
+        </button>
+      </div>
+    </div>
+
     <div id="assistantForm" hx-encoding="multipart/form-data" hx-swap="none"
       class="flex w-full justify-center md:w-1/2">
       <div class="h-full grow overflow-hidden">
-
-        <div class="h-full grow overflow-hidden">
           <div class="flex h-full flex-col px-2 pt-2">
 
-            <div class="md:hidden flex w-full flex-row justify-center">
-              <button onclick="switchTab('form')" id="formTab"
-                class="flex-1 py-2 px-4 text-white border-b-2 border-transparent active-tab">
-                Create Assistant
-              </button>
-              <button onclick="switchTab('chat')" id="chatTab"
-                class="flex-1 py-2 px-4 text-white border-b-2 border-transparent">
-                Chat
-              </button>
-            </div>
             <div class="grow overflow-hidden">
-              <div class="flex h-full grow overflow-y-auto px-2 pt-6 text-sm">
+              <div class="flex h-full grow overflow-y-auto px-2 pt-6 md:pt-2 text-sm">
                 <div class="grow">
-
-
                   {% csrf_token %}
                   <div class="mb-6">
                     <div
@@ -54,18 +54,18 @@
                         hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}" hx-trigger="blur changed delay:1s"
                         hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "assistant_name"}' autocomplete="off"
                         hx-replace-url="false" value="{{ assistant.name|default:'' }}" placeholder="Name your ASSISTANT"
-                        class="input w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2" />
+                        class="input input-bordered text-lg w-full" />
 
                     </div>
                   </div>
                   <div class="mb-6">
                     <label class="block text-white text-lg font-bold mb-2">Description</label>
-                    <input type="text" name="description" hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
+                    <textarea name="description" hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
                       hx-trigger="blur changed delay:1s"
                       hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "description"}' autocomplete="off"
-                      hx-replace-url="false" value="{{ assistant.description|default:'' }}"
-                      placeholder="Add a short description about what this ASSISTANT does"
-                      class="input w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2" />
+                      hx-replace-url="false" placeholder="Add a short description about what this ASSISTANT does"
+                      class="textarea textarea-bordered textarea-xs text-lg w-full"
+                      rows="3">{{ assistant.description|default:'' }}</textarea>
                   </div>
                   <div class="mb-6 flex gap-4">
                     <div class="flex-1">
@@ -73,7 +73,7 @@
                       <select name="subject" id="subjectSelect" hx-post="{% url 'assistant' ass_id=assistant.id %}"
                         hx-trigger="blur changed delay:1s"
                         hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "subject"}' hx-replace-url="false"
-                        class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2">
+                        class="select select-bordered w-full max-w-xs">
                         <option value="" disabled>Select a subject</option>
                       </select>
                     </div>
@@ -82,7 +82,7 @@
                       <select name="topic" id="topicSelect" hx-trigger="blur changed delay:1s"
                         hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
                         hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "topic"}' hx-replace-url="false"
-                        class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2">
+                        class="select select-bordered w-full">
                         <option value="" disabled>Select a topic</option>
                       </select>
                     </div>
@@ -94,7 +94,7 @@
                       hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "teacher_instructions"}'
                       autocomplete="off" hx-replace-url="false"
                       placeholder="What does this ASSISTANT do? How does it behave? What should it avoid doing?"
-                      class="textarea w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
+                      class="textarea textarea-bordered textarea-xs text-xl w-full"
                       rows="4">{{ assistant.teacher_instructions|default:'' }}</textarea>
                   </div>
                   <div class="mb-6">
@@ -103,7 +103,7 @@
                       {% for url in urls %}
                       <div class="url-input-group mb-2 flex items-center gap-2">
                         <input type="url" name="url" value="{{ url }}" disabled
-                          class="input flex-1 bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 opacity-50" />
+                          class="select select-bordered w-full max-w-xs fex-1" />
                         <button type="button" onclick="removeUrl(this)" class="text-gray-400 hover:text-red-500">
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -117,7 +117,7 @@
                         <input type="url" name="url" hx-post="{% url 'assistant' ass_id=assistant.id %}"
                           hx-trigger="blur" hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "url"}'
                           placeholder="Enter a URL"
-                          class="input flex-1 bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2" />
+                          class="input input-bordered w-full" />
                         <div class="loader hidden">
                           <svg class="w-5 h-5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
@@ -165,13 +165,12 @@
             </div>
           </div>
         </div>
-      </div>
+      
 
     </div>
 
     <!-- Chat section -->
-    <div id="assistantChat" class="hidden w-full md:w-1/2 justify-center border-l border-gray-700 bg-gray-900 pt-4 md:flex"
-      _="on load if window.innerWidth > 768 then remove .hidden from me end">
+    <div id="assistantChat" class="w-full md:w-1/2 justify-center border-l border-gray-700 bg-gray-900 pt-4 md:flex">
       {% include 'assistant/assistant_chat.html' with assistant=assistant %}
     </div>
   </div>
@@ -362,18 +361,48 @@
     const formSection = document.getElementById('assistantForm');
     const chatSection = document.getElementById('assistantChat');
 
+    // Remove active styles from both tabs
+    formTab.classList.remove('bg-purple-600', 'text-white');
+    chatTab.classList.remove('bg-purple-600', 'text-white');
+
     if (tab === 'form') {
-      formTab.classList.add('active-tab', 'border-blue-500');
-      chatTab.classList.remove('active-tab', 'border-blue-500');
-      formSection.classList.remove('hidden');
-      chatSection.classList.add('hidden');
+      // Add active styles to form tab
+      formTab.classList.add('bg-purple-600', 'text-white');
+      
+      // Show form, hide chat on mobile
+      formSection.style.display = 'flex';
+      if (window.innerWidth < 768) { // mobile only
+        chatSection.style.display = 'none';
+      }
     } else {
-      chatTab.classList.add('active-tab', 'border-blue-500');
-      formTab.classList.remove('active-tab', 'border-blue-500');
-      formSection.classList.add('hidden');
-      chatSection.classList.remove('hidden');
+      // Add active styles to chat tab
+      chatTab.classList.add('bg-purple-600', 'text-white');
+      
+      // Show chat, hide form on mobile
+      if (window.innerWidth < 768) { // mobile only
+        formSection.style.display = 'none';
+      }
+      chatSection.style.display = 'flex';
     }
   }
+
+  // Add event listener for window resize
+  window.addEventListener('resize', () => {
+    if (window.innerWidth >= 768) {
+      // On desktop, show both sections
+      document.getElementById('assistantForm').style.display = 'flex';
+      document.getElementById('assistantChat').style.display = 'flex';
+    } else {
+      // On mobile, respect current tab selection
+      const activeTab = document.querySelector('.bg-purple-600').id;
+      switchTab(activeTab === 'formTab' ? 'form' : 'chat');
+    }
+  });
+
+  // Initialize tabs on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    switchTab('form'); // Set initial active tab
+  });
 
   // Set initial values
   document.addEventListener('DOMContentLoaded', function () {
@@ -584,72 +613,72 @@
       reader.readAsDataURL(input.files[0]);
     }
   }
+ 
   function previewImage(event) {
-    const input = event.target;
-    const preview = document.getElementById("image-preview");
-    const iconContainer = document.getElementById("icon-container");
-    console.log(input.files)
-    if (input.files && input.files[0]) {
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        preview.src = e.target.result;
-        preview.classList.remove("hidden");
-        iconContainer.classList.add("hidden"); // Hide the plus icon
-      };
-      reader.readAsDataURL(input.files[0]);
-    }
-  }
+            const input = event.target;
+            const preview = document.getElementById("image-preview");
+            const iconContainer = document.getElementById("icon-container");
+
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const imageUrl = e.target.result;
+                    preview.src = imageUrl;
+                    preview.classList.remove("hidden");
+                    preview.style.display = "block";
+                    iconContainer.classList.add("hidden");
+
+                    // Save image data to localStorage
+                    localStorage.setItem("savedImage", imageUrl);
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Restore saved image on page load
+        window.addEventListener("load", function () {
+            const preview = document.getElementById("image-preview");
+            const iconContainer = document.getElementById("icon-container");
+
+            const savedImage = localStorage.getItem("savedImage");
+            if (savedImage) {
+                preview.src = savedImage;
+                preview.classList.remove("hidden");
+                iconContainer.classList.add("hidden");
+            }
+        });
 
 </script>
 
 <style>
+  /* Adjust content padding on mobile for fixed tabs */
+  @media (max-width: 767px) {
+    #assistant-form {
+      padding-top: 4rem;
+    }
+  }
+
   .active-tab {
-    border-color: var(--clr-main);
+    @apply bg-purple-600 text-white;
   }
 
-  .htmx-indicator {
-    display: none;
+  /* Smooth transitions for tab switching */
+  #assistantForm,
+  #assistantChat {
+    transition: all 0.3s ease-in-out;
   }
 
-  .htmx-request .htmx-indicator {
-    display: block;
+  /* Tab button hover effects */
+  #formTab:hover,
+  #chatTab:hover {
+    @apply bg-purple-500/50;
   }
 
-  .htmx-request .htmx-indicator-hide {
-    display: none;
-  }
-
-  select option {
-    background-color: #1a1a1a;
-    /* Dark background */
-    color: white;
-    /* White text */
-  }
-
-  select {
-    background-color: rgba(255, 255, 255, 0.1);
-    /* Matches the input background */
-    color: white;
-  }
-
-  /* For Firefox */
-  select:-moz-focusring {
-    color: transparent;
-    text-shadow: 0 0 0 white;
-  }
-
-  /* For Chrome/Safari */
-  select::-ms-expand {
-    display: none;
-  }
-
-  select option:hover,
-  select option:focus,
-  select option:active,
-  select option:checked {
-    background: linear-gradient(#2d3748, #2d3748);
-    background-color: #2d3748 !important;
-    /* Darker highlight color */
+  @media (min-width: 768px) {
+    #assistantForm,
+    #assistantChat {
+      display: flex !important;
+    }
   }
 </style>
 {% endblock %}
