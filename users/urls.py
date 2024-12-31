@@ -15,7 +15,7 @@ urlpatterns = [
 
 
     # Generate Instructions
-    path('assistants/generate-instructions/', views.generate_instructions, name='generate_instructions'),
+    path('assistants/generate_instructions/<str:assistant_id>', views.generate_instructions, name='generate_instructions'),
     
     
     # Delete assistant

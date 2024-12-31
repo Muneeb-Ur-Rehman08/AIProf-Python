@@ -141,7 +141,7 @@ def create_assistant(request, ass_id: Optional[str] = None):
                 'urls': urls,
                 'knowledge_base': pdfs,
                 'chat_mode': False,
-                'image_url': assistant_data.image if assistant_data.image else None
+                'image_url': assistant_data.image.url if assistant_data.image else None
             })
         else:
             return HttpResponseRedirect(f'/assistants')
@@ -377,8 +377,8 @@ def delete_assistant(request, ass_id):
 
 
 @login_required
-@require_http_methods(["POST"])
-def generate_instructions(request) -> StreamingHttpResponse:
+@require_http_methods(["POST","GET"])
+def generate_instructions(request, assistant_id: Optional[str]) -> StreamingHttpResponse:
     """
     Streaming view for generating AI assistant instructions
     
@@ -386,15 +386,6 @@ def generate_instructions(request) -> StreamingHttpResponse:
         StreamingHttpResponse with instruction generation progress
     """
     try:
-        # Extract request data
-        data = request.POST
-        assistant_id = data.get('assistant_id')
-        
-        if not assistant_id:
-            return StreamingHttpResponse(
-                json.dumps({'error': 'Assistant ID is required'}),
-                content_type='application/json'
-            )
 
         # Retrieve assistant
         try:
@@ -405,12 +396,11 @@ def generate_instructions(request) -> StreamingHttpResponse:
                 content_type='application/json'
             )
 
-        # Extract context details
-        subject = data.get('subject', assistant.subject or '')
-        topic = data.get('topic', assistant.topic or '')
-        description = data.get('description', assistant.description or '')
-        current_instructions = data.get('teacher_instructions', 
-                                        assistant.teacher_instructions or '')
+
+        subject = assistant.subject
+        topic = assistant.topic
+        description = assistant.description
+        current_instructions = assistant.teacher_instructions
 
         # Create streaming response
         response = StreamingHttpResponse(
@@ -422,10 +412,8 @@ def generate_instructions(request) -> StreamingHttpResponse:
             ),
             content_type='text/event-stream'
         )
+        logger.info(f"Streaming response initiated - Content-Type: {response['Content-Type']}")
         
-        # Set headers for streaming
-        response['Cache-Control'] = 'no-cache'
-        response['X-Accel-Buffering'] = 'no'
         
         return response
 
