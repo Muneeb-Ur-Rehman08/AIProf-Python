@@ -12,7 +12,7 @@ from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count
 from django.http import Http404, HttpResponse, JsonResponse, StreamingHttpResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
@@ -226,6 +226,8 @@ def list_assistants(request):
     subjects_data = Subject.objects.prefetch_related('topics').all()
     # Fetch Assistants from the database with conversation counts
     assistants = Assistant.objects.all()
+
+    user = request.user
     
     # Apply filters
     filters = Q()
@@ -259,6 +261,10 @@ def list_assistants(request):
         if rating_q:
             filters &= rating_q
     
+    # Associated Assistants filter
+    if request.GET.get("created_by_me"):
+        filters &= Q(user_id=user)
+
     # Apply all filters at once
     if filters:
         assistants = assistants.filter(filters)
@@ -365,22 +371,71 @@ def list_assistants(request):
     return render(request, 'assistant/list.html', context)
 
 
+
 @csrf_exempt
-@require_http_methods(["GET"])
+@require_http_methods(["GET", "POST"])
 def assistant_detail(request, assistant_id: Optional[str] = None):
-
-    # logged in user id
+    """
+    Handle assistant detail view for both GET and POST requests.
+    GET: Returns assistant data as JSON
+    POST: Updates rating and returns to the same page
+    """
+    # Get logged in user id
     user_id = request.user.id
-
-    try:
-        interactions = Conversation.objects.filter(assistant_id=assistant_id).count()
-        assistant = Assistant.objects.get(id=assistant_id)
-        ratings = AssistantRating.objects.filter(assistant=assistant_id)
-    except Assistant.DoesNotExist:
-        raise Http404("Assistant not found")
-
-    logger.info(f"user_id: {user_id}, assistant: {assistant.user_id.id}")
-
-    is_creator = user_id == assistant.user_id.id
     
-    return render(request, 'assistant/assistant.html', {"assistant": assistant, "interactions": interactions, "reviews": len(ratings), "is_creator": is_creator})
+    # Get assistant or return 404
+    assistant = get_object_or_404(Assistant, id=assistant_id)
+    
+    if request.method == "GET":
+        # Get related data
+        interactions = Conversation.objects.filter(assistant_id=assistant_id).count()
+        ratings = AssistantRating.objects.filter(assistant=assistant_id)
+        is_creator = user_id == assistant.user_id.id
+        
+        # Return JSON response for GET requests
+        return render(request, 'assistant/assistant.html', {
+            'assistant': assistant,
+            'interactions': interactions,
+            'reviews_count': len(ratings),
+            'is_creator': is_creator
+        })
+    
+    else:  # POST request
+        try:
+            # Extract request data
+            data = request.POST.dict()
+            logger.info(f"Received data: {data}")
+
+            rating = data.get("rating", "")
+            review = data.get("review", "")
+
+            # Update or create rating
+            AssistantRating.objects.update_or_create(
+                assistant=assistant,
+                user=user_id,
+                defaults={
+                    'rating': rating,
+                    'review': review
+                }
+            )
+
+            # Get updated data for the template
+            interactions = Conversation.objects.filter(assistant_id=assistant_id).count()
+            ratings = AssistantRating.objects.filter(assistant=assistant_id)
+            is_creator = user_id == assistant.user_id.id
+
+            # Return to the same page with updated context
+            return render(request, 'assistant/assistant.html', {
+                "assistant": assistant,
+                "interactions": interactions,
+                "reviews": len(ratings),
+                "is_creator": is_creator,
+                "success_message": "Rating updated successfully"
+            })
+
+        except Exception as e:
+            logger.error(f"Error updating rating: {str(e)}")
+            return render(request, 'assistant/assistant.html', {
+                "assistant": assistant,
+                "error_message": "Error updating rating"
+            })
