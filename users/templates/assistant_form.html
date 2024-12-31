@@ -152,10 +152,7 @@
             <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"></path>
           </svg> -->
           <svg id="generate-instructions" 
-            hx-get="{% url 'generate_instructions' assistant_id=assistant.id %}" 
-            hx-replace-url="false" 
-            hx-target="#teacher_instructions" 
-            hx-vals='{"assistant_id": "{{ assistant.id }}"}'
+            data-url="{% url 'generate_instructions' assistant_id=assistant.id %}"
             class="w-4 h-4 fill-[#8e8e8e] absolute top-3 right-2 text-white cursor-pointer hover:fill-white transition-colors"
             viewBox="0 0 448 512">
 
@@ -678,14 +675,28 @@
     const textarea = document.getElementById('teacher_instructions');
     textarea.value = ''; // Clear existing content
     
-    // Create fetch request
-    fetch(this.getAttribute('hx-get'))
+    const url = this.dataset.url;
+    if (!url) {
+        console.error('Generate instructions URL not found');
+        return;
+    }
+    
+    fetch(url)
         .then(response => {
             const reader = response.body.getReader();
             let accumulatedContent = '';
             
             function processStream({ done, value }) {
-                if (done) return;
+                if (done) {
+                    // Change this to focus after a small delay and return
+                    setTimeout(() => {
+                        const textarea = document.getElementById('teacher_instructions');
+                        textarea.focus();
+                        // Optional: Move cursor to end of text
+                        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+                    }, 100);
+                    return;
+                }
                 
                 // Convert the chunk to text
                 const chunk = new TextDecoder().decode(value);
