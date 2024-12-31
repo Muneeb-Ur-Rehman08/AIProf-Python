@@ -5,16 +5,28 @@ def populate_subjects_and_topics():
     subjects_data = {
         "Mathematics": [
             "Algebra", "Geometry", "Calculus", "Trigonometry", "Statistics", "Linear Algebra",
-            "Number Theory", "Discrete Mathematics", "Probability", "Topology", "Differential Equations"
+            "Number Theory", "Discrete Mathematics", "Probability", "Topology", "Differential Equations",
+            # Adding new topics
+            "Arithmetic", "Addition", "Subtraction", "Multiplication", "Division", "Fractions",
+            "Decimals", "Percentages", "Linear Equations", "Quadratic Equations", "Inequalities",
+            "Polynomials", "Shapes", "Angles", "Theorems", "Coordinate Geometry", "Sine", "Cosine",
+            "Tangent", "Pythagoras' Theorem", "Limits", "Derivatives", "Integrals", "Mean", "Median",
+            "Mode", "Standard Deviation"
         ],
         "Science": [
             "Physics", "Chemistry", "Biology", "Astronomy", "Environmental Science", "Geology",
-            "Ecology", "Botany", "Zoology", "Genetics", "Microbiology", "Biochemistry", "Biophysics"
+            "Ecology", "Botany", "Zoology", "Genetics", "Microbiology", "Biochemistry", "Biophysics",
+            # Adding new topics
+            "Newton's Laws of Motion", "Electricity", "Magnetism", "Thermodynamics", "Waves",
+            "Quantum Mechanics", "Periodic Table", "Chemical Reactions", "Molecular Structure",
+            "Acids and Bases", "Organic Chemistry", "Cell Structure", "Human Anatomy", "Evolution"
         ],
         "Computer Science": [
             "Programming", "Algorithms", "Data Structures", "Artificial Intelligence", "Machine Learning",
             "Cybersecurity", "Network Engineering", "Web Development", "Database Systems", "Cloud Computing",
-            "Data Science", "Software Engineering", "Computer Graphics", "Human-Computer Interaction"
+            "Data Science", "Software Engineering", "Computer Graphics", "Human-Computer Interaction",
+            # Adding new topics
+            "Programming Basics", "Networking"
         ],
         "Social Sciences": [
             "Psychology", "Sociology", "Anthropology", "Political Science", "Economics", "History",
@@ -24,13 +36,30 @@ def populate_subjects_and_topics():
             "English", "Spanish", "French", "German", "Mandarin", "Arabic", "Italian", "Japanese",
             "Russian", "Portuguese", "Linguistics", "Hindi", "Korean"
         ],
-        "Literature": [
-            "World Literature", "Poetry", "Drama", "Novel Studies", "Shakespeare", "Literary Criticism",
-            "Comparative Literature", "Modern Literature", "Classical Literature"
+        "English": [
+            "Grammar", "Sentence Structure", "Tenses", "Vocabulary", "Writing Skills", "Essay Writing",
+            "Creative Writing", "Literature", "Poetry Analysis", "Novel Studies", "Drama",
+            "Research and Citation"
         ],
-        "Arts": [
+        "History": [
+            "Ancient Civilizations", "Greek and Roman History", "Middle Ages", "Renaissance",
+            "World Wars", "American Revolution", "Industrial Revolution", "Modern History",
+            "Cold War", "Civil Rights Movement"
+        ],
+        "Geography": [
+            "Physical Geography", "Landforms", "Weather and Climate", "Ecosystems",
+            "Human Geography", "Population Studies", "Urbanization", "Economic Geography",
+            "Global Trade"
+        ],
+        "Art": [
             "Visual Arts", "Music", "Theater", "Dance", "Film Studies", "Graphic Design", "Photography",
-            "Sculpture", "Art History", "Architecture", "Ceramics", "Painting"
+            "Sculpture", "Art History", "Architecture", "Ceramics", "Painting",
+            # Adding new topics
+            "Drawing Techniques", "Painting Styles", "Digital Art", "Design Principles"
+        ],
+        "Physical Education": [
+            "Fitness Training", "Team Sports", "Individual Sports", "Health and Nutrition",
+            "Mental Well-being", "Exercise Physiology"
         ],
         "Engineering": [
             "Mechanical Engineering", "Electrical Engineering", "Civil Engineering", "Chemical Engineering",
@@ -49,6 +78,7 @@ def populate_subjects_and_topics():
             "Early Childhood Education", "Elementary Education", "Secondary Education", "Higher Education",
             "Special Education", "Curriculum and Instruction", "Educational Psychology", "Educational Leadership"
         ],
+        # Keeping the rest of the original subjects and their topics
         "Environmental Studies": [
             "Environmental Science", "Environmental Engineering", "Environmental Policy", "Sustainability",
             "Climate Change", "Conservation Biology"
@@ -85,20 +115,35 @@ def populate_subjects_and_topics():
     # Bulk create subjects
     subjects = []
     for subject_name in subjects_data.keys():
-        subject, created = Subject.objects.get_or_create(name=subject_name)
-        subjects.append(subject)
+        # Check if subject exists
+        subject_exists = Subject.objects.filter(name=subject_name).exists()
+        if not subject_exists:
+            subject = Subject.objects.create(name=subject_name)
+            subjects.append(subject)
+            print(f"Created new subject: {subject_name}")
 
     # Bulk create topics
     topics_to_create = []
     for subject_name, topic_list in subjects_data.items():
         subject = Subject.objects.get(name=subject_name)
         for topic_name in topic_list:
-            topic, created = Topic.objects.get_or_create(
-                name=topic_name, 
+            # Check if topic exists for this subject
+            topic_exists = Topic.objects.filter(
+                name=topic_name,
                 subject=subject
-            )
-            topics_to_create.append(topic)
-    print("Data populate successfully")
+            ).exists()
+            
+            if not topic_exists:
+                topic = Topic.objects.create(
+                    name=topic_name,
+                    subject=subject
+                )
+                topics_to_create.append(topic)
+                print(f"Created new topic: {topic_name} for subject: {subject_name}")
+
+    print("Data population completed successfully")
+    print(f"Added {len(subjects)} new subjects")
+    print(f"Added {len(topics_to_create)} new topics")
     return subjects, topics_to_create
 
 

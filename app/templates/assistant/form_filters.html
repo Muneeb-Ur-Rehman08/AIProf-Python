@@ -36,7 +36,7 @@
             hx-trigger="change"
             hx-get="{% url 'list_assistants' %}"
             hx-target="#assistants-list"
-            hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword']"
+            hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']"
           />
           <label for="subject-{{ subject.name }}" class="label cursor-pointer">
             {{ subject.name }}
@@ -84,7 +84,7 @@
                 hx-trigger="change"
                 hx-get="{% url 'list_assistants' %}"
                 hx-target="#assistants-list"
-                hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword']"
+                hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']"
               />
               <label for="topic-{{ topic.id }}" class="label cursor-pointer">
                 {{ topic.name }}
@@ -117,7 +117,7 @@
             hx-target="#assistants-list"
             hx-trigger="change"
             hx-push-url="true"
-            hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked"
+            hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']"
           />
           <label for="rating-5" class="ml-3 flex items-center gap-1">
             {% for star in "12345" %}
@@ -141,7 +141,7 @@
             hx-target="#assistants-list"
             hx-trigger="change"
             hx-push-url="true"
-            hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked"
+            hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']"
           />
           <label for="rating-4" class="ml-3 flex items-center gap-1">
             {% for star in "1234" %}
@@ -168,7 +168,7 @@
             hx-target="#assistants-list"
             hx-trigger="change"
             hx-push-url="true"
-            hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked"
+            hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']"
           />
           <label for="rating-3" class="ml-3 flex items-center gap-1">
             {% for star in "123" %}
@@ -197,7 +197,7 @@
             hx-target="#assistants-list"
             hx-trigger="change"
             hx-push-url="true"
-            hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked"
+            hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']"
           />
           <label for="rating-2" class="ml-3 flex items-center gap-1">
             {% for star in "12" %}
@@ -226,7 +226,7 @@
             hx-target="#assistants-list"
             hx-trigger="change"
             hx-push-url="true"
-            hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked"
+            hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']"
           />
           <label for="rating-1" class="ml-3 flex items-center gap-1">
             <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">

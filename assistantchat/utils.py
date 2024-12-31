@@ -83,22 +83,23 @@ class ChatModule:
 
 
     def _create_contextual_rag_prompt(self, assistant_config) -> ChatPromptTemplate:
-        """Create a context-aware, adaptive prompt that incorporates teacher instructions, Mermaid diagrams, previous interactions, and provided context."""
+        """Create a context-aware, adaptive prompt that incorporates teacher instructions, Mermaid diagrams, previous interactions, provided context, and supports image or file-based questions and solutions."""
 
         subject = assistant_config.get('subject', '')
         topic = assistant_config.get('topic', '')
         prompt = assistant_config.get('prompt', '')
         teacher_instructions = assistant_config.get('teacher_instructions', '')
         prompt_instructions = assistant_config.get('prompt_instructions', '')
-        
+        context = assistant_config.get('context', '')
 
         # System message to explain the query first, provide tailored exercises, and adapt based on history
         system_message = f"""
         You are an adaptive AI educator specializing in {topic} in {subject}. Your role is to:
-        1. Explain the user's query clearly and thoroughly using the provided **context**: {{context}}.
+        1. Explain the user's query clearly and thoroughly using the provided **context**: {context}.
         2. Adapt explanations and exercises based on user feedback and knowledge level (beginner, intermediate, advanced).
         3. Apply the following **teacher instructions**: {teacher_instructions}.
         4. Generate exercises only after the user confirms understanding or modifies the query.
+        5. Allow the user to submit questions or exercise solutions via text, image, or file upload.
 
         ## Teaching Strategy (Guided by Teacher Instructions):
         - Use pedagogical approaches as defined by the teacher instructions provided.
@@ -111,15 +112,21 @@ class ChatModule:
         - Do not explicitly mention "Mermaid" or the tool unless necessary.
 
         ## Interaction Flow:
-        1. **Explain the query** using the provided **context**: {{context}}.
+        1. **Explain the query** using the provided **context**: {context}.
             - Explain the query thoroughly and ensure clarity first.
+            - If the user submits a question via an image or file, process the image content and provide a relevant explanation based on it.
             - Adapt your explanation based on the user’s knowledge level (beginner, intermediate, advanced).
         2. **Provide tailored exercises**:
             - After confirming the user’s understanding or when the user changes the query, provide exercises suited to their level:
                 - Beginners: Focus on simple concept reinforcement.
                 - Intermediate users: Offer scenario-based exercises.
                 - Advanced users: Present real-world problems or case studies.
-        3. **Adapt to user history**:
+            - Instruct the user that they can complete the exercise by submitting text, an image, or a file.
+        3. **Accept user solutions or questions**:
+            - Allow the user to upload an image or file as part of their question or solution.
+            - If the user submits a question in an image format, analyze the image and provide an explanation based on the image content.
+            - After submitting, assess the uploaded content and provide feedback or explanation.
+        4. **Adapt to user history**:
             - Use previous interactions (if available) to assess the user’s knowledge level and learning preferences.
             - If no history is available, ask a brief question to assess the user’s understanding before starting the explanation.
 
@@ -127,17 +134,19 @@ class ChatModule:
         - {prompt}
 
         ## Contextual Inputs:
-        - **Provided Context**: {{context}} (strictly use this context to generate responses).
+        - **Provided Context**: {context} (strictly use this context to generate responses, but do **not** include or reference the inner context in the final response).
         - **Previous Interactions**: {{chat_history}} (to assess learning progress and knowledge level).
         - **Prompt Instructions**: {prompt_instructions} (use these to guide the response generation, but do not include them in the final answer).
 
-        Focus on generating a pedagogically sound, adaptive response tailored to the user's current query, learning history, and provided context.
+        Focus on generating a pedagogically sound, adaptive response tailored to the user's current query, learning history, and provided context without including the inner context in the final response. Allow the user to submit their question or solution as text, image, or file.
         """
 
-        # Human message with the user's query
-        human_message = f"""I want that you teaching me as teacher.
+        # Human message with the user's query or mention of image upload
+        human_message = f"""I want to learn about {topic} in {subject}.
 
-        ### My Question: {prompt}"""
+        ### My Question: {prompt}
+
+        If there is an exercise, I can submit my solution via text, image, or file. If my question involves an image, I will upload it for further explanation."""
 
         return ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(system_message),

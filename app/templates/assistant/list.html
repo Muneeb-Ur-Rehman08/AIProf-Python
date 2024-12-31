@@ -36,7 +36,7 @@
           <input type="text" hx-push-url="true" class="grow" autocomplete="off" placeholder="Search"
             hx-get="{% url 'list_assistants' %}" hx-target="#assistants-list" hx-trigger="keyup changed delay:500ms"
             name="keyword"
-            hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword'],[name='sort']"
+            hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']"
             />
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4">
             <path fill-rule="evenodd"
@@ -58,7 +58,7 @@
           hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']"
         >
           {% for value, label in sorting_options.items %}
-            <option value="{{ label }}" {% if label == current_sort %}selected{% endif %}>
+            <option value="{{ label}}" {% if label == current_sort %}selected{% endif %}>
               {{ label }}
             </option>
           {% endfor %}
