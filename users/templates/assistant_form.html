@@ -73,7 +73,7 @@
                       <select name="subject" id="subjectSelect" hx-post="{% url 'assistant' ass_id=assistant.id %}"
                         hx-trigger="blur changed delay:1s"
                         hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "subject"}' hx-replace-url="false"
-                        class="select select-bordered w-full max-w-xs">
+                        class="select select-bordered w-full">
                         <option value="" disabled>Select a subject</option>
                       </select>
                     </div>
