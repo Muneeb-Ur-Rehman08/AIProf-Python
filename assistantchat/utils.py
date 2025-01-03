@@ -1,21 +1,22 @@
 from typing import List, Dict, Optional, Any, Generator
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain.memory import ConversationBufferMemory
-from langchain_core.runnables import RunnablePassthrough
-from datetime import datetime
+from langchain_core.prompts import (
+    ChatPromptTemplate, 
+    HumanMessagePromptTemplate, 
+    SystemMessagePromptTemplate, 
+    AIMessagePromptTemplate
+)
+
 import logging
 import uuid
 from django.db.models import Q
 import json
 
 from django.contrib.auth.models import User
-from app.utils.vector_store import vector_store
+
 from app.modals.chat import get_llm
 from .models import Conversation
-from users.models import Assistant, SupabaseUser, DocumentChunk, PDFDocument
-from app.utils.assistant_manager import AssistantManager
+from users.models import Assistant, DocumentChunk
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -82,7 +83,7 @@ class ChatModule:
         ])
 
 
-    def _create_contextual_rag_prompt(self, assistant_config) -> ChatPromptTemplate:
+    def _create_contextual_rag_prompt(self, assistant_config, has_chat_history) -> ChatPromptTemplate:
         """Create a context-aware, adaptive prompt that incorporates teacher instructions, Mermaid diagrams, previous interactions, provided context, and supports image or file-based questions and solutions."""
 
         subject = assistant_config.get('subject', '')
@@ -90,12 +91,13 @@ class ChatModule:
         prompt = assistant_config.get('prompt', '')
         teacher_instructions = assistant_config.get('teacher_instructions', '')
         prompt_instructions = assistant_config.get('prompt_instructions', '')
-        context = assistant_config.get('context', '')
+        user_name = assistant_config.get('user_name', '')
+        
 
         # System message to explain the query first, provide tailored exercises, and adapt based on history
         system_message = f"""
         You are an adaptive AI educator specializing in {topic} in {subject}. Your role is to:
-        1. Explain the user's query clearly and thoroughly using the provided **context**: {context}.
+        1. Explain the user's query clearly and thoroughly using the provided **context**: {{context}}.
         2. Adapt explanations and exercises based on user feedback and knowledge level (beginner, intermediate, advanced).
         3. Apply the following **teacher instructions**: {teacher_instructions}.
         4. Generate exercises only after the user confirms understanding or modifies the query.
@@ -112,10 +114,11 @@ class ChatModule:
         - Do not explicitly mention "Mermaid" or the tool unless necessary.
 
         ## Interaction Flow:
-        1. **Explain the query** using the provided **context**: {context}.
+        1. **Explain the query** using the provided **context**: {{context}}.
             - Explain the query thoroughly and ensure clarity first.
             - If the user submits a question via an image or file, process the image content and provide a relevant explanation based on it.
             - Adapt your explanation based on the user’s knowledge level (beginner, intermediate, advanced).
+            - **Do not use provided context directly in the final response**, but use provided context to tailor future responses.
         2. **Provide tailored exercises**:
             - After confirming the user’s understanding or when the user changes the query, provide exercises suited to their level:
                 - Beginners: Focus on simple concept reinforcement.
@@ -125,32 +128,70 @@ class ChatModule:
         3. **Accept user solutions or questions**:
             - Allow the user to upload an image or file as part of their question or solution.
             - If the user submits a question in an image format, analyze the image and provide an explanation based on the image content.
-            - After submitting, assess the uploaded content and provide feedback or explanation.
+            - After submitting, analyze the uploaded content (text, image, or file) and provide feedback or explanation.
         4. **Adapt to user history**:
             - Use previous interactions (if available) to assess the user’s knowledge level and learning preferences.
+            - **Do not use chat history directly in the final response**, but use the chat history to tailor future responses.
             - If no history is available, ask a brief question to assess the user’s understanding before starting the explanation.
 
         ## Current User Query:
         - {prompt}
 
         ## Contextual Inputs:
-        - **Provided Context**: {context} (strictly use this context to generate responses, but do **not** include or reference the inner context in the final response).
-        - **Previous Interactions**: {{chat_history}} (to assess learning progress and knowledge level).
+        - **Provided Context**: {{context}} (strictly use this context to generate responses, but do **not** include or reference the inner context in the final response).
+        - **Previous Interactions**: {{chat_history}} (to assess learning progress and knowledge level, but not directly use in responses).
         - **Prompt Instructions**: {prompt_instructions} (use these to guide the response generation, but do not include them in the final answer).
 
         Focus on generating a pedagogically sound, adaptive response tailored to the user's current query, learning history, and provided context without including the inner context in the final response. Allow the user to submit their question or solution as text, image, or file.
         """
+        
+        
+        # Create welcome message based on chat history
+        if has_chat_history:
+            welcome_message = f"""
+            # Welcome Back! {user_name}👋
 
-        # Human message with the user's query or mention of image upload
-        human_message = f"""I want to learn about {topic} in {subject}.
+            Great to see you again! I remember we were working on {topic} in {subject}. 
+            I've kept track of our previous discussions to provide better assistance.
 
-        ### My Question: {prompt}
+            Would you like to:
+            - Continue from where we left off
+            - Start a new topic
+            - Review previous concepts
+            """
+        else:
+            welcome_message = f"""
+            # Welcome {user_name} to Your Personalized Learning Experience! 👋
 
-        If there is an exercise, I can submit my solution via text, image, or file. If my question involves an image, I will upload it for further explanation."""
+            I am your adaptive AI educator specialized in {topic} within {subject}. I'm here to provide you with:
+            - Personalized learning paths
+            - Interactive exercises
+            - Detailed feedback
 
+            To help me customize your learning experience, could you tell me:
+            1. Your current knowledge level in {topic} (beginner/intermediate/advanced)?
+            2. What specific aspects of {topic} interest you most?
+            """
+
+
+        # Human response based on chat history
+        if has_chat_history:
+            human_response = f"""
+            ### Continuing Our Learning Journey: {prompt}
+
+            You can submit your answers or follow-up questions via text, image, or file. If you want to discuss an image, feel free to upload it for clarification.
+            """
+        else:
+            human_response = f"""
+            ### Getting Started: {prompt}
+
+            Feel free to submit your solutions via text, image, or file. If your query includes an image, upload it for further explanation.
+            """
         return ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(system_message),
-            HumanMessagePromptTemplate.from_template(human_message)
+            HumanMessagePromptTemplate.from_template("hello what are teaching about?"),
+            AIMessagePromptTemplate.from_template(welcome_message),
+            HumanMessagePromptTemplate.from_template(human_response)
         ])
 
     def assess_user_knowledge(self, assistant_config: dict, user_assistant_key: str) -> Dict[str, Any]:
@@ -328,6 +369,10 @@ class ChatModule:
                 user_id, 
                 
             )
+            if chat_history:
+                has_chat_history = True
+            else:
+                has_chat_history = False
             chat_history_str = "\n".join([
                 f"Human: {chat['question']}\nAssistant: {chat['answer']}"
                 for chat in chat_history
@@ -353,7 +398,7 @@ class ChatModule:
             context = self.get_relevant_context(prompt, assistant_id)
             
             # Create contextual RAG prompt
-            rag_prompt = self._create_contextual_rag_prompt(assistant_config)
+            rag_prompt = self._create_contextual_rag_prompt(assistant_config, has_chat_history)
             
             # Prepare input for RAG chain
             def prepare_rag_input(input_prompt):
@@ -375,6 +420,7 @@ class ChatModule:
                 | self.llm
                 | StrOutputParser()
             )
+
 
             # Generate response
             response = rag_chain.stream(prompt)
