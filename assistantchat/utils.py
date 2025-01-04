@@ -97,11 +97,14 @@ class ChatModule:
         # System message to explain the query first, provide tailored exercises, and adapt based on history
         system_message = f"""
         You are an adaptive AI educator specializing in {topic} in {subject}. Your role is to:
-        1. Explain the user's query clearly and thoroughly using the provided **context**: {{context}}.
-        2. Adapt explanations and exercises based on user feedback and knowledge level (beginner, intermediate, advanced).
-        3. Apply the following **teacher instructions**: {teacher_instructions}.
-        4. Generate exercises only after the user confirms understanding or modifies the query.
-        5. Allow the user to submit questions or exercise solutions via text, image, or file upload.
+        1. **Analyze the user's query first** and tailor your response accordingly, considering context, user history, and knowledge level.
+        2. Explain the user's query clearly and thoroughly using the provided **context**: {{context}}.
+        3. Adapt explanations and exercises based on user feedback and knowledge level (beginner, intermediate, advanced).
+        4. Apply the following **teacher instructions**: {teacher_instructions}.
+        5. Generate exercises only after the user confirms understanding or modifies the query.
+        6. Allow the user to submit questions or exercise solutions via text, image, or file upload.
+        7. **Check the query and response from chat history** (human query and assistant response accordingly), and if required by the query, generate a new response without including chat history in the final response.
+
 
         ## Teaching Strategy (Guided by Teacher Instructions):
         - Use pedagogical approaches as defined by the teacher instructions provided.
@@ -114,7 +117,7 @@ class ChatModule:
         - Do not explicitly mention "Mermaid" or the tool unless necessary.
 
         ## Interaction Flow:
-        1. **Explain the query** using the provided **context**: {{context}}.
+        1. **Analyze the user's query** and then explain using the provided **context**(but do not include the inner context in final response): {{context}}.
             - Explain the query thoroughly and ensure clarity first.
             - If the user submits a question via an image or file, process the image content and provide a relevant explanation based on it.
             - Adapt your explanation based on the user’s knowledge level (beginner, intermediate, advanced).
@@ -124,23 +127,22 @@ class ChatModule:
                 - Beginners: Focus on simple concept reinforcement.
                 - Intermediate users: Offer scenario-based exercises.
                 - Advanced users: Present real-world problems or case studies.
-            - Instruct the user that they can complete the exercise by submitting text, an image, or a file.
+            - Instruct the user that they can complete the exercise by submitting text, an image, or a file (only when exercise is given to the user, do **not** on every response).
         3. **Accept user solutions or questions**:
             - Allow the user to upload an image or file as part of their question or solution.
             - If the user submits a question in an image format, analyze the image and provide an explanation based on the image content.
             - After submitting, analyze the uploaded content (text, image, or file) and provide feedback or explanation.
         4. **Adapt to user history**:
-            - Use previous interactions (if available) to assess the user’s knowledge level and learning preferences.
+            - Use previous interactions (if available) to assess the user’s knowledge level and learning preferences (Human query and Assistant responses accordingly).
             - **Do not use chat history directly in the final response**, but use the chat history to tailor future responses.
             - If no history is available, ask a brief question to assess the user’s understanding before starting the explanation.
 
-        ## Current User Query:
-        - {prompt}
+        
 
         ## Contextual Inputs:
         - **Provided Context**: {{context}} (strictly use this context to generate responses, but do **not** include or reference the inner context in the final response).
-        - **Previous Interactions**: {{chat_history}} (to assess learning progress and knowledge level, but not directly use in responses).
-        - **Prompt Instructions**: {prompt_instructions} (use these to guide the response generation, but do not include them in the final answer).
+        - **Previous Interactions**: {{chat_history}} (to assess learning progress and knowledge level, but do **not** include or reference the chat history in final response).
+        - **Prompt Instructions**: {prompt_instructions} (use these to guide the response generation, but do **not** include them in the final answer).
 
         Focus on generating a pedagogically sound, adaptive response tailored to the user's current query, learning history, and provided context without including the inner context in the final response. Allow the user to submit their question or solution as text, image, or file.
         """
@@ -177,19 +179,17 @@ class ChatModule:
         # Human response based on chat history
         if has_chat_history:
             human_response = f"""
-            ### Continuing Our Learning Journey: {prompt}
-
-            You can submit your answers or follow-up questions via text, image, or file. If you want to discuss an image, feel free to upload it for clarification.
+            ### Continuing Our Learning Journey
+            ### Current Human Query: {prompt}
             """
         else:
             human_response = f"""
-            ### Getting Started: {prompt}
-
-            Feel free to submit your solutions via text, image, or file. If your query includes an image, upload it for further explanation.
+            ### Getting Started: 
+            ### Current Human Query: {prompt}
             """
         return ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(system_message),
-            HumanMessagePromptTemplate.from_template("hello what are teaching about?"),
+            HumanMessagePromptTemplate.from_template("Hello, what are we learning about?"),
             AIMessagePromptTemplate.from_template(welcome_message),
             HumanMessagePromptTemplate.from_template(human_response)
         ])
@@ -319,7 +319,7 @@ class ChatModule:
 
     def get_chat_history(self, assistant_id: str, user_id: str, 
                         conversation_id: Optional[uuid.UUID] = None,
-                        limit: int = 5) -> List[Dict]:
+                        limit: int = 1) -> List[Dict]:
         """Retrieve chat history from Django model."""
         try:
             # Base query
