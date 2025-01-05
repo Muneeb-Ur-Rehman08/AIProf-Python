@@ -11,9 +11,9 @@
     function appendMessage(text, isUser = false) {
         if (isUser) {
             const messageDiv = document.createElement('div');
-            messageDiv.className = `w-full text-right mb-4`;
+            messageDiv.className = `chat-message message-user`;
             messageDiv.innerHTML = `
-                <div class="inline-block bg-blue-600 rounded-lg p-3 text-white max-w-[80%]">
+                <div class="markdown-content">
                     ${text}
                 </div>
             `;
@@ -22,15 +22,15 @@
             let assistantMessageDiv = document.querySelector('.assistant-message-pending');
             if (!assistantMessageDiv) {
                 assistantMessageDiv = document.createElement('div');
-                assistantMessageDiv.className = `w-full text-left mb-4 assistant-message-pending`;
+                assistantMessageDiv.className = `chat-message message-assistant assistant-message-pending`;
                 assistantMessageDiv.innerHTML = `
-                    <div class="inline-block bg-white/10 rounded-lg p-3 text-white max-w-[80%] relative">
+                    <div class="markdown-content">
                         ${text}
                     </div>
                 `;
                 document.getElementById('chat-container').appendChild(assistantMessageDiv);
             } else {
-                const element = assistantMessageDiv.querySelector('div');
+                const element = assistantMessageDiv.querySelector('.markdown-content');
                 processMarkdownWithMermaid(element, text);
             }
         }
