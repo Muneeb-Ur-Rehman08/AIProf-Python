@@ -151,13 +151,15 @@
   
   /* User message style */
   .message-user {
-    background-color: #e2f3ff;  /* Light blue background */
+    background-color: rgb(37, 99, 235, 1);
     margin-left: auto;         /* Align to the right */
+    color: #ffffff;
   }
   
   /* Assistant (ChatGPT-like) message style */
   .message-assistant {
-    background-color: #f6f6f6;  /* Soft gray background */
     margin-right: auto;         /* Align to the left */
+    background-color: rgb(255, 255, 255 / 0.1);  /* Light blue background */
+    color: #ffffff;
   }
   
