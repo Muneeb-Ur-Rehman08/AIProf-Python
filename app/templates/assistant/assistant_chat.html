@@ -1,64 +1,84 @@
 <!-- Main Chat Wrapper -->
-<div class="flex flex-col h-full min-h-screen bg-gray-900">
-    <!-- Chat header -->
-    <div class="bg-black/30 p-3 md:p-4 w-full text-center" style="border-bottom: 1px solid var(--clr-main)">
-        <h2 class="text-lg font-bold">{{ assistant.name }}</h2>
-    </div>
+<div class="flex-grow pb-5">
+    <div class="h-full">
+        <div class="flex h-full w-full">
+            <div class="flex grow flex-col">
+                <div class="relative mb-2 flex-shrink-0">
+                    <div class="hidden md:flex justify-center py-1">
+                        <h2 class="text-lg font-bold tracking-wider">{{ assistant.name }}</h2>
+                    </div>
+                </div>
 
-    <!-- Chat Container with proper scroll -->
-    <div class="flex-1 flex flex-col overflow-y-auto p-3" id="chat-container">
-        <!-- Messages will be dynamically inserted here -->
-    </div>
+                <div class="relative grow overflow-auto px-2">
+                    <div class="flex h-full flex-col focus-visible:outline-none">
+                        <div class="flex-1 overflow-hidden">
+                            <div class="h-full">
+                                <div class="relative h-full">
+                                    <div class="h-full overflow-y-auto w-full">
+                                      <div class="flex flex-col text-sm md:pb-9 pb-16" id="chat-container">
+                                        <!-- Messages will be dynamically inserted here -->
+                                      </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-    <!-- Message Input Area -->
-    <div class="bg-black/30 fixed bottom-0 w-full md:w-1/2" style="border-top: 1px solid var(--clr-main)">
-        <div class="w-full px-3 py-2">
-            <form class="w-full" onsubmit="event.preventDefault();">
-                <div class="relative flex items-center">
-                    <div class="flex w-full cursor-text items-center rounded-xl px-3 py-2 transition-colors bg-white/10">
-                        <!-- Microphone button -->
-                        <button
-                            type="button"
-                            id="mic-button"
-                            class="p-1.5 rounded-lg text-white hover:bg-black/10"
-                            onclick="toggleSpeechRecognition()"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                            </svg>
-                        </button>
-                        <input
-                            type="text"
-                            name="prompt"
-                            id="prompt-input"
-                            class="flex-1 resize-none border-0 bg-transparent text-white placeholder-gray-400 focus:outline-none mx-2"
-                            placeholder="Message Assistant..."
-                            onkeydown="if (event.key === 'Enter') { event.preventDefault(); sendPayload('{{ assistant.id }}'); }"
-                        >
-                        <div class="flex items-center gap-2">
-                            <button type="button" class="p-1.5 rounded-lg text-white hover:bg-black/10">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M9 7C9 4.23858 11.2386 2 14 2C16.7614 2 19 4.23858 19 7V15C19 18.866 15.866 22 12 22C8.13401 22 5 18.866 5 15V9C5 8.44772 5.44772 8 6 8C6.55228 8 7 8.44772 7 9V15C7 17.7614 9.23858 20 12 20C14.7614 20 17 17.7614 17 15V7C17 5.34315 15.6569 4 14 4C12.3431 4 11 5.34315 11 7V15C11 15.5523 11.4477 16 12 16C12.5523 16 13 15.5523 13 15V9C13 8.44772 13.4477 8 14 8C14.5523 8 15 8.44772 15 9V15C15 16.6569 13.6569 18 12 18C10.3431 18 9 16.6569 9 15V7Z" fill="currentColor"/>
-                                </svg>
-                            </button>
-                            <button 
-                                type="button"
-                                onclick="sendPayload('{{ assistant.id }}')"
-                                class="p-1.5 rounded-full transition-colors hover:opacity-70 bg-white text-black"
-                            >
-                                <svg width="20" height="20" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M15.1918 8.90615C15.6381 8.45983 16.3618 8.45983 16.8081 8.90615L21.9509 14.049C22.3972 14.4953 22.3972 15.2189 21.9509 15.6652C21.5046 16.1116 20.781 16.1116 20.3347 15.6652L17.1428 12.4734V22.2857C17.1428 22.9169 16.6311 23.4286 15.9999 23.4286C15.3688 23.4286 14.8571 22.9169 14.8571 22.2857V12.4734L11.6652 15.6652C11.2189 16.1116 10.4953 16.1116 10.049 15.6652C9.60265 15.2189 9.60265 14.4953 10.049 14.049L15.1918 8.90615Z" fill="currentColor"/>
-                                </svg>
-                            </button>
+                        <!-- Message Input Area -->
+                        <div class="w-full fixed md:relative bottom-0 left-0 right-0 bg-gray-900"
+                            style="border-top: 1px solid var(--clr-main)">
+                            <div>
+                                <div class="m-auto text-base px-3 md:px-5 lg:px-4 xl:px-5">
+                                    <div></div>
+                                    <form class="w-full" onsubmit="event.preventDefault();">
+                                        <div class="relative flex items-center">
+                                            <div
+                                                class="flex w-full cursor-text items-center rounded-xl px-3 py-2 transition-colors bg-white/10">
+                                                <!-- Microphone button -->
+                                                <button type="button" id="mic-button"
+                                                    class="p-1.5 rounded-lg text-white hover:bg-black/10"
+                                                    onclick="toggleSpeechRecognition()">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                                                        viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                                    </svg>
+                                                </button>
+                                                <input type="text" name="prompt" id="prompt-input"
+                                                    class="flex-1 resize-none border-0 bg-transparent text-white placeholder-gray-400 focus:outline-none mx-2"
+                                                    placeholder="Message Assistant..."
+                                                    onkeydown="if (event.key === 'Enter') { event.preventDefault(); sendPayload('{{ assistant.id }}'); }">
+                                                <div class="flex items-center gap-2">
+                                                    {% if chat_mode %}
+                                                    <button type="button"
+                                                        class="p-1.5 rounded-lg text-white hover:bg-black/10">
+                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                                            xmlns="http://www.w3.org/2000/svg">
+                                                            <path fill-rule="evenodd" clip-rule="evenodd"
+                                                                d="M9 7C9 4.23858 11.2386 2 14 2C16.7614 2 19 4.23858 19 7V15C19 18.866 15.866 22 12 22C8.13401 22 5 18.866 5 15V9C5 8.44772 5.44772 8 6 8C6.55228 8 7 8.44772 7 9V15C7 17.7614 9.23858 20 12 20C14.7614 20 17 17.7614 17 15V7C17 5.34315 15.6569 4 14 4C12.3431 4 11 5.34315 11 7V15C11 15.5523 11.4477 16 12 16C12.5523 16 13 15.5523 13 15V9C13 8.44772 13.4477 8 14 8C14.5523 8 15 8.44772 15 9V15C15 16.6569 13.6569 18 12 18C10.3431 18 9 16.6569 9 15V7Z"
+                                                                fill="currentColor" />
+                                                        </svg>
+                                                    </button>
+                                                    {% endif %}
+                                                    <button type="button" onclick="sendPayload('{{ assistant.id }}')"
+                                                        class="p-1.5 rounded-full transition-colors hover:opacity-70 bg-white text-black">
+                                                        <svg width="20" height="20" viewBox="0 0 32 32" fill="none"
+                                                            xmlns="http://www.w3.org/2000/svg">
+                                                            <path fill-rule="evenodd" clip-rule="evenodd"
+                                                                d="M15.1918 8.90615C15.6381 8.45983 16.3618 8.45983 16.8081 8.90615L21.9509 14.049C22.3972 14.4953 22.3972 15.2189 21.9509 15.6652C21.5046 16.1116 20.781 16.1116 20.3347 15.6652L17.1428 12.4734V22.2857C17.1428 22.9169 16.6311 23.4286 15.9999 23.4286C15.3688 23.4286 14.8571 22.9169 14.8571 22.2857V12.4734L11.6652 15.6652C11.2189 16.1116 10.4953 16.1116 10.049 15.6652C9.60265 15.2189 9.60265 14.4953 10.049 14.049L15.1918 8.90615Z"
+                                                                fill="currentColor" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </form>
+            </div>
         </div>
+
     </div>
-</div>
-
-
-
-
-
