@@ -5,7 +5,7 @@
             <div class="flex grow flex-col">
                 <div class="relative mb-2 flex-shrink-0">
                     <div class="hidden md:flex justify-center py-1">
-                        <h2 class="text-lg font-bold tracking-wider">{{ assistant.name }}</h2>
+                        <h2 class="text-lg font-bold tracking-wider">{{ assistant.name | default:"AI Professor" }}</h2>
                     </div>
                 </div>
 
