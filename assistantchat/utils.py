@@ -104,7 +104,7 @@ class ChatModule:
         5. Generate exercises only after the user confirms understanding or modifies the query.
         6. Allow the user to submit questions or exercise solutions via text, image, or file upload.
         7. **Check the query and response from chat history** (human query and assistant response accordingly), and if required by the query, generate a new response without including chat history in the final response.
-
+        8. **Do not use notes in the responses**.
 
         ## Teaching Strategy (Guided by Teacher Instructions):
         - Use pedagogical approaches as defined by the teacher instructions provided.
@@ -146,52 +146,15 @@ class ChatModule:
 
         Focus on generating a pedagogically sound, adaptive response tailored to the user's current query, learning history, and provided context without including the inner context in the final response. Allow the user to submit their question or solution as text, image, or file.
         """
-        
-        
-        # Create welcome message based on chat history
-        if has_chat_history:
-            welcome_message = f"""
-            # Welcome Back! {user_name}👋
-
-            Great to see you again! I remember we were working on {topic} in {subject}. 
-            I've kept track of our previous discussions to provide better assistance.
-
-            Would you like to:
-            - Continue from where we left off
-            - Start a new topic
-            - Review previous concepts
-            """
-        else:
-            welcome_message = f"""
-            # Welcome {user_name} to Your Personalized Learning Experience! 👋
-
-            I am your adaptive AI educator specialized in {topic} within {subject}. I'm here to provide you with:
-            - Personalized learning paths
-            - Interactive exercises
-            - Detailed feedback
-
-            To help me customize your learning experience, could you tell me:
-            1. Your current knowledge level in {topic} (beginner/intermediate/advanced)?
-            2. What specific aspects of {topic} interest you most?
-            """
 
 
-        # Human response based on chat history
-        if has_chat_history:
-            human_response = f"""
-            ### Continuing Our Learning Journey
-            ### Current Human Query: {prompt}
-            """
-        else:
-            human_response = f"""
-            ### Getting Started: 
-            ### Current Human Query: {prompt}
-            """
+        # Human message with the user's query or mention of image upload
+        human_message = f"""
+        ### My Question: {prompt}"""
+
         return ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(system_message),
-            HumanMessagePromptTemplate.from_template("Hello, what are we learning about?"),
-            AIMessagePromptTemplate.from_template(welcome_message),
-            HumanMessagePromptTemplate.from_template(human_response)
+            HumanMessagePromptTemplate.from_template(human_message)
         ])
 
     def assess_user_knowledge(self, assistant_config: dict, user_assistant_key: str) -> Dict[str, Any]:
