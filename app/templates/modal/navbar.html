@@ -1,14 +1,13 @@
 {% load static %}
-    <div class="navbar border-b-2 border-gray-900" id="navbar">
-        <div class="flex-1">
+    <div class="relative flex h-14 w-full items-center justify-between gap-2 border-b border-[hsla(0,0%,100%,.15)] px-3 shrink-0" id="navbar">
+        <div class="flex flex-col">
             <a href="{% url 'index' %}">
                 <img class="w-24 font-sans" src="{% static 'assets/images/logo/logo.svg' %}" alt="AIPro Logo" />
             </a>
         </div>
-        <div class="flex-none">
-            <div class="dropdown dropdown-end">
-                <div class="flex items-center" _="on click toggle .hidden on #dropdownMenu">
-                    <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
+        <div class="dropdown dropdown-end">
+            <div class="flex items-center" _="on click toggle .hidden on #dropdownMenu">
+                <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
                         <div class="w-10 rounded-full">
                             <img alt="Tailwind CSS Navbar component" src="https://i.pravatar.cc/150?img=1" />
                         </div>
@@ -24,8 +23,8 @@
                         </a>
                     </li>
                     <li><a>Settings</a></li>
-                    <li><a>Logout</a></li>
-                </ul>
-            </div>
+                <li><a>Logout</a></li>
+            </ul>
         </div>
+
     </div>
