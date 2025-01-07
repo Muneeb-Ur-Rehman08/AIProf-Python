@@ -45,7 +45,7 @@
                       <!-- Image Preview -->
                       <img id="image-preview" class="hidden absolute inset-0 w-full h-full object-cover rounded-full"
                         alt="Selected Image" />
-                        <input id="file-input" type="file" accept="image/*" class="hidden" onchange="previewImage(event)" />
+                        <input id="file-input" name="image" type="file" accept="image/*" class="hidden" onchange="previewImage(event)" />
                     </div>
                     <div>
 
@@ -150,7 +150,7 @@
                         class="inline-block cursor-pointer bg-white/10 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-white/20">
                         Upload Files
                       </label>
-                      <input type="file" name="file_picker" id="fileInput" multiple onchange="onFileChange(event)"
+                      <input type="file" name="knowledge_base" id="fileInput" multiple onchange="onFileChange(event)"
                         class="sr-only" />
                     </div>
                     <div class="flex flex-wrap gap-2 items-center mt-4" id="files-container">
