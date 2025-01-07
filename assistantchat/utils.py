@@ -1,10 +1,11 @@
 from typing import List, Dict, Optional, Any, Generator
-from langchain_core.output_parsers import StrOutputParser
+from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 from langchain_core.prompts import (
     ChatPromptTemplate, 
     HumanMessagePromptTemplate, 
     SystemMessagePromptTemplate, 
-    AIMessagePromptTemplate
+    AIMessagePromptTemplate,
+    PromptTemplate
 )
 
 import logging
@@ -127,7 +128,7 @@ class ChatModule:
                 - Beginners: Focus on simple concept reinforcement.
                 - Intermediate users: Offer scenario-based exercises.
                 - Advanced users: Present real-world problems or case studies.
-            - Instruct the user that they can complete the exercise by submitting text, an image, or a file (only when exercise is given to the user, do **not** on every response).
+            - Instruct the user that they can complete the exercise by submitting text, an image, or a file (only when exercise is given to the user, do **not** on every response), **do not use these instructs in final response**.
         3. **Accept user solutions or questions**:
             - Allow the user to upload an image or file as part of their question or solution.
             - If the user submits a question in an image format, analyze the image and provide an explanation based on the image content.
@@ -156,6 +157,65 @@ class ChatModule:
             SystemMessagePromptTemplate.from_template(system_message),
             HumanMessagePromptTemplate.from_template(human_message)
         ])
+
+
+    def analyze_chat_history(self, assistant_id: str, user_id: str) -> Dict[str, Any]:
+        """Analyze chat history to generate learning insights."""
+        try:
+            # Get chat history
+            chat_history = self.get_chat_history(
+                assistant_id=assistant_id,
+                user_id=user_id,
+                
+                limit=10  # Analyze last 10 interactions
+            )
+            
+            if not chat_history:
+                return {
+                    "error": "No chat history found for analysis"
+                }
+
+            # Format chat history
+            chat_history_str = "\n".join([
+                f"Human: {chat['question']}\nAssistant: {chat['answer']}"
+                for chat in chat_history
+            ])
+
+            # System message (instructions to the assistant)
+            system_message = """
+            You are an intelligent assistant tasked with summarizing chat histories.
+            Your summary should cover the following points:
+            1. The topics discussed between the Human and Assistant.
+            2. The current knowledge level of the Human based on their questions and conversations.
+            3. Any exercises or hands-on activities the Human has completed or discussed.
+            4. How much progress the Human has made in terms of understanding or learning the topics.
+            Be sure to clearly address each of these points in your summary.
+            """
+
+            # Human message (actual chat history)
+            human_message = """
+            Chat history:
+            {chat_history}
+            """
+
+            # Create ChatPromptTemplate with system and human messages
+            chat_prompt_template = ChatPromptTemplate.from_messages([
+                SystemMessagePromptTemplate.from_template(system_message),
+                HumanMessagePromptTemplate.from_template(human_message)
+            ])
+
+            chain = self.llm | chat_prompt_template
+
+
+            # Generate the prompt
+            summary_prompt = chain.invoke(chat_history_str)
+            return summary_prompt
+
+        except Exception as e:
+            logger.error(f"Error analyzing chat history: {e}")
+            return {
+                "error": f"Analysis failed: {str(e)}"
+            }
 
     def assess_user_knowledge(self, assistant_config: dict, user_assistant_key: str) -> Dict[str, Any]:
         try:
@@ -231,8 +291,6 @@ class ChatModule:
                     }
                     for chunk, similarity_score in results
                 ]
-
-            logger.info(f"Relevant chunks: {[chunk['chunk_content'] for chunk in relevant_chunks]}")
             
             # Step 3: Extract and combine the content of the top-k relevant chunks
             context = "\n".join([chunk['chunk_content'] for chunk in relevant_chunks])
@@ -281,8 +339,7 @@ class ChatModule:
             raise
 
     def get_chat_history(self, assistant_id: str, user_id: str, 
-                        conversation_id: Optional[uuid.UUID] = None,
-                        limit: int = 1) -> List[Dict]:
+                        limit: int=1) -> List[Dict]:
         """Retrieve chat history from Django model."""
         try:
             # Base query
@@ -340,7 +397,12 @@ class ChatModule:
                 f"Human: {chat['question']}\nAssistant: {chat['answer']}"
                 for chat in chat_history
             ])
-            
+
+            analysis_result = self.analyze_chat_history(
+                    assistant_id=assistant_id,
+                    user_id=user_id
+                )
+            logger.info(f"Chat history summary: {analysis_result}")
             # If no prior assessment or knowledge level is unassessed
             if (not user_knowledge or 
                 user_knowledge.get('knowledge_level') == 'unassessed' or 
@@ -368,7 +430,7 @@ class ChatModule:
                 return {
                     "context": context,
                     "question": input_prompt,
-                    "chat_history": chat_history_str,
+                    "chat_history": analysis_result,
                     "subject": assistant_config.get("subject", ""),
                     "instructions": assistant_config.get("teacher_instructions", ""),
                     "knowledge_level": user_knowledge.get('knowledge_level', 'basic'),
