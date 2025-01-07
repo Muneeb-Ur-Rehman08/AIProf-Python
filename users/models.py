@@ -324,7 +324,7 @@ class PDFDocument(models.Model):
                             # Use YoutubeLoader to extract transcript
                             youtube_loader = YoutubeLoader.from_youtube_url(url, add_video_info=False)
                             youtube_docs = youtube_loader.load()
-                            logger.info(f"Youtube docs are: {youtube_docs}")
+                            # logger.info(f"Youtube docs are: {youtube_docs}")
                             youtube_text = " ".join([doc.page_content for doc in youtube_docs])
                             youtube_chunks = text_splitter.split_text(youtube_text)
                             text_chunks.extend(youtube_chunks)
@@ -335,7 +335,7 @@ class PDFDocument(models.Model):
                         try:
                             loader = WebBaseLoader(url)
                             web_docs = loader.load()
-                            logger.info(f"Web docs are: {web_docs}")
+                            # logger.info(f"Web docs are: {web_docs}")
                             web_text = " ".join([doc.page_content for doc in web_docs])
                             web_chunks = text_splitter.split_text(web_text)
                             text_chunks.extend(web_chunks)

@@ -200,7 +200,8 @@ def create_assistant(request, ass_id: Optional[str] = None):
             'description': 'description',
             'topic': 'topic',
             'teacher_instructions': 'teacher_instructions',
-            'url': 'url'
+            'url': 'url',
+            'knowledge_base': 'knowledge_base'
         }
 
         changes_made = False
@@ -427,6 +428,17 @@ def generate_instructions(request, assistant_id: Optional[str]) -> StreamingHttp
             status=500
         )
     
+def del_knowledgebase(request, document_id: str):
+    try:
+        document = PDFDocument.objects.get(doc_id=document_id)
+        if document.assistant_id.user_id == request.user:
+            document.delete()
+            logger.info(f"Knowledge base with id: {document.doc_id} and {document.title} successfully deleted.")
+            return json.dumps({'message': 'Document successfully deleted'})
+        else:
+            return json.dumps({'error': 'Unauthorized to delete this document'})
+    except PDFDocument.DoesNotExist:
+        return json.dumps({'error': 'Document not found'})
 
 @login_required(login_url='accounts/login/')
 def create_assistant_view(request, ass_id):

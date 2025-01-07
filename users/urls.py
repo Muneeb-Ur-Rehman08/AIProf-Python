@@ -17,6 +17,8 @@ urlpatterns = [
     # Generate Instructions
     path('assistants/generate_instructions/<str:assistant_id>', views.generate_instructions, name='generate_instructions'),
     
+    # Delete KnowledgeBase
+    path('knowledgebasedelete/<str:document_id>/', views.del_knowledgebase, name='del_knowledgebase'),
     
     # Delete assistant
     path('assistants/delete/<str:ass_id>/', views.delete_assistant, name='delete_assistant'),
