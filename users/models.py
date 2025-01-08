@@ -280,15 +280,16 @@ class PDFDocument(models.Model):
                 length_function=len,
                 separators=["\n\n", "\n", " ", ""]
             )
+            # Check if the document already exists
+            existing_document = PDFDocument.objects.filter(
+                assistant_id=self.assistant_id,
+                title=self.title,
+                status='completed'
+            ).first()
 
             # Process PDF file
             if self.file:
-                # Check if the document already exists
-                existing_document = PDFDocument.objects.filter(
-                    assistant_id=self.assistant_id,
-                    title=self.title,
-                    status='completed'
-                ).first()
+                
                 
                 if existing_document:
                     # Log that the document already exists
@@ -318,29 +319,32 @@ class PDFDocument(models.Model):
             elif self.urls:
                 text_chunks = []
                 for url in self.urls:
-                    # Check if YouTube URL
-                    if any(yt_domain in url for yt_domain in ['youtube.com', 'youtu.be', 'www.youtube.com', 'm.youtube.com']):
-                        try:
-                            # Use YoutubeLoader to extract transcript
-                            youtube_loader = YoutubeLoader.from_youtube_url(url, add_video_info=False)
-                            youtube_docs = youtube_loader.load()
-                            # logger.info(f"Youtube docs are: {youtube_docs}")
-                            youtube_text = " ".join([doc.page_content for doc in youtube_docs])
-                            youtube_chunks = text_splitter.split_text(youtube_text)
-                            text_chunks.extend(youtube_chunks)
-                        except Exception as e:
-                            logger.error(f"Error processing YouTube URL {url}: {str(e)}")
+                    if existing_document:
+                        logger.info(f"URL '{self.title}' already processed. Skipping.")
                     else:
-                        # Process regular web URLs
-                        try:
-                            loader = WebBaseLoader(url)
-                            web_docs = loader.load()
-                            # logger.info(f"Web docs are: {web_docs}")
-                            web_text = " ".join([doc.page_content for doc in web_docs])
-                            web_chunks = text_splitter.split_text(web_text)
-                            text_chunks.extend(web_chunks)
-                        except Exception as e:
-                            logger.error(f"Error processing web URL {url}: {str(e)}")
+                        # Check if YouTube URL
+                        if any(yt_domain in url for yt_domain in ['youtube.com', 'youtu.be', 'www.youtube.com', 'm.youtube.com']):
+                            try:
+                                # Use YoutubeLoader to extract transcript
+                                youtube_loader = YoutubeLoader.from_youtube_url(url, add_video_info=False)
+                                youtube_docs = youtube_loader.load()
+                                # logger.info(f"Youtube docs are: {youtube_docs}")
+                                youtube_text = " ".join([doc.page_content for doc in youtube_docs])
+                                youtube_chunks = text_splitter.split_text(youtube_text)
+                                text_chunks.extend(youtube_chunks)
+                            except Exception as e:
+                                logger.error(f"Error processing YouTube URL {url}: {str(e)}")
+                        else:
+                            # Process regular web URLs
+                            try:
+                                loader = WebBaseLoader(url)
+                                web_docs = loader.load()
+                                # logger.info(f"Web docs are: {web_docs}")
+                                web_text = " ".join([doc.page_content for doc in web_docs])
+                                web_chunks = text_splitter.split_text(web_text)
+                                text_chunks.extend(web_chunks)
+                            except Exception as e:
+                                logger.error(f"Error processing web URL {url}: {str(e)}")
 
             else:
                 raise ValidationError("No valid document source found.")

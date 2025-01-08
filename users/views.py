@@ -433,12 +433,22 @@ def del_knowledgebase(request, document_id: str):
         document = PDFDocument.objects.get(doc_id=document_id)
         if document.assistant_id.user_id == request.user:
             document.delete()
-            logger.info(f"Knowledge base with id: {document.doc_id} and {document.title} successfully deleted.")
-            return json.dumps({'message': 'Document successfully deleted'})
+            return StreamingHttpResponse(
+                json.dumps({'message': 'Document successfully deleted'}),
+                content_type='application/json'
+            )
         else:
-            return json.dumps({'error': 'Unauthorized to delete this document'})
+            return StreamingHttpResponse(
+                json.dumps({'error': 'Unauthorized to delete this document'}),
+                content_type='application/json',
+                status=403
+            )
     except PDFDocument.DoesNotExist:
-        return json.dumps({'error': 'Document not found'})
+        return StreamingHttpResponse(
+            json.dumps({'error': 'Document not found'}),
+            content_type='application/json',
+            status=404
+        )
 
 @login_required(login_url='accounts/login/')
 def create_assistant_view(request, ass_id):

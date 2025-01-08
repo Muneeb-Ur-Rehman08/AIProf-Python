@@ -141,7 +141,7 @@ class ChatModule:
         
 
         ## Contextual Inputs:
-        - **Provided Context**: {{context}} (strictly use this context to generate responses, but do **not** include or reference the inner context in the final response).
+        - **Provided Context**: {{context}} (strictly use this context to generate responses. If the query is unrelated to the context, please respond with a polite message stating that you lack knowledge about the query and **do not use context in the final response**).
         - **Previous Interactions**: {{chat_history}} (to assess learning progress and knowledge level, but do **not** include or reference the chat history in final response).
         - **Prompt Instructions**: {prompt_instructions} (use these to guide the response generation, but do **not** include them in the final answer).
 
