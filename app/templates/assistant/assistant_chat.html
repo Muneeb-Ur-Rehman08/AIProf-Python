@@ -1,23 +1,31 @@
 <!-- Main Chat Wrapper -->
-<div class="flex-grow pb-5">
-    <div class="h-full">
-        <div class="flex h-full w-full">
-            <div class="flex grow flex-col">
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/chat.css' %}">
+
+{% if chat_mode %}
+    <!-- header -->
+  {% include 'modal/navbar.html' %}
+
+{% endif %}
+    <div class="flex-grow pb-5">
+        <div class="h-full">
+            <div class="flex h-full w-full">
+            <div class="flex grow flex-col h-full">
                 <div class="relative mb-2 flex-shrink-0">
                     <div class="hidden md:flex justify-center py-1">
-                        <h2 class="text-lg font-bold tracking-wider">{{ assistant.name }}</h2>
+                        <h2 class="text-lg font-bold tracking-wider">{{ assistant.name | default:"AI Professor" }}</h2>
                     </div>
                 </div>
 
-                <div class="relative grow overflow-auto px-2">
-                    <div class="flex h-full flex-col focus-visible:outline-none">
+                <div class="relative grow overflow-hidden">
+                    <div class="flex h-full flex-col">
                         <div class="flex-1 overflow-hidden">
                             <div class="h-full">
                                 <div class="relative h-full">
-                                    <div class="h-full overflow-y-auto w-full">
-                                      <div class="flex flex-col text-sm md:pb-9 pb-16" id="chat-container">
-                                        <!-- Messages will be dynamically inserted here -->
-                                      </div>
+                                    <div class="absolute inset-0 overflow-y-auto">
+                                        <div class="flex flex-col text-sm md:pb-9 pb-16 chat-window" id="chat-container">
+                                            <!-- Messages will be dynamically inserted here -->
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -29,7 +37,7 @@
                             <div>
                                 <div class="m-auto text-base px-3 md:px-5 lg:px-4 xl:px-5">
                                     <div></div>
-                                    <form class="w-full" onsubmit="event.preventDefault();">
+                                    <form class="max-w-[720px] mx-auto " onsubmit="event.preventDefault();">
                                         <div class="relative flex items-center">
                                             <div
                                                 class="flex w-full cursor-text items-center rounded-xl px-3 py-2 transition-colors bg-white/10">

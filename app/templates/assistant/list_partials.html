@@ -4,7 +4,7 @@
     {% if assistants %}
     {% for assistant in assistants %}
     {% if assistant.subject and assistant.topic and assistant.description %}
-    <a href="{% url 'assistant_detail' assistant_id=assistant.id %}" target="_blank">
+    <a href="{% url 'assistant_detail' assistant_id=assistant.id %}">
     <div class="card bg-white text-gray-800 rounded-lg shadow-md overflow-hidden cursor-pointer h-full">
         <div class="card-body p-4 rounded-lg" style="border: 1px solid rgba(var(--clr-main-rgb), 0.35)">
             <div class="flex items-center gap-4 mb-4">

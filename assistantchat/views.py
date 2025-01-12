@@ -94,6 +94,7 @@ def chat_query(request, ass_id: Optional[str] = None):
             "teacher_instructions": assistant.teacher_instructions,
             "prompt_instructions": mermaid_instructions,
             "prompt": prompt,
+            "user_name": user.first_name
         }
 
         # Initialize chat module and process message

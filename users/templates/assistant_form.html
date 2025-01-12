@@ -45,7 +45,7 @@
                       <!-- Image Preview -->
                       <img id="image-preview" class="hidden absolute inset-0 w-full h-full object-cover rounded-full"
                         alt="Selected Image" />
-                        <input id="file-input" type="file" accept="image/*" class="hidden" onchange="previewImage(event)" />
+                        <input id="file-input" name="image" type="file" accept="image/*" class="hidden" onchange="previewImage(event)" />
                     </div>
                     <div>
 
@@ -116,7 +116,7 @@
                       {% for url in urls %}
                       <div class="url-input-group mb-2 flex items-center gap-2">
                         <input type="url" name="url" value="{{ url }}" disabled
-                          class="select select-bordered w-full max-w-xs fex-1" />
+                          class="input input-bordered w-full" />
                         <button type="button" onclick="removeUrl(this)" class="text-gray-400 hover:text-red-500">
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -143,14 +143,16 @@
                       </div>
                     </div>
                   </div>
-                  <div class="pb-6 flex items-center gap-2">
-                    <label class="block text-white text-lg font-bold">Files</label>
-                    <label for="fileInput"
-                      class="inline-block cursor-pointer bg-white/10 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-white/20">
-                      Upload Files
-                    </label>
-                    <input type="file" name="file_picker" id="fileInput" multiple onchange="onFileChange(event)"
-                      class="sr-only" />
+                  <div class="pb-6 flex flex-col gap-2">
+                    <div class="flex gap-2 items-center">
+                      <label class="block text-white text-lg font-bold">Files</label>
+                      <label for="fileInput"
+                        class="inline-block cursor-pointer bg-white/10 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-white/20">
+                        Upload Files
+                      </label>
+                      <input type="file" name="knowledge_base" id="fileInput" multiple onchange="onFileChange(event)"
+                        class="sr-only" />
+                    </div>
                     <div class="flex flex-wrap gap-2 items-center mt-4" id="files-container">
                       {{ knowledge_base.all }}
                       {% for file in knowledge_base %}
@@ -555,9 +557,17 @@
     htmx.process(newGroup);
   }
 
-  // Add HTMX event listeners for URL inputs
+  // Modify the htmx:beforeRequest event handler
   document.addEventListener('htmx:beforeRequest', function (evt) {
     if (evt.detail.elt.name === 'url') {
+      const urlValue = evt.detail.elt.value.trim();
+      
+      // Prevent the request if URL is empty
+      if (!urlValue) {
+        evt.preventDefault();
+        return;
+      }
+      
       const inputGroup = evt.detail.elt.closest('.url-input-group');
       const loader = inputGroup.querySelector('.loader');
       loader.classList.remove('hidden');

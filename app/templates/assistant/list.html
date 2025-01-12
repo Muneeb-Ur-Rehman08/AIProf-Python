@@ -10,7 +10,7 @@
   </div>
   {% endblock %}
   <div id="search-bar" class="sticky top-28 z-20">
-    <div class="grid grid-cols-12 gap-x-2.5 sm:gap-x-1.5 lg:gap-x-0">
+    <div class="grid grid-cols-12 gap-x-2.5 sm:gap-x-1.5 lg:gap-x-0 gap-2">
 
       <div class="drawer inline-block w-auto col-span-2 sm:col-span-1 lg:hidden">
         <input id="my-drawer" type="checkbox" class="drawer-toggle" />
@@ -47,22 +47,40 @@
       </div>
 
       <!-- Sort dropdown -->
-      <div class="w-full col-span-3 sm:col-span-2 lg:col-span-1">
+      <div class="w-full col-span-3 sm:col-span-2 lg:col-span-2">
         <select 
-          class="select select-bordered w-full bg-transparent [&>option]:bg-base-100 [&>option]:text-base-content"
+          class="select select-bordered w-full"
           name="sort"
           hx-get="{% url 'list_assistants' %}"
           hx-push-url="true"
           hx-target="#assistants-list"
           hx-trigger="change"
-          hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']"
+          hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort'],[name='created_by_me']"
         >
+          <option value="" disabled>Select sorting option</option>
           {% for value, label in sorting_options.items %}
             <option value="{{ label}}" {% if label == current_sort %}selected{% endif %}>
               {{ label }}
             </option>
           {% endfor %}
         </select>
+      </div>
+
+      <!-- Created by me filter -->
+      <div class="w-full col-span-3 sm:col-span-2 lg:col-span-1 flex items-center">
+        <label class="cursor-pointer label gap-2">
+          <span class="label-text">Created by me</span>
+          <input type="checkbox" 
+                 class="checkbox checkbox-primary" 
+                 name="created_by_me"
+                 hx-get="{% url 'list_assistants' %}"
+                 hx-push-url="true"
+                 hx-target="#assistants-list"
+                 hx-trigger="change"
+                 hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort'],[name='created_by_me']"
+                 {% if created_by_me %}checked{% endif %}
+          >
+        </label>
       </div>
     </div>
     
