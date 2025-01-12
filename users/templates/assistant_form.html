@@ -70,11 +70,17 @@
                   <div class="mb-6 flex gap-4">
                     <div class="flex-1">
                       <label class="block text-white text-lg font-bold mb-2">Subject</label>
-                      <select name="subject" id="subjectSelect" hx-post="{% url 'assistant' ass_id=assistant.id %}"
+                      <select name="subject" id="subjectSelect" 
+                        hx-post="{% url 'assistant' ass_id=assistant.id %}"
                         hx-trigger="blur changed delay:1s"
                         hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "subject"}' hx-replace-url="false"
                         class="select select-bordered w-full">
                         <option value="" disabled>Select a subject</option>
+                        {% for subject in meta.subjects %}
+                          <option value="{{ subject.name }}" data-id="{{ subject.id }}" {% if subject.name == assistant.subject %}selected{% endif %}>
+                            {{ subject.name }}
+                          </option>
+                        {% endfor %}
                       </select>
                     </div>
                     <div class="flex-1">
@@ -193,182 +199,6 @@
 
 
 <script>
-  const subjectsData = {
-    "subjects": [
-      {
-        "name": "Mathematics",
-        "topics": [
-          "Arithmetic",
-          "Addition",
-          "Subtraction",
-          "Multiplication",
-          "Division",
-          "Fractions",
-          "Decimals",
-          "Percentages",
-          "Algebra",
-          "Linear Equations",
-          "Quadratic Equations",
-          "Inequalities",
-          "Polynomials",
-          "Geometry",
-          "Shapes",
-          "Angles",
-          "Theorems",
-          "Coordinate Geometry",
-          "Trigonometry",
-          "Sine",
-          "Cosine",
-          "Tangent",
-          "Pythagoras' Theorem",
-          "Calculus",
-          "Limits",
-          "Derivatives",
-          "Integrals",
-          "Differential Equations",
-          "Statistics & Probability",
-          "Mean",
-          "Median",
-          "Mode",
-          "Standard Deviation"
-        ]
-      },
-      {
-        "name": "Science",
-        "topics": [
-          "Physics",
-          "Newton's Laws of Motion",
-          "Electricity",
-          "Magnetism",
-          "Thermodynamics",
-          "Waves",
-          "Quantum Mechanics",
-          "Chemistry",
-          "Periodic Table",
-          "Chemical Reactions",
-          "Molecular Structure",
-          "Acids and Bases",
-          "Organic Chemistry",
-          "Biology",
-          "Cell Structure",
-          "Human Anatomy",
-          "Genetics",
-          "Ecology",
-          "Evolution"
-        ]
-      },
-      {
-        "name": "English",
-        "topics": [
-          "Grammar",
-          "Sentence Structure",
-          "Tenses",
-          "Vocabulary",
-          "Writing Skills",
-          "Essay Writing",
-          "Creative Writing",
-          "Literature",
-          "Poetry Analysis",
-          "Novel Studies",
-          "Drama",
-          "Research and Citation"
-        ]
-      },
-      {
-        "name": "History",
-        "topics": [
-          "Ancient Civilizations",
-          "Greek and Roman History",
-          "Middle Ages",
-          "Renaissance",
-          "World Wars",
-          "American Revolution",
-          "Industrial Revolution",
-          "Modern History",
-          "Cold War",
-          "Civil Rights Movement"
-        ]
-      },
-      {
-        "name": "Geography",
-        "topics": [
-          "Physical Geography",
-          "Landforms",
-          "Weather and Climate",
-          "Ecosystems",
-          "Human Geography",
-          "Population Studies",
-          "Urbanization",
-          "Economic Geography",
-          "Global Trade"
-        ]
-      },
-      {
-        "name": "Computer Science",
-        "topics": [
-          "Programming Basics",
-          "Algorithms",
-          "Data Structures",
-          "Databases",
-          "Web Development",
-          "Networking",
-          "Cybersecurity",
-          "Artificial Intelligence",
-          "Machine Learning"
-        ]
-      },
-      {
-        "name": "Art",
-        "topics": [
-          "Drawing Techniques",
-          "Painting Styles",
-          "Sculpture",
-          "Art History",
-          "Photography",
-          "Digital Art",
-          "Design Principles"
-        ]
-      },
-      {
-        "name": "Physical Education",
-        "topics": [
-          "Fitness Training",
-          "Team Sports",
-          "Individual Sports",
-          "Health and Nutrition",
-          "Mental Well-being",
-          "Exercise Physiology"
-        ]
-      }
-    ]
-  };
-
-  const subjectSelect = document.getElementById('subjectSelect');
-  const topicSelect = document.getElementById('topicSelect');
-
-  // Populate subjects dropdown
-  subjectsData.subjects.forEach(subject => {
-    const option = document.createElement('option');
-    option.value = subject.name;
-    option.textContent = subject.name;
-    subjectSelect.appendChild(option);
-  });
-
-  // Update topics when subject changes
-  subjectSelect.addEventListener('change', (e) => {
-    const selectedSubject = subjectsData.subjects.find(s => s.name === e.target.value);
-    topicSelect.innerHTML = '<option value="default" disabled>Select a topic</option>';
-    topicSelect.value = 'default';
-    if (selectedSubject) {
-      selectedSubject.topics.forEach((topic, index) => {
-        const option = document.createElement('option');
-        option.value = topic;
-        option.textContent = topic;
-        topicSelect.appendChild(option);
-      });
-    }
-  });
-
   // Tab switching functionality
   function switchTab(tab) {
     const formTab = document.getElementById('formTab');
@@ -423,17 +253,36 @@
   document.addEventListener('DOMContentLoaded', function () {
     const savedSubject = "{{ assistant.subject }}";
     const savedTopic = "{{ assistant.topic }}";
+    const subjectSelect = document.getElementById('subjectSelect');
 
-    if (savedSubject && subjectsData.subjects.some(s => s.name === savedSubject)) {
+    if (savedSubject) {
+      // Set the subject
       subjectSelect.value = savedSubject;
-      const event = new Event('change');
-      subjectSelect.dispatchEvent(event);
-
-      setTimeout(() => {
-        if (savedTopic) {
-          topicSelect.value = savedTopic || '';
-        }
-      }, 0);
+      
+      // Get the selected subject's ID
+      const selectedOption = subjectSelect.querySelector(`option[value="${savedSubject}"]`);
+      if (selectedOption) {
+        const subjectId = selectedOption.dataset.id;
+        
+        // Fetch and set topics
+        fetch(`/assistants/get_topics/${subjectId}/`)
+          .then(response => response.json())
+          .then(data => {
+            const topicSelect = document.getElementById('topicSelect');
+            topicSelect.innerHTML = '<option value="" disabled>Select a topic</option>';
+            
+            data.topics.forEach(topic => {
+              const option = document.createElement('option');
+              option.value = topic;
+              option.textContent = topic;
+              if (topic === savedTopic) {
+                option.selected = true;
+              }
+              topicSelect.appendChild(option);
+            });
+          })
+          .catch(error => console.error('Error fetching topics:', error));
+      }
     }
   });
 
@@ -745,6 +594,50 @@
             console.error('Error:', error);
             textarea.value = 'Error generating instructions. Please try again.';
         });
+  });
+
+  // Add this function to fetch topics from the endpoint
+  function updateTopics(selectedSubject) {
+    const topicSelect = document.getElementById('topicSelect');
+    topicSelect.innerHTML = '<option value="" disabled selected>Select a topic</option>';
+    
+    if (!selectedSubject) return;
+
+    // Get the selected option element
+    const selectedOption = document.querySelector(`#subjectSelect option[value="${selectedSubject}"]`);
+    if (!selectedOption) {
+        console.error('Selected subject option not found');
+        return;
+    }
+
+    const subjectId = selectedOption.dataset.id;
+    if (!subjectId) {
+        console.error('Subject ID not found');
+        return;
+    }
+    
+    fetch(`/assistants/get_topics/${subjectId}/`)
+        .then(response => response.json())
+        .then(data => {
+            data.topics.forEach(topic => {
+                const option = document.createElement('option');
+                option.value = topic;
+                option.textContent = topic;
+                topicSelect.appendChild(option);
+            });
+
+            // If there's a saved topic, select it
+            const savedTopic = "{{ assistant.topic }}";
+            if (savedTopic) {
+                topicSelect.value = savedTopic;
+            }
+        })
+        .catch(error => console.error('Error fetching topics:', error));
+  }
+
+  // Modify the subject select element to include data-id
+  document.getElementById('subjectSelect').addEventListener('change', function(e) {
+    updateTopics(e.target.value);
   });
 
 </script>
