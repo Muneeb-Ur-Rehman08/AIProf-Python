@@ -1,9 +1,10 @@
 import os
-from django.http import JsonResponse, HttpResponseRedirect
+from django.http import JsonResponse, HttpResponseRedirect, StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 import json
 import uuid
+import base64
 from typing import Dict, Any, Optional
 import logging
 from django.conf import settings
@@ -20,6 +21,9 @@ from django.template.loader import TemplateDoesNotExist
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from .add import populate_subjects_and_topics
+from .utils import generate_instruction_stream
+from app.modals.chat import get_llm
+
 
 
 
@@ -136,7 +140,8 @@ def create_assistant(request, ass_id: Optional[str] = None):
                 'teacher_instructions': assistant_data.teacher_instructions,
                 'urls': urls,
                 'knowledge_base': pdfs,
-                'chat_mode': False
+                'chat_mode': False,
+                'image_url': assistant_data.image.url if assistant_data.image else None
             })
         else:
             return HttpResponseRedirect(f'/assistants')
@@ -195,10 +200,37 @@ def create_assistant(request, ass_id: Optional[str] = None):
             'description': 'description',
             'topic': 'topic',
             'teacher_instructions': 'teacher_instructions',
-            'url': 'url'
+            'url': 'url',
+            'knowledge_base': 'knowledge_base'
         }
 
         changes_made = False
+
+        
+        
+        # Handle image upload
+        image_file = request.FILES.get('image')
+        if image_file:
+            try:
+                # Validate image size (max 5MB)
+                if image_file.size > 5 * 1024 * 1024:
+                    return format_response(error="Image size too large. Maximum 5MB allowed.", status=400)
+                
+                # Read file content as blob
+                image_blob = image_file.read()
+                
+                # Update assistant with blob data
+                assistant.image_blob = image_blob
+                assistant.save()
+                
+                return format_response(data={
+                    "message": "Image uploaded successfully"
+                })
+            
+            except Exception as e:
+                logger.error(f"Image upload error: {e}")
+                return format_response(error=f"Image upload failed: {str(e)}", status=500)
+
 
         # Update fields dynamically
         for request_field, model_field in field_mapping.items():
@@ -282,6 +314,8 @@ def create_assistant(request, ass_id: Optional[str] = None):
                     "topic": assistant.topic,
                     "teacher_instructions": assistant.teacher_instructions,
                     "is_published": assistant.is_published,
+                    # "image": base64.b64encode(assistant.image_blob).decode('utf-8') if assistant.image_blob else None,
+                    "image_url": assistant.image if assistant.image else None,
                     "message": "Assistant updated successfully"
                 }
                 return format_response(data=response_data)
@@ -293,6 +327,7 @@ def create_assistant(request, ass_id: Optional[str] = None):
         # No changes scenario
         return format_response(data={
             "ass_id": str(assistant.id),
+            "image_url": assistant.image.url if assistant.image else None,
             "message": "No changes detected"
         })
 
@@ -341,6 +376,69 @@ def delete_assistant(request, ass_id):
         return format_response(error="Internal server error", status=500)
     
 
+
+@login_required
+@require_http_methods(["POST","GET"])
+def generate_instructions(request, assistant_id: Optional[str]) -> StreamingHttpResponse:
+    """
+    Streaming view for generating AI assistant instructions
+    
+    Returns:
+        StreamingHttpResponse with instruction generation progress
+    """
+    try:
+
+        # Retrieve assistant
+        try:
+            assistant = Assistant.objects.get(id=assistant_id, user_id=request.user)
+        except Assistant.DoesNotExist:
+            return StreamingHttpResponse(
+                json.dumps({'error': 'Assistant not found or unauthorized'}),
+                content_type='application/json'
+            )
+
+
+        subject = assistant.subject
+        name = assistant.name
+        topic = assistant.topic
+        description = assistant.description
+        current_instructions = assistant.teacher_instructions
+
+        # Create streaming response
+        response = StreamingHttpResponse(
+            generate_instruction_stream(
+                name,
+                subject, 
+                topic, 
+                current_instructions,
+                description
+            ),
+            content_type='text/event-stream'
+        )
+        logger.info(f"Streaming response initiated - Content-Type: {response['Content-Type']}")
+        
+        
+        return response
+
+    except Exception as e:
+        logger.error(f"Instruction generation error: {e}")
+        return StreamingHttpResponse(
+            json.dumps({'error': str(e)}),
+            content_type='application/json',
+            status=500
+        )
+    
+def del_knowledgebase(request, document_id: str):
+    try:
+        document = PDFDocument.objects.get(doc_id=document_id)
+        if document.assistant_id.user_id == request.user:
+            document.delete()
+            logger.info(f"Knowledge base with id: {document.doc_id} and {document.title} successfully deleted.")
+            return json.dumps({'message': 'Document successfully deleted'})
+        else:
+            return json.dumps({'error': 'Unauthorized to delete this document'})
+    except PDFDocument.DoesNotExist:
+        return json.dumps({'error': 'Document not found'})
 
 @login_required(login_url='accounts/login/')
 def create_assistant_view(request, ass_id):

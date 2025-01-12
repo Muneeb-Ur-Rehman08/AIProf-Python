@@ -1,194 +1,196 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="min-h-screen h-full">
+
+<!-- Tab buttons for mobile -->
+<div class="flex h-screen w-full flex-col items-center">
+
   {% include 'modal/navbar.html' %}
-  <div
-    id="assistant-form"
-    class="flex flex-col md:flex-row items-self-start h-[calc(100vh-5.5rem)]"
-    hx-replace-url="true"
-  >
-    <!-- Tab buttons for mobile -->
-    <div class="md:hidden flex border-b border-gray-800">
-      <button 
-        onclick="switchTab('form')" 
-        id="formTab"
-        class="flex-1 py-2 px-4 text-white border-b-2 border-transparent active-tab"
-      >
-        Create Assistant
-      </button>
-      <button 
-        onclick="switchTab('chat')" 
-        id="chatTab"
-        class="flex-1 py-2 px-4 text-white border-b-2 border-transparent"
-      >
-        Chat
-      </button>
+
+  <div id="assistant-form" class="relative flex w-full grow overflow-hidden" hx-replace-url="true">
+
+    <!-- Tab buttons for mobile - Moved outside -->
+    <div class="md:hidden fixed top-14 left-0 right-0 z-10 flex justify-center py-2 bg-gray-900">
+      <div class="flex w-11/12 overflow-hidden p-1.5 self-center outline-none bg-gray-800/50 rounded-lg mb-4">
+        <button onclick="switchTab('form')" id="formTab"
+          class="flex-1 py-2 px-4 text-white rounded-lg transition-all duration-300 hover:bg-purple-400">
+          Create Assistant
+        </button>
+        <button onclick="switchTab('chat')" id="chatTab" 
+          class="flex-1 py-2 px-4 text-white rounded-lg transition-all duration-300 hover:bg-purple-400">
+          Chat
+        </button>
+      </div>
     </div>
 
-    <!-- Form section -->
-    <form
-      id="assistantForm"
-      hx-encoding="multipart/form-data"
-      hx-swap="none"
-      class="p-4 md:p-8 rounded-lg shadow-lg w-full md:w-1/2 items-self-start"
-    >
-      {% csrf_token %}
-      <div class="mb-4">
-        <label class="block text-white text-lg font-bold mb-2 mt-4">Name</label>
-        <input
-          type="text"
-          name="assistant_name"
-          hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
-          hx-trigger="blur changed delay:1s"
-          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "assistant_name"}'
-          autocomplete="off"
-          hx-replace-url="false"
-          value="{{ assistant.name|default:'' }}"
-          placeholder="Name your ASSISTANT"
-          class="input w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
-        />
-      </div>
-      <div class="mb-4">
-        <label class="block text-white text-lg font-bold mb-2">Description</label>
-        <input
-          type="text"
-          name="description"
-          hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
-          hx-trigger="blur changed delay:1s"
-          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "description"}'
-          autocomplete="off"
-          hx-replace-url="false"
-          value="{{ assistant.description|default:'' }}"
-          placeholder="Add a short description about what this ASSISTANT does"
-          class="input w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
-        />
-      </div>
-      <div class="mb-4 flex gap-4">
-        <div class="flex-1">
-          <label class="block text-white text-lg font-bold mb-2">Subject</label>
-          <select
-            name="subject"
-            id="subjectSelect"
-            hx-post="{% url 'assistant' ass_id=assistant.id %}"
-            hx-trigger="blur changed delay:1s"
-            hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "subject"}'
-            hx-replace-url="false"
-            class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
-          >
-            <option value="" disabled>Select a subject</option>
-          </select>
-        </div>
-        <div class="flex-1">
-          <label class="block text-white text-lg font-bold mb-2">Topic</label>
-          <select
-            name="topic"
-            id="topicSelect"
-            hx-trigger="blur changed delay:1s"
-            hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
-            hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "topic"}'
-            hx-replace-url="false"
-            class="select w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
-          >
-            <option value="" disabled>Select a topic</option>
-          </select>
-        </div>
-      </div>
-      <div class="mb-4">
-        <label class="block text-white text-lg font-bold mb-2">Instructions</label>
-        <textarea
-          name="teacher_instructions"
-          hx-trigger="blur changed delay:1s" 
-          hx-post="{% url 'assistant' ass_id=assistant.id %}"
-          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "teacher_instructions"}'
-          autocomplete="off"
-          hx-replace-url="false"
-          placeholder="What does this ASSISTANT do? How does it behave? What should it avoid doing?"
-          class="textarea w-full bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
-          rows="4"
-        >{{ assistant.teacher_instructions|default:'' }}</textarea>
-      </div>
-      <div class="mb-4">
-        <label class="block text-white text-lg font-bold mb-2">Files</label>
-        <label 
-          for="fileInput" 
-          class="inline-block cursor-pointer bg-white/10 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-white/20"
-        >
-          Upload Files
-        </label>
-        <input
-          type="file"
-          name="file_picker"
-          id="fileInput"
-          multiple
-          onchange="onFileChange(event)"
-          class="sr-only"
-        />
-        <div class="flex flex-wrap gap-2 items-center mt-4" id="files-container">
-          {{ knowledge_base.all }}
-          {% for file in knowledge_base %}
-          <div class="flex items-center p-2 bg-gray-800 rounded-lg">
-            <svg class="w-5 h-5 mr-2 file-icon" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"></path>
-            </svg>
-            <span class="text-sm text-white">{{ file }}</span>
-            <button type="button" onclick="removeFile(this)" class="ml-2 text-gray-400 hover:text-red-500">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-      <div class="mb-4">
-        <label class="block text-white text-lg font-bold mb-2">URLs</label>
-        <div id="url-container">
-          {% for url in urls %}
-          <div class="url-input-group mb-2 flex items-center gap-2">
-            <input
-              type="url"
-              name="url"
-              value="{{ url }}"
-              disabled
-              class="input flex-1 bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 opacity-50"
-            />
-            <button type="button" onclick="removeUrl(this)" class="text-gray-400 hover:text-red-500">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
-          </div>
-          {% endfor %}
-          <div class="url-input-group mb-2 flex items-center gap-2">
-            <input
-              type="url"
-              name="url"
-              hx-post="{% url 'assistant' ass_id=assistant.id %}"
-              hx-trigger="blur"
-              hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "url"}'
-              placeholder="Enter a URL"
-              class="input flex-1 bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2"
-            />
-            <div class="loader hidden">
-              <svg class="w-5 h-5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+    <div id="assistantForm" hx-encoding="multipart/form-data" hx-swap="none"
+      class="flex w-full justify-center md:w-1/2">
+      <div class="h-full grow overflow-hidden">
+          <div class="flex h-full flex-col px-2 pt-2">
+
+            <div class="grow overflow-hidden">
+              <div class="flex h-full grow overflow-y-auto px-2 pt-6 md:pt-2 text-sm">
+                <div class="grow">
+                  {% csrf_token %}
+                  <div class="mb-6">
+                    <div
+                      class="relative size-20 mx-auto rounded-full bg-gray-200 flex items-center justify-center border-2 border-dashed border-gray-400 cursor-pointer overflow-hidden"
+                      onclick="document.getElementById('file-input').click()">
+                      <!-- Plus Icon -->
+                      <div id="icon-container" class="absolute flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                          stroke="currentColor" class="w-8 h-8 text-purple-600">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.75v14.5M4.75 12h14.5" />
+                        </svg>
+                      </div>
+                      <!-- Image Preview -->
+                      <img id="image-preview" class="hidden absolute inset-0 w-full h-full object-cover rounded-full"
+                        alt="Selected Image" />
+                        <input id="file-input" name="image" type="file" accept="image/*" class="hidden" onchange="previewImage(event)" />
+                    </div>
+                    <div>
+
+                      <label class="block text-white text-lg font-bold mb-2 mt-2">Name</label>
+                      <input type="text" name="assistant_name"
+                        hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}" hx-trigger="blur changed delay:1s"
+                        hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "assistant_name"}' autocomplete="off"
+                        hx-replace-url="false" value="{{ assistant.name|default:'' }}" placeholder="Name your ASSISTANT"
+                        class="input input-bordered text-lg w-full" />
+
+                    </div>
+                  </div>
+                  <div class="mb-6">
+                    <label class="block text-white text-lg font-bold mb-2">Description</label>
+                    <textarea name="description" hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
+                      hx-trigger="blur changed delay:1s"
+                      hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "description"}' autocomplete="off"
+                      hx-replace-url="false" placeholder="Add a short description about what this ASSISTANT does"
+                      class="textarea textarea-bordered textarea-xs text-lg w-full"
+                      rows="3">{{ assistant.description|default:'' }}</textarea>
+                  </div>
+                  <div class="mb-6 flex gap-4">
+                    <div class="flex-1">
+                      <label class="block text-white text-lg font-bold mb-2">Subject</label>
+                      <select name="subject" id="subjectSelect" hx-post="{% url 'assistant' ass_id=assistant.id %}"
+                        hx-trigger="blur changed delay:1s"
+                        hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "subject"}' hx-replace-url="false"
+                        class="select select-bordered w-full">
+                        <option value="" disabled>Select a subject</option>
+                      </select>
+                    </div>
+                    <div class="flex-1">
+                      <label class="block text-white text-lg font-bold mb-2">Topic</label>
+                      <select name="topic" id="topicSelect" hx-trigger="blur changed delay:1s"
+                        hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
+                        hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "topic"}' hx-replace-url="false"
+                        class="select select-bordered w-full">
+                        <option value="" disabled>Select a topic</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="mb-6 relative">
+                    <label class="block text-white text-lg font-bold mb-2">Instructions</label>
+                    <textarea
+                      id="teacher_instructions"
+                      name="teacher_instructions"
+                      hx-trigger="blur changed delay:1s" 
+                      hx-post="{% url 'assistant' ass_id=assistant.id %}"
+                      hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "teacher_instructions"}'
+                      autocomplete="off"
+                      hx-replace-url="false"
+                      placeholder="What does this ASSISTANT do? How does it behave? What should it avoid doing?"      
+                      class="textarea textarea-bordered textarea-xs text-xl w-full"
+                      rows="4">{{ assistant.teacher_instructions|default:'' }}</textarea>
+                      <svg id="generate-instructions" 
+                        data-url="{% url 'generate_instructions' assistant_id=assistant.id %}"
+                        class="w-4 h-4 fill-[#8e8e8e] absolute top-3 right-2 text-white cursor-pointer hover:fill-white transition-colors"
+                        viewBox="0 0 448 512">
+
+                        <!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
+                        <path d="M398.5 373.6c95.9-122.1 17.2-233.1 17.2-233.1 45.4 85.8-41.4 170.5-41.4 170.5 105-171.5-60.5-271.5-60.5-271.5 96.9 72.7-10.1 190.7-10.1 190.7 85.8 158.4-68.6 230.1-68.6 230.1s-.4-16.9-2.2-85.7c4.3 4.5 34.5 36.2 34.5 36.2l-24.2-47.4 62.6-9.1-62.6-9.1 20.2-55.5-31.4 45.9c-2.2-87.7-7.8-305.1-7.9-306.9v-2.4 1-1 2.4c0 1-5.6 219-7.9 306.9l-31.4-45.9 20.2 55.5-62.6 9.1 62.6 9.1-24.2 47.4 34.5-36.2c-1.8 68.8-2.2 85.7-2.2 85.7s-154.4-71.7-68.6-230.1c0 0-107-118.1-10.1-190.7 0 0-165.5 99.9-60.5 271.5 0 0-86.8-84.8-41.4-170.5 0 0-78.7 111 17.2 233.1 0 0-26.2-16.1-49.4-77.7 0 0 16.9 183.3 222 185.7h4.1c205-2.4 222-185.7 222-185.7-23.6 61.5-49.9 77.7-49.9 77.7z"></path>
+                      
+                      </svg>
+                  </div>
+                  <div class="mb-6">
+                    <label class="block text-white text-lg font-bold mb-2">URLs</label>
+                    <div id="url-container">
+                      {% for url in urls %}
+                      <div class="url-input-group mb-2 flex items-center gap-2">
+                        <input type="url" name="url" value="{{ url }}" disabled
+                          class="input input-bordered w-full" />
+                        <button type="button" onclick="removeUrl(this)" class="text-gray-400 hover:text-red-500">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12">
+                            </path>
+                          </svg>
+                        </button>
+                      </div>
+                      {% endfor %}
+                      <div class="url-input-group mb-2 flex items-center gap-2">
+                        <input type="url" name="url" hx-post="{% url 'assistant' ass_id=assistant.id %}"
+                          hx-trigger="blur" hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "url"}'
+                          placeholder="Enter a URL"
+                          class="input input-bordered w-full" />
+                        <div class="loader hidden">
+                          <svg class="w-5 h-5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="pb-6 flex flex-col gap-2">
+                    <div class="flex gap-2 items-center">
+                      <label class="block text-white text-lg font-bold">Files</label>
+                      <label for="fileInput"
+                        class="inline-block cursor-pointer bg-white/10 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-white/20">
+                        Upload Files
+                      </label>
+                      <input type="file" name="knowledge_base" id="fileInput" multiple onchange="onFileChange(event)"
+                        class="sr-only" />
+                    </div>
+                    <div class="flex flex-wrap gap-2 items-center mt-4" id="files-container">
+                      {{ knowledge_base.all }}
+                      {% for file in knowledge_base %}
+                      <div class="flex items-center p-2 bg-gray-800 rounded-lg">
+                        <svg class="w-5 h-5 mr-2 file-icon" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z">
+                          </path>
+                        </svg>
+                        <span class="text-sm text-white">{{ file }}</span>
+                        <button type="button" onclick="removeFile(this)" class="ml-2 text-gray-400 hover:text-red-500">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12">
+                            </path>
+                          </svg>
+                        </button>
+                      </div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                 
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </form>
+      
 
-    <div class="hidden md:block w-[1px] bg-gray-800"></div>
+    </div>
 
     <!-- Chat section -->
-    <div id="assistantChat" class="hidden w-full md:w-1/2 flex flex-col justify-between"
-    _="on load if window.innerWidth > 768 then remove .hidden from me end"
->
-    {% include 'assistant/assistant_chat.html' with assistant=assistant %}
+    <div id="assistantChat" class="w-full md:w-1/2 justify-center border-l border-gray-700 bg-gray-900 pt-4 md:flex">
+      {% include 'assistant/assistant_chat.html' with assistant=assistant %}
     </div>
   </div>
+</div>
+
 
 <script>
   const subjectsData = {
@@ -374,21 +376,51 @@
     const formSection = document.getElementById('assistantForm');
     const chatSection = document.getElementById('assistantChat');
 
+    // Remove active styles from both tabs
+    formTab.classList.remove('bg-purple-600', 'text-white');
+    chatTab.classList.remove('bg-purple-600', 'text-white');
+
     if (tab === 'form') {
-      formTab.classList.add('active-tab', 'border-blue-500');
-      chatTab.classList.remove('active-tab', 'border-blue-500');
-      formSection.classList.remove('hidden');
-      chatSection.classList.add('hidden');
+      // Add active styles to form tab
+      formTab.classList.add('bg-purple-600', 'text-white');
+      
+      // Show form, hide chat on mobile
+      formSection.style.display = 'flex';
+      if (window.innerWidth < 768) { // mobile only
+        chatSection.style.display = 'none';
+      }
     } else {
-      chatTab.classList.add('active-tab', 'border-blue-500');
-      formTab.classList.remove('active-tab', 'border-blue-500');
-      formSection.classList.add('hidden');
-      chatSection.classList.remove('hidden');
+      // Add active styles to chat tab
+      chatTab.classList.add('bg-purple-600', 'text-white');
+      
+      // Show chat, hide form on mobile
+      if (window.innerWidth < 768) { // mobile only
+        formSection.style.display = 'none';
+      }
+      chatSection.style.display = 'flex';
     }
   }
 
+  // Add event listener for window resize
+  window.addEventListener('resize', () => {
+    if (window.innerWidth >= 768) {
+      // On desktop, show both sections
+      document.getElementById('assistantForm').style.display = 'flex';
+      document.getElementById('assistantChat').style.display = 'flex';
+    } else {
+      // On mobile, respect current tab selection
+      const activeTab = document.querySelector('.bg-purple-600').id;
+      switchTab(activeTab === 'formTab' ? 'form' : 'chat');
+    }
+  });
+
+  // Initialize tabs on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    switchTab('form'); // Set initial active tab
+  });
+
   // Set initial values
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function () {
     const savedSubject = "{{ assistant.subject }}";
     const savedTopic = "{{ assistant.topic }}";
 
@@ -396,7 +428,7 @@
       subjectSelect.value = savedSubject;
       const event = new Event('change');
       subjectSelect.dispatchEvent(event);
-      
+
       setTimeout(() => {
         if (savedTopic) {
           topicSelect.value = savedTopic || '';
@@ -474,14 +506,14 @@
       htmx.process(uploadForm);
 
       // Events for this specific form
-      uploadForm.addEventListener('htmx:beforeRequest', function(evt) {
+      uploadForm.addEventListener('htmx:beforeRequest', function (evt) {
         const loader = fileContainer.querySelector('.loader-indicator');
         const fileIcon = fileContainer.querySelector('.file-icon');
         if (loader) loader.style.display = 'block';
         if (fileIcon) fileIcon.style.display = 'none';
       });
 
-      uploadForm.addEventListener('htmx:afterRequest', function(evt) {
+      uploadForm.addEventListener('htmx:afterRequest', function (evt) {
         const loader = fileContainer.querySelector('.loader-indicator');
         const fileIcon = fileContainer.querySelector('.file-icon');
         if (loader) loader.style.display = 'none';
@@ -525,9 +557,17 @@
     htmx.process(newGroup);
   }
 
-  // Add HTMX event listeners for URL inputs
-  document.addEventListener('htmx:beforeRequest', function(evt) {
+  // Modify the htmx:beforeRequest event handler
+  document.addEventListener('htmx:beforeRequest', function (evt) {
     if (evt.detail.elt.name === 'url') {
+      const urlValue = evt.detail.elt.value.trim();
+      
+      // Prevent the request if URL is empty
+      if (!urlValue) {
+        evt.preventDefault();
+        return;
+      }
+      
       const inputGroup = evt.detail.elt.closest('.url-input-group');
       const loader = inputGroup.querySelector('.loader');
       loader.classList.remove('hidden');
@@ -535,13 +575,13 @@
     }
   });
 
-  document.addEventListener('htmx:afterRequest', function(evt) {
+  document.addEventListener('htmx:afterRequest', function (evt) {
     if (evt.detail.elt.name === 'url') {
       const inputGroup = evt.detail.elt.closest('.url-input-group');
       const loader = inputGroup.querySelector('.loader');
       const input = inputGroup.querySelector('input');
       loader.classList.add('hidden');
-      
+
       if (evt.detail.successful) {
         input.disabled = true;
         input.classList.add('opacity-50');
@@ -555,16 +595,16 @@
     if (chatNameElement && field === 'assistant_name') {
       chatNameElement.textContent = value;
     }
-    
+
     // You can add more field updates here as needed
   }
 
-  document.addEventListener('htmx:afterRequest', function(evt) {
+  document.addEventListener('htmx:afterRequest', function (evt) {
     // Check if the request was successful
     if (evt.detail.successful) {
       const field = evt.detail.requestConfig.parameters?.field;
       const value = evt.detail.elt.value;
-      
+
       if (field) {
         updateLocalAssistantData(field, value);
       }
@@ -580,49 +620,164 @@
     const urlContainer = button.closest('.url-input-group');
     urlContainer.remove();
   }
+  
+  // function previewImage(event) {
+  //   const input = event.target;
+  //   const preview = document.getElementById("image-preview");
+  //   const placeholder = input.previousElementSibling;
+
+  //   if (input.files && input.files[0]) {
+  //     const reader = new FileReader();
+  //     reader.onload = function (e) {
+  //       preview.src = e.target.result;
+  //       preview.classList.remove("hidden");
+  //       placeholder.classList.add("hidden");
+  //     };
+  //     reader.readAsDataURL(input.files[0]);
+  //   }
+  // }
+
+  function previewImage(event) {
+            const input = event.target;
+            const preview = document.getElementById("image-preview");
+            const iconContainer = document.getElementById("icon-container");
+
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const imageUrl = e.target.result;
+                    preview.src = imageUrl;
+                    preview.classList.remove("hidden");
+                    preview.style.display = "block";
+                    iconContainer.classList.add("hidden");
+
+                    // Save image data to localStorage
+                    localStorage.setItem("savedImage", imageUrl);
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Restore saved image on page load
+        window.addEventListener("load", function () {
+            const preview = document.getElementById("image-preview");
+            const iconContainer = document.getElementById("icon-container");
+
+            const savedImage = localStorage.getItem("savedImage");
+            if (savedImage) {
+                preview.src = savedImage;
+                preview.classList.remove("hidden");
+                iconContainer.classList.add("hidden");
+            }
+        });
+
+  // Add event listener for the generate instructions icon
+  document.getElementById('generate-instructions').addEventListener('click', function(e) {
+    e.preventDefault();
+    
+    const textarea = document.getElementById('teacher_instructions');
+    textarea.value = ''; // Clear existing content
+    
+    const url = this.dataset.url;
+    if (!url) {
+        console.error('Generate instructions URL not found');
+        return;
+    }
+    
+    fetch(url)
+        .then(response => {
+            const reader = response.body.getReader();
+            let accumulatedContent = '';
+            
+            function processStream({ done, value }) {
+                if (done) {
+                    // Change this to focus after a small delay and return
+                    setTimeout(() => {
+                        const textarea = document.getElementById('teacher_instructions');
+                        textarea.focus();
+                        // Optional: Move cursor to end of text
+                        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+                    }, 100);
+                    return;
+                }
+                
+                // Convert the chunk to text
+                const chunk = new TextDecoder().decode(value);
+                
+                // Split by newlines in case multiple JSON objects arrived together
+                const lines = chunk.split('\n');
+                
+                lines.forEach(line => {
+                    if (!line.trim()) return;
+                    
+                    try {
+                        const data = JSON.parse(line);
+                        
+                        switch(data.status) {
+                            case 'start':
+                                textarea.value = 'Starting...';
+                                break;
+                            case 'progress':
+                                textarea.value = data.message;
+                                break;
+                            case 'generating':
+                                accumulatedContent += data.partial_content;
+                                textarea.value = accumulatedContent;
+                                textarea.scrollTop = textarea.scrollHeight;
+                                break;
+                            case 'complete':
+                                textarea.value = data.full_content;
+                                break;
+                        }
+                    } catch (e) {
+                        console.error('Error parsing JSON:', e);
+                    }
+                });
+                
+                // Continue reading
+                return reader.read().then(processStream);
+            }
+            
+            // Start reading the stream
+            return reader.read().then(processStream);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            textarea.value = 'Error generating instructions. Please try again.';
+        });
+  });
+
 </script>
 
 <style>
+  /* Adjust content padding on mobile for fixed tabs */
+  @media (max-width: 767px) {
+    #assistant-form {
+      padding-top: 4rem;
+    }
+  }
+
   .active-tab {
-    border-color: var(--clr-main);
-  }
-  .htmx-indicator {
-    display: none;
-  }
-  .htmx-request .htmx-indicator {
-    display: block;
-  }
-  .htmx-request .htmx-indicator-hide {
-    display: none;
+    @apply bg-purple-600 text-white;
   }
 
-  select option {
-    background-color: #1a1a1a;  /* Dark background */
-    color: white;               /* White text */
+  /* Smooth transitions for tab switching */
+  #assistantForm,
+  #assistantChat {
+    transition: all 0.3s ease-in-out;
   }
 
-  select {
-    background-color: rgba(255, 255, 255, 0.1);  /* Matches the input background */
-    color: white;
+  /* Tab button hover effects */
+  #formTab:hover,
+  #chatTab:hover {
+    @apply bg-purple-500/50;
   }
 
-  /* For Firefox */
-  select:-moz-focusring {
-    color: transparent;
-    text-shadow: 0 0 0 white;
-  }
-
-  /* For Chrome/Safari */
-  select::-ms-expand {
-    display: none;
-  }
-
-  select option:hover,
-  select option:focus,
-  select option:active,
-  select option:checked {
-    background: linear-gradient(#2d3748, #2d3748);
-    background-color: #2d3748 !important; /* Darker highlight color */
+  @media (min-width: 768px) {
+    #assistantForm,
+    #assistantChat {
+      display: flex !important;
+    }
   }
 </style>
 {% endblock %}
