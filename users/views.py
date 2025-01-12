@@ -128,12 +128,14 @@ def create_assistant(request, ass_id: Optional[str] = None):
         assistant_data = Assistant.objects.get(id=ass_id)
         documents = PDFDocument.objects.filter(assistant_id=ass_id)
 
-        urls = [document.title for document in documents if document.metadata.get('document_type') == 'url']
-        pdfs = [document.title for document in documents if document.metadata.get('document_type') == 'pdf']
+        print(documents)
+
+        urls = [{'title': document.title, 'id': document.doc_id} for document in documents if document.metadata.get('document_type') == 'url']
+        pdfs = [{'title': document.title, 'id': document.doc_id} for document in documents if document.metadata.get('document_type') == 'pdf']
         is_creator = request.user.id == assistant_data.user_id.id
 
         subjects = Subject.objects.all()
-                
+
         if is_creator:
             return render(request, 'assistant_form.html', {
                 'assistant': assistant_data,
@@ -432,18 +434,20 @@ def generate_instructions(request, assistant_id: Optional[str]) -> StreamingHttp
             content_type='application/json',
             status=500
         )
-    
+
+@csrf_exempt
+@require_http_methods(["DELETE", "OPTIONS", "POST"])
 def del_knowledgebase(request, document_id: str):
     try:
         document = PDFDocument.objects.get(doc_id=document_id)
         if document.assistant_id.user_id == request.user:
             document.delete()
             logger.info(f"Knowledge base with id: {document.doc_id} and {document.title} successfully deleted.")
-            return json.dumps({'message': 'Document successfully deleted'})
+            return JsonResponse({'message': 'Document successfully deleted'})
         else:
-            return json.dumps({'error': 'Unauthorized to delete this document'})
+            return JsonResponse({'error': 'Unauthorized to delete this document'}, status=403)
     except PDFDocument.DoesNotExist:
-        return json.dumps({'error': 'Document not found'})
+        return JsonResponse({'error': 'Document not found'}, status=404)
 
 @login_required(login_url='accounts/login/')
 def create_assistant_view(request, ass_id):

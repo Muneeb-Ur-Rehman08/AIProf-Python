@@ -121,9 +121,9 @@
                     <div id="url-container">
                       {% for url in urls %}
                       <div class="url-input-group mb-2 flex items-center gap-2">
-                        <input type="url" name="url" value="{{ url }}" disabled
+                        <input type="url" name="url" value="{{ url.title }}" disabled
                           class="input input-bordered w-full" />
-                        <button type="button" onclick="removeUrl(this)" class="text-gray-400 hover:text-red-500">
+                        <button type="button" hx-post="{% url 'del_knowledgebase' document_id=url.id %}" hx-trigger="click" hx-on::after-request="removeUrl(this)" hx-replace-url="false" class="text-gray-400 hover:text-red-500">
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M6 18L18 6M6 6l12 12">
@@ -168,8 +168,8 @@
                             d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z">
                           </path>
                         </svg>
-                        <span class="text-sm text-white">{{ file }}</span>
-                        <button type="button" onclick="removeFile(this)" class="ml-2 text-gray-400 hover:text-red-500">
+                        <span class="text-sm text-white">{{ file.title }}</span>
+                        <button type="button" hx-post="{% url 'del_knowledgebase' document_id=file.id %}" hx-trigger="click" hx-on::after-request="removeFile(this)" hx-replace-url="false" class="ml-2 text-gray-400 hover:text-red-500">
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M6 18L18 6M6 6l12 12">
@@ -288,89 +288,82 @@
 
   function onFileChange(e) {
     const filesContainer = document.getElementById('files-container');
+    if (!filesContainer || !e.target.files) return;
+    
     const files = Array.from(e.target.files);
 
-    files.forEach((file, index) => {
-      const fileContainer = document.createElement('div');
-      fileContainer.className = 'flex items-center p-2 bg-gray-800 rounded-lg';
-      fileContainer.dataset.fileName = file.name;
+    files.forEach((file) => {
+        const fileContainer = document.createElement('div');
+        fileContainer.className = 'flex items-center p-2 bg-gray-800 rounded-lg';
+        fileContainer.dataset.fileName = file.name;
 
-      fileContainer.innerHTML = `
-        <svg class="w-5 h-5 mr-2 animate-spin text-red-500 loader-indicator" fill="none" viewBox="0 0 24 24" style="display:block;">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <svg class="w-5 h-5 mr-2 file-icon" fill="currentColor" viewBox="0 0 20 20" style="display:none;">
-          <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"></path>
-        </svg>
-        <span class="text-sm text-white">${file.name}</span>
-      `;
+        fileContainer.innerHTML = `
+            <svg class="w-5 h-5 mr-2 animate-spin text-red-500 loader-indicator" fill="none" viewBox="0 0 24 24" style="display:block;">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <svg class="w-5 h-5 mr-2 file-icon" fill="currentColor" viewBox="0 0 20 20" style="display:none;">
+                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"></path>
+            </svg>
+            <span class="text-sm text-white">${file.name}</span>
+        `;
 
-      filesContainer.appendChild(fileContainer);
+        filesContainer.appendChild(fileContainer);
 
-      // Create a separate hidden form for each file
-      const uploadForm = document.createElement('form');
-      uploadForm.style.display = 'none';
-      uploadForm.setAttribute('hx-post', "{% url 'assistant' ass_id='{{ assistant.id }}' %}");
-      uploadForm.setAttribute('hx-trigger', 'htmx:sendFile');
-      uploadForm.setAttribute('hx-encoding', 'multipart/form-data');
-      uploadForm.setAttribute('hx-swap', 'none');
-      uploadForm.setAttribute('hx-vals', `{"assistant_id": "{{ assistant.id }}", "field": "knowledge_base"}`);
+        // Create form data with required fields
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        formData.append('knowledge_base', file);
+        formData.append('assistant_id', '{{ assistant.id }}');
+        formData.append('field', 'knowledge_base');
 
-      // Add all form fields
-      const formData = {
-        'assistant_name': document.querySelector('input[name="assistant_name"]').value,
-        'description': document.querySelector('input[name="description"]').value,
-        'subject': document.querySelector('select[name="subject"]').value,
-        'topic': document.querySelector('select[name="topic"]').value,
-        'teacher_instructions': document.querySelector('textarea[name="teacher_instructions"]').value,
-      };
+        // Get form field values safely
+        const formFields = {
+            'assistant_name': document.querySelector('input[name="assistant_name"]'),
+            'description': document.querySelector('textarea[name="description"]'),
+            'subject': document.querySelector('select[name="subject"]'),
+            'topic': document.querySelector('select[name="topic"]'),
+            'teacher_instructions': document.querySelector('textarea[name="teacher_instructions"]')
+        };
 
-      // Add all form fields as hidden inputs
-      Object.entries(formData).forEach(([key, value]) => {
-        const hiddenInput = document.createElement('input');
-        hiddenInput.type = 'hidden';
-        hiddenInput.name = key;
-        hiddenInput.value = value || '';
-        uploadForm.appendChild(hiddenInput);
-      });
+        // Add form fields if they exist
+        Object.entries(formFields).forEach(([key, element]) => {
+            if (element && element.value) {
+                formData.append(key, element.value);
+            }
+        });
 
-      // Add CSRF token
-      const csrfInput = document.createElement('input');
-      csrfInput.type = 'hidden';
-      csrfInput.name = 'csrfmiddlewaretoken';
-      csrfInput.value = '{{ csrf_token }}';
-      uploadForm.appendChild(csrfInput);
+        // Send the file using fetch instead of htmx
+        fetch("{% url 'assistant' ass_id=assistant.id %}", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            const loader = fileContainer.querySelector('.loader-indicator');
+            const fileIcon = fileContainer.querySelector('.file-icon');
+            if (loader) loader.style.display = 'none';
+            if (fileIcon) fileIcon.style.display = 'block';
 
-      // Add file input
-      const hiddenFileInput = document.createElement('input');
-      hiddenFileInput.type = 'file';
-      hiddenFileInput.name = 'knowledge_base';
-      hiddenFileInput.files = createFileList([file]);
-      uploadForm.appendChild(hiddenFileInput);
-
-      document.body.appendChild(uploadForm);
-
-      // Let htmx process this newly added form so it recognizes hx attributes
-      htmx.process(uploadForm);
-
-      // Events for this specific form
-      uploadForm.addEventListener('htmx:beforeRequest', function (evt) {
-        const loader = fileContainer.querySelector('.loader-indicator');
-        const fileIcon = fileContainer.querySelector('.file-icon');
-        if (loader) loader.style.display = 'block';
-        if (fileIcon) fileIcon.style.display = 'none';
-      });
-
-      uploadForm.addEventListener('htmx:afterRequest', function (evt) {
-        const loader = fileContainer.querySelector('.loader-indicator');
-        const fileIcon = fileContainer.querySelector('.file-icon');
-        if (loader) loader.style.display = 'none';
-        if (fileIcon) fileIcon.style.display = 'block';
-      });
-
-      // Trigger our custom event to start the upload
-      htmx.trigger(uploadForm, 'htmx:sendFile');
+            // Add remove button after successful upload
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'ml-2 text-gray-400 hover:text-red-500';
+            removeButton.setAttribute('onclick', 'removeFile(this)');
+            removeButton.innerHTML = `
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            `;
+            fileContainer.appendChild(removeButton);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            fileContainer.remove();
+        });
     });
   }
 
@@ -425,16 +418,28 @@
   });
 
   document.addEventListener('htmx:afterRequest', function (evt) {
-    if (evt.detail.elt.name === 'url') {
-      const inputGroup = evt.detail.elt.closest('.url-input-group');
-      const loader = inputGroup.querySelector('.loader');
-      const input = inputGroup.querySelector('input');
-      loader.classList.add('hidden');
+    if (evt.detail.elt.name === 'url' && evt.detail.successful) {
+        const inputGroup = evt.detail.elt.closest('.url-input-group');
+        const loader = inputGroup.querySelector('.loader');
+        const input = inputGroup.querySelector('input');
+        loader.classList.add('hidden');
 
-      if (evt.detail.successful) {
-        input.disabled = true;
-        input.classList.add('opacity-50');
-      }
+        if (evt.detail.successful) {
+            input.disabled = true;
+            input.classList.add('opacity-50');
+            
+            // Add remove button after successful upload
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'text-gray-400 hover:text-red-500';
+            removeButton.setAttribute('onclick', 'removeUrl(this)');
+            removeButton.innerHTML = `
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            `;
+            inputGroup.appendChild(removeButton);
+        }
     }
   });
 
