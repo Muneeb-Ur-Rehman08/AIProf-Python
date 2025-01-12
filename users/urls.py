@@ -18,9 +18,10 @@ urlpatterns = [
     path('assistants/generate_instructions/<str:assistant_id>', views.generate_instructions, name='generate_instructions'),
     
     # Delete KnowledgeBase
-    path('knowledgebasedelete/<str:document_id>/', views.del_knowledgebase, name='del_knowledgebase'),
+    path('delete_document/<str:document_id>/', views.del_knowledgebase, name='del_knowledgebase'),
     
     # Delete assistant
     path('assistants/delete/<str:ass_id>/', views.delete_assistant, name='delete_assistant'),
+    path('assistants/get_topics/<str:subject_id>/', views.get_topics, name='get_topics'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
