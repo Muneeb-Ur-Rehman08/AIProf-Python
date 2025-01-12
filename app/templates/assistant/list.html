@@ -2,37 +2,18 @@
 {% load static %}
 {% block content %}
 <!-- Search Input -->
-<div class="h-full mx-5" style="min-height: 100vh;" hx-replace-url="{% url 'list_assistants' %}">
-  {% block navbar %}
-  <div id="navbar" class="fixed top-0 left-0 right-0 mx-5 z-[100]">
+<div class="min-h-screen bg-gradient-to-b from-purple-50 to-white text-black" hx-replace-url="{% url 'list_assistants' %}">
+ 
     {% include 'modal/navbar.html' %}
-  </div>
-  {% endblock %}
+  
+   
+  
 
-  <div id="search-bar" class="sticky top-28 z-[90]">
-    <div class="grid grid-cols-12 gap-x-2.5 sm:gap-x-1.5 lg:gap-x-0">
+  <div class="sticky top-14 z-30 bg-white p-4 border-b">
+    <div class=" flex items-center gap-4">
 
-      <div class="drawer inline-block w-auto col-span-2 sm:col-span-1 lg:hidden">
-        <input id="my-drawer" type="checkbox" class="drawer-toggle" />
-        <div class="drawer-content ">
-          <!-- Page content here -->
-          <label for="my-drawer" class="btn drawer-button bg-purple-600/40">
-            <img src="{% static 'assets/images/filter.png' %}" class="w-6 h-6" alt="Filter">
-          </label>
-        </div>
-        <div class="drawer-side">
-          <label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
-          <ul class="menu bg-base-200 text-base-content min-h-full w-full sm:w-96 p-4 z-50">
-            <div class="flex items-center  justify-between mb-2">
-              <p class="text-lg font-semibold">Select filters</p>
-              <label for="my-drawer" class="btn text-2xl text-sky-500 drawer-button lg:hidden mb-4">x</label>
-            </div>
-            {% include 'assistant/form_filters.html' %}
-          </ul>
-        </div>
-      </div>
-      <div class="w-full col-span-10 sm:col-span-5 lg:col-span-3">
-        <label id="search-input" class="input input-bordered flex items-center gap-2 bg-transparent">
+      <div class="flex-1">
+        <label id="search-input" class="input input-bordered flex items-center gap-2 bg-transparent w-full">
           <input type="text" hx-push-url="true" class="grow" autocomplete="off" placeholder="Search"
             hx-get="{% url 'list_assistants' %}" hx-target="#assistants-list" hx-trigger="keyup changed delay:500ms"
             name="keyword" hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword']" />
@@ -45,9 +26,9 @@
       </div>
 
       <!-- Sort dropdown -->
-      <div class="w-full col-span-3 sm:col-span-2 lg:col-span-2">
+      <div class="w-48">
         <select 
-          class="select select-bordered w-full"
+          class="select select-bordered w-full bg-white"
           name="sort"
           hx-get="{% url 'list_assistants' %}"
           hx-push-url="true"
@@ -65,7 +46,7 @@
       </div>
 
       <!-- Created by me filter -->
-      <div class="w-full col-span-3 sm:col-span-2 lg:col-span-1 flex items-center">
+      <div class="flex items-center">
         <label class="cursor-pointer label gap-2">
           <span class="label-text">Created by me</span>
           <input type="checkbox" 
@@ -84,18 +65,18 @@
 
   </div>
   <!-- Filters Section -->
-  <div class="flex gap-x-2 pt-32 py-2">
+  <div class="">
     <!-- Main content area -->
 
-    <div class="hidden lg:block lg:w-1/3 py-3">
+    <div class="lg:flex">
       {% include 'assistant/form_filters.html' %}
     </div>
 
     <!-- Assistants list content -->
-    <div class="w-full lg:w-w-2/3" style="z-index: 1;" id="assistants-list" hx-get="{% url 'list_assistants' %}" hx-trigger="load"
+    <main class="flex-1 lg:ml-72 pt-14" style="z-index: 1;" id="assistants-list" hx-get="{% url 'list_assistants' %}" hx-trigger="load"
       hx-replace-url="false">
       <!-- Content loaded dynamically -->
-    </div>
+    </main>
   </div>
 </div>
 

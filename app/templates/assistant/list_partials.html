@@ -1,9 +1,10 @@
-<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 p-3"">
+<div class="p-4">
+<div class="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
     {% if assistants %}
         {% for assistant in assistants %}
             {% if assistant.subject and assistant.topic and assistant.description %}
-            <a href="{% url 'assistant_detail' assistant_id=assistant.id %}" target="_blank" class="transition transform hover:scale-105 hover:shadow-lg">
-                <div class="card bg-gradient-to-b from-purple-500/10 via-purple-600/10 to-purple-800/10 text-white rounded-lg shadow-xl overflow-hidden h-full">
+            <a href="{% url 'assistant_detail' assistant_id=assistant.id %}">
+                <div class="card rounded-lg border bg-white text-card-foreground shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md">
                     <!-- Card Header with Avatar -->
                     <div class="flex items-center gap-4 p-4">
                         <div class="avatar">
@@ -13,24 +14,24 @@
                         </div>
                         <div>
                             <h3 class="font-semibold text-lg truncate">{{ assistant.name | default:"AI Professor" }}</h3>
-                            <p class="text-sm text-gray-300">{{ assistant.subject }}</p>
+                            <p class="text-sm text-gray-400">{{ assistant.subject }}</p>
                         </div>
                     </div>
 
                     <!-- Card Body -->
                     <div class="card-body p-4">
                         <!-- Subject - Light Purple with Shadow -->
-                        <p class="text-sm text-purple-300 font-medium mb-1 drop-shadow-[0_2px_2px_rgba(168,85,247,0.4)]">
+                        <p class="text-sm font-medium mb-1 ">
                             {{ assistant.subject }}
                         </p>
 
                         <!-- Topic - Light Blue with Shadow -->
-                        <p class="text-sm text-cyan-300 font-semibold mb-2 drop-shadow-[0_2px_2px_rgba(34,211,238,0.4)]">
+                        <p class="text-sm font-semibold mb-2 ]">
                             {{ assistant.topic }}
                         </p>
 
                         <!-- Description - Soft White -->
-                        <p class="text-sm text-gray-100 mb-4 line-clamp-2">
+                        <p class="text-sm mb-4 line-clamp-2">
                             {{ assistant.description }}
                         </p>
 
@@ -50,7 +51,7 @@
                         </div>
 
                         <!-- Footer -->
-                        <div class="flex justify-between text-sm p-2 bg-gradient-to-r from-purple-500/20 to-purple-600/20 via-purple-500/20 text-white rounded-b-lg shadow-md">
+                        <div class="flex justify-between text-sm">
                             <p class="font-medium flex-grow-0">{{ assistant.total_reviews | default:"0" }} Reviews</p>
                             <p class="font-medium flex-grow-0">{{ assistant.interactions | default:"0" }} Interactions</p>
                         </div>
@@ -64,4 +65,5 @@
         <p class="text-gray-300">No assistants available at the moment.</p>
     </div>
     {% endif %}
+</div>
 </div>
