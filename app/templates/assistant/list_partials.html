@@ -1,37 +1,28 @@
 <div class="p-4">
-<div class="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+<div class="grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
     {% if assistants %}
         {% for assistant in assistants %}
             {% if assistant.subject and assistant.topic and assistant.description %}
             <a href="{% url 'assistant_detail' assistant_id=assistant.id %}">
-                <div class="card rounded-lg border bg-white text-card-foreground shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md">
+                <div class="card rounded-lg border bg-white hover:bg-gray-50 hover:scale-95 text-card-foreground shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md">
                     <!-- Card Header with Avatar -->
-                    <div class="flex items-center gap-4 p-4">
+                    <div class="flex items-center gap-4 px-4 pt-4 pb-2">
                         <div class="avatar">
                             <div class="w-16 rounded-full border-2 border-white">
                                 <img src="https://api.dicebear.com/7.x/bottts/svg?seed={{ assistant.name }}" alt="{{ assistant.name | default:'AI Professor' }}" />
                             </div>
                         </div>
                         <div>
-                            <h3 class="font-semibold text-lg truncate">{{ assistant.name | default:"AI Professor" }}</h3>
-                            <p class="text-sm text-gray-400">{{ assistant.subject }}</p>
+                            <h3 class="font-semibold text-lg line-clamp-1 overflow-hidden">{{ assistant.name | default:"AI Professor" }}</h3>
+                            <p class="text-sm text-gray-400">{{ assistant.subject }} - {{ assistant.topic }}</p>
                         </div>
                     </div>
-
                     <!-- Card Body -->
                     <div class="card-body p-4">
-                        <!-- Subject - Light Purple with Shadow -->
-                        <p class="text-sm font-medium mb-1 ">
-                            {{ assistant.subject }}
-                        </p>
-
-                        <!-- Topic - Light Blue with Shadow -->
-                        <p class="text-sm font-semibold mb-2 ]">
-                            {{ assistant.topic }}
-                        </p>
+                        
 
                         <!-- Description - Soft White -->
-                        <p class="text-sm mb-4 line-clamp-2">
+                        <p class="text-sm h-10 line-clamp-2 overflow-hidden">
                             {{ assistant.description }}
                         </p>
 
