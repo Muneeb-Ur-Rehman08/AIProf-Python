@@ -87,7 +87,7 @@ def chat_query(request, ass_id: Optional[str] = None):
             ```
         '''
         final_instructions = assist_instructions + "\n" + mermaid_instructions
-
+        
         assistant_config = {
             "subject": assistant.subject,
             "topic": assistant.topic,
@@ -101,7 +101,7 @@ def chat_query(request, ass_id: Optional[str] = None):
         chat_module = ChatModule()
         response = chat_module.process_message(
             prompt=prompt,
-            assistant_id=assistant.id,
+            assistant_id=str(assistant.id),
             user_id=user_id,
             assistant_config=assistant_config,
         )
