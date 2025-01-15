@@ -1,30 +1,42 @@
 {% load static %}
-    <div class="relative flex h-14 w-full items-center justify-between gap-2 border-b border-[hsla(0,0%,100%,.15)] px-3 shrink-0" id="navbar">
-        <div class="flex flex-col">
-            <a href="{% url 'index' %}">
-                <img class="w-24 font-sans" src="{% static 'assets/images/logo/logo.svg' %}" alt="AIPro Logo" />
+<div
+    class="sticky top-0 z-30 w-full border-b-2 bg-white">
+    <div class="max-w-[100rem] px-4 mx-auto flex h-14 items-center justify-between">
+        <div class="flex items-center">
+            <a class="flex items-center space-x-2"  href="{% url 'index' %}">
+                <img class="w-24 font-sans" src="{% static 'assets/images/logo/black-logo.svg' %}" alt="AIPro Logo" />
             </a>
         </div>
-        <div class="dropdown dropdown-end">
-            <div class="flex items-center" _="on click toggle .hidden on #dropdownMenu">
-                <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
-                        <div class="w-10 rounded-full">
-                            <img alt="Tailwind CSS Navbar component" src="https://i.pravatar.cc/150?img=1" />
-                        </div>
-                    </div>
-                    <span tabindex="0" class="ml-2 text-white"><button>Your Name</button></span>
-                </div>
-                <ul id="dropdownMenu" tabindex="0" class="menu menu-sm dropdown-content rounded-box mt-3 w-52 p-2 shadow hidden"
-                    style="background-color: var(--clr-dark-blue);color: white; z-index: 1000;">
-                    <li>
-                        <a class="justify-between">
-                            Profile
-                            <span class="badge">New</span>
-                        </a>
-                    </li>
-                    <li><a>Settings</a></li>
-                <li><a>Logout</a></li>
-            </ul>
-        </div>
+        <div class="flex items-center space-x-4">
+            <!-- Notification Button -->
+            <!-- <button class="btn btn-ghost btn-circle">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span class="sr-only">Notifications</span>
+            </button> -->
 
+            <!-- Profile Dropdown -->
+            <div class="dropdown dropdown-end">
+                <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar" _="on click toggle .hidden on #dropdownMenu">
+                    <div class="w-5 rounded-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" style="enable-background:new 0 0 16 16" xml:space="preserve" stroke="currentColor" stroke-width="0.5" fill="currentColor"><path d="M16 14c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zm0-12c-2.757 0-5 2.243-5 5s2.243 5 5 5 5-2.243 5-5-2.243-5-5-5zM27 32a1 1 0 0 1-1-1v-6.115a6.95 6.95 0 0 0-6.942-6.943h-6.116A6.95 6.95 0 0 0 6 24.885V31a1 1 0 1 1-2 0v-6.115c0-4.93 4.012-8.943 8.942-8.943h6.116c4.93 0 8.942 4.012 8.942 8.943V31a1 1 0 0 1-1 1z"/></svg>
+                    </div>
+                </div>
+                <div id="dropdownMenu" tabindex="0" class="dropdown-content menu z-[1] p-4 shadow bg-white rounded-box w-56 hidden">
+                    <div class="px-2 py-2">
+                        <p class="text-sm font-medium">John Doe</p>
+                        <p class="text-xs text-gray-500">john.doe@example.com</p>
+                    </div>
+                    <div class="divider my-1"></div>
+                    <ul class="menu menu-sm">
+                        <li><a>Profile</a></li>
+                        <li><a>Settings</a></li>
+                        <li class="divider my-1"></li>
+                        <li><a>Log out</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
+</div>

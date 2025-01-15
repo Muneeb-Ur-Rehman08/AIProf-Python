@@ -1,268 +1,189 @@
-<form class="space-y-3" id="filter-form">
-  <!-- Accordion Item for Subjects -->
-  <div class="collapse collapse-arrow w-full border border-gray-300 rounded-md">
-    <input type="checkbox" class="peer" checked />
-    <div class="collapse-title peer-checked:bg-primary peer-checked:text-primary-content hover:underline hover:text-">
-      Subjects
-      
-    </div>
-    <div class="collapse-content space-y-4 peer-checked:bg-primary peer-checked:text-primary-content">
-      <div class="relative">
-        <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-2 top-4 h-4 w-4 text-muted-foreground" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4 opacity-70">
-          <path fill-rule="evenodd" d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" clip-rule="evenodd" />
-        </svg>
-        <input
-          type="text"
-          hx-push-url="true"
-          placeholder="Search subjects..."
-          class="input input-bordered w-full bg-transparent pl-8"
-          id="subject-search"
-          hx-trigger="keyup changed delay:300ms"
-          onkeyup="filterSubjects()"
-          _="on keyup from #subject-search
-              send this.closest('div') to #assistants-list"
-        />
-      </div>
-      <div class="space-y-2 max-h-32 overflow-y-auto" id="subject-list">
-        {% for subject in subjects_data %}
-        <div class="flex items-center space-x-2 subject-item">
-          <input
-            type="checkbox"
-            hx-push-url="true"
-            id="subject-{{ subject.name }}"
-            class="checkbox"
-            name="subject"
-            value="{{ subject.name }}"
-            hx-trigger="change"
-            hx-get="{% url 'list_assistants' %}"
-            hx-target="#assistants-list"
-            hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']"
-          />
-          <label for="subject-{{ subject.name }}" class="label cursor-pointer">
-            {{ subject.name }}
-          </label>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
+<div
+  class="bg-white backdrop-blur-xl w-full lg:w-72 lg:h-[calc(100vh-3.5rem)] lg:fixed lg:left-0 lg:top-32 lg:overflow-y-auto lg:border-r"
+  id="filter-form">
+  <div class="p-4">
 
-  <!-- Accordion Item for Topics -->
-  <div class="collapse collapse-arrow w-full border border-gray-300 rounded-md">
-    <input type="checkbox" class="peer" checked />
-    <div class="collapse-title peer-checked:bg-primary peer-checked:text-primary-content">
-      Topics
-    </div>
-    <div class="collapse-content space-y-4 peer-checked:bg-primary peer-checked:text-primary-content">
-      <div class="relative">
-        <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-2 top-4 h-4 w-4 text-muted-foreground" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4 opacity-70">
-          <path fill-rule="evenodd" d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" clip-rule="evenodd" />
+    <!-- Main Label -->
+    <h3 class="font-semibold text-lg mb-2">Subjects</h3>
+
+    <!-- Subjects Dropdown -->
+    <div class="dropdown w-full mb-4">
+      <label tabindex="0"
+        class="btn btn-block border-gray-300 border justify-between bg-white text-black hover:bg-gray-100 rounded-lg">
+        Select a Subject
+        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
-        <input
-          type="text"
-          hx-push-url="true"
-          placeholder="Search topics..."
-          class="input input-bordered bg-transparent w-full pl-8"
-          id="topic-search"
-          hx-trigger="keyup changed delay:300ms"
-          onkeyup="filterTopics()"
-          _="on keyup from #topic-search
-              send this.closest('div') to #assistants-list"
-        />
-      </div>
-      <div class="space-y-2 max-h-32 overflow-y-auto" id="topic-list">
-        {% for subject in subjects_data %}
-          {% for topic in subject.topics.all %}
-            <div class="flex items-center space-x-2 topic-item" data-subject="{{ subject.name }}">
-              <input
-                type="checkbox"
-                hx-push-url="true"
-                id="topic-{{ topic.id }}"
-                class="checkbox"
-                name="topic"
-                value="{{ topic.name }}"
-                hx-trigger="change"
-                hx-get="{% url 'list_assistants' %}"
+      </label>
+      <div tabindex="0" class="dropdown-content z-[1] w-full p-4 shadow-2xl bg-white rounded-lg mt-2">
+        <!-- Search Input -->
+        <div class="relative mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-3 h-5 w-5 text-gray-400"
+            viewBox="0 0 16 16" fill="currentColor">
+            <path fill-rule="evenodd"
+              d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
+              clip-rule="evenodd" />
+          </svg>
+          <input type="text" placeholder="Search subjects..."
+            class="input input-bordered w-full bg-white text-black pl-10 focus:outline-none focus:ring-2 focus:ring-gray-200"
+            id="subject-search" hx-trigger="keyup changed delay:300ms" onkeyup="filterSubjects()" />
+        </div>
+        <!-- Subject List -->
+        <div class="space-y-2 max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+          id="subject-list">
+          {% for subject in subjects_data %}
+          <div class="form-control subject-item">
+            <label class="label cursor-pointer justify-start gap-x-2 hover:bg-gray-100 rounded-lg px-2">
+              <input type="checkbox" id="subject-{{ subject.name }}" class="checkbox checkbox-sm" name="subject"
+                value="{{ subject.name }}" hx-trigger="change" hx-get="{% url 'list_assistants' %}"
                 hx-target="#assistants-list"
-                hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']"
-              />
-              <label for="topic-{{ topic.id }}" class="label cursor-pointer">
-                {{ topic.name }}
-              </label>
-            </div>
+                hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword']" />
+              <span class="label-text text-black">{{ subject.name }}</span>
+            </label>
+          </div>
           {% endfor %}
-        {% endfor %}
+        </div>
       </div>
     </div>
-  </div>
 
+    <!-- Sub Label -->
+    <h3 class="font-semibold text-lg mb-2">Topics</h3>
 
-  <!-- Accordion Item for Rating Filter -->
-  <div class="collapse collapse-arrow w-full border border-gray-300 rounded-md mt-4">
-    <input type="checkbox" class="peer" checked />
-    <div class="collapse-title peer-checked:bg-primary peer-checked:text-primary-content">
-      Rating
+    <!-- Topics Dropdown -->
+    <div class="dropdown w-full mb-4">
+      <label tabindex="0"
+        class="btn btn-block border-gray-300 border justify-between bg-white text-black hover:bg-gray-100 rounded-lg ">
+        Select a Topic
+        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </label>
+      <div tabindex="0" class="dropdown-content z-[1] w-full p-4 shadow-2xl bg-white rounded-lg mt-2">
+        <!-- Search Input -->
+        <div class="relative mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-3 h-5 w-5 text-gray-400"
+            viewBox="0 0 16 16" fill="currentColor">
+            <path fill-rule="evenodd"
+              d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
+              clip-rule="evenodd" />
+          </svg>
+          <input type="text" placeholder="Search topics..."
+            class="input input-bordered w-full bg-white text-black pl-10 focus:outline-none focus:ring-2 focus:ring-gray-200"
+            id="topic-search" hx-trigger="keyup changed delay:300ms" onkeyup="filterTopics()" />
+        </div>
+        <!-- Topic List -->
+        <div class="space-y-2 max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+          id="topic-list">
+          {% for subject in subjects_data %}
+          {% for topic in subject.topics.all %}
+          <div class="topic-item" data-subject="{{ subject.name }}">
+            <label class="label cursor-pointer justify-start gap-x-2 hover:bg-gray-100 rounded-lg px-2">
+              <input type="checkbox" id="topic-{{ topic.id }}" class="checkbox checkbox-sm" name="topic"
+                value="{{ topic.name }}" hx-trigger="change" hx-get="{% url 'list_assistants' %}"
+                hx-target="#assistants-list"
+                hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']" />
+              <span class="label-text text-black">{{ topic.name }}</span>
+            </label>
+          </div>
+          {% endfor %}
+          {% endfor %}
+        </div>
+      </div>
     </div>
-    <div class="collapse-content space-y-4 peer-checked:bg-primary peer-checked:text-primary-content py-4">
-      <div class="flex flex-col gap-2">
-        <!-- 5 stars -->
-        <div class="flex items-center">
-          <input
-            type="checkbox"
-            id="rating-5"
-            name="filter_rating"
-            value="5"
-            class="checkbox checkbox-sm"
-            hx-get="{% url 'list_assistants' %}"
-            hx-target="#assistants-list"
-            hx-trigger="change"
-            hx-push-url="true"
-            hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']"
-          />
-          <label for="rating-5" class="ml-3 flex items-center gap-1">
-            {% for star in "12345" %}
-              <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-              </svg>
-            {% endfor %}
-            <span class="text-sm ml-2">({{ rating_counts.5 }})</span>
-          </label>
-        </div>
 
-        <!-- 4 stars -->
-        <div class="flex items-center">
-          <input
-            type="checkbox"
-            id="rating-4"
-            name="filter_rating" 
-            value="4"
-            class="checkbox checkbox-sm"
-            hx-get="{% url 'list_assistants' %}"
-            hx-target="#assistants-list"
-            hx-trigger="change"
-            hx-push-url="true"
-            hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']"
-          />
-          <label for="rating-4" class="ml-3 flex items-center gap-1">
-            {% for star in "1234" %}
-              <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-              </svg>
-            {% endfor %}
-            <svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-            </svg>
-            <span class="text-sm ml-2">({{ rating_counts.4 }})</span>
+    <!-- Rating Dropdown -->
+    <h3 class="font-semibold text-lg mb-2">Rating</h3>
+    <div class="dropdown w-full mb-4">
+      <label tabindex="0"
+        class="btn btn-block border-gray-300 border justify-between bg-white text-black hover:bg-gray-100 rounded-lg">
+        Select a Rating
+        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </label>
+      <div tabindex="0" class="dropdown-content z-[1] w-full p-4 shadow-2xl bg-white rounded-lg mt-2">
+        <div class="space-y-2">
+          {% for i in "54321"|make_list %}
+          <label class="flex items-center space-x-2 hover:bg-gray-100 rounded-lg p-2 cursor-pointer">
+            <input type="checkbox" id="rating-{{ i }}" name="filter_rating" value="{{ i }}" class="checkbox checkbox-sm"
+              hx-get="{% url 'list_assistants' %}" hx-target="#assistants-list" hx-trigger="change" hx-push-url="true"
+              hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']" />
+            <div class="flex items-center gap-1">
+              {% for star in "12345"|make_list %}
+              {% if star|add:"0" <= i|add:"0" %} <svg class="w-5 h-5 text-yellow-400" fill="currentColor"
+                viewBox="0 0 20 20">
+                <path
+                  d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                {% else %}
+                <svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                {% endif %}
+                {% endfor %}
+                <span class="text-sm ml-2">({{ i }})</span>
+            </div>
           </label>
+          {% endfor %}
         </div>
-
-        <!-- 3 stars -->
-        <div class="flex items-center">
-          <input
-            type="checkbox"
-            id="rating-3"
-            name="filter_rating"
-            value="3"
-            class="checkbox checkbox-sm"
-            hx-get="{% url 'list_assistants' %}"
-            hx-target="#assistants-list"
-            hx-trigger="change"
-            hx-push-url="true"
-            hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']"
-          />
-          <label for="rating-3" class="ml-3 flex items-center gap-1">
-            {% for star in "123" %}
-              <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-              </svg>
+      </div>
+    </div>
+    
+    <!-- Sort dropdown -->
+    <div class="block sm:hidden">
+      <h3 class="font-semibold text-lg mb-2">Sort</h3>
+      <div class="dropdown w-full" id="sort-dropdown">
+        <label tabindex="0" class="btn btn-block border-gray-300 border justify-between bg-white text-black hover:bg-gray-100 rounded-lg">
+          Sort By
+          <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </label>
+        <div tabindex="0" class="dropdown-content z-[1] w-full p-4 shadow-2xl bg-white rounded-lg mt-2">
+          <div class="space-y-2">
+            {% for value, label in sorting_options.items %}
+            <label class="label cursor-pointer justify-start gap-x-2 hover:bg-gray-100 rounded-lg px-2">
+              <input
+                type="radio"
+                name="sort" 
+                value="{{ label }}"
+                class="radio radio-sm"
+                {% if label == current_sort %}checked{% endif %}
+                hx-get="{% url 'list_assistants' %}"
+                hx-push-url="true"
+                hx-target="#assistants-list"
+                hx-trigger="change"
+                hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort'],[name='created_by_me']"
+              />
+              <span class="label-text text-black">{{ label }}</span>
+            </label>
             {% endfor %}
-            {% for star in "12" %}
-              <svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-              </svg>
-            {% endfor %}
-            <span class="text-sm ml-2">({{ rating_counts.3 }})</span>
-          </label>
-        </div>
-
-        <!-- 2 stars -->
-        <div class="flex items-center">
-          <input
-            type="checkbox"
-            id="rating-2"
-            name="filter_rating"
-            value="2"
-            class="checkbox checkbox-sm"
-            hx-get="{% url 'list_assistants' %}"
-            hx-target="#assistants-list"
-            hx-trigger="change"
-            hx-push-url="true"
-            hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']"
-          />
-          <label for="rating-2" class="ml-3 flex items-center gap-1">
-            {% for star in "12" %}
-              <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-              </svg>
-            {% endfor %}
-            {% for star in "123" %}
-              <svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-              </svg>
-            {% endfor %}
-            <span class="text-sm ml-2">({{ rating_counts.2 }})</span>
-          </label>
-        </div>
-
-        <!-- 1 star -->
-        <div class="flex items-center">
-          <input
-            type="checkbox"
-            id="rating-1"
-            name="filter_rating"
-            value="1"
-            class="checkbox checkbox-sm"
-            hx-get="{% url 'list_assistants' %}"
-            hx-target="#assistants-list"
-            hx-trigger="change"
-            hx-push-url="true"
-            hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']"
-          />
-          <label for="rating-1" class="ml-3 flex items-center gap-1">
-            <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-            </svg>
-            {% for star in "1234" %}
-              <svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-              </svg>
-            {% endfor %}
-            <span class="text-sm ml-2">({{ rating_counts.1 }})</span>
-          </label>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</form>
+</div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function () {
     // Function to update visible topics based on selected subjects
     function updateTopics() {
       const selectedSubjects = Array.from(document.querySelectorAll('input[name="subject"]:checked'))
         .map(checkbox => checkbox.value);
-      
+
       const topicItems = document.querySelectorAll('.topic-item');
-      
+
       topicItems.forEach(item => {
         if (selectedSubjects.length === 0) {
           // Show all topics if no subjects are selected
-          item.style.display = 'flex';
+          item.style.display = 'block';
         } else {
           // Show only topics that belong to selected subjects
           const topicSubject = item.dataset.subject;
-          item.style.display = selectedSubjects.includes(topicSubject) ? 'flex' : 'none';
-          
+          item.style.display = selectedSubjects.includes(topicSubject) ? 'block' : 'none';
+
           // Uncheck hidden topics
           if (!selectedSubjects.includes(topicSubject)) {
             const topicCheckbox = item.querySelector('input[type="checkbox"]');
@@ -290,22 +211,22 @@
   function filterSubjects() {
     const searchTerm = document.getElementById('subject-search').value.toLowerCase();
     const subjects = document.querySelectorAll('.subject-item');
-    
+
     subjects.forEach(subject => {
       const label = subject.querySelector('label').textContent.toLowerCase();
-      subject.style.display = label.includes(searchTerm) ? 'flex' : 'none';
+      subject.style.display = label.includes(searchTerm) ? 'block' : 'none';
     });
   }
 
   function filterTopics() {
     const searchTerm = document.getElementById('topic-search').value.toLowerCase();
     const topics = document.querySelectorAll('.topic-item');
-    
+
     topics.forEach(topic => {
       if (topic.style.display !== 'none') { // Only search through currently visible topics
         const label = topic.querySelector('label').textContent.toLowerCase();
-        topic.style.display = label.includes(searchTerm) ? 'flex' : 'none';
+        topic.style.display = label.includes(searchTerm) ? 'block' : 'none';
       }
     });
   }
-</script> 
+</script>

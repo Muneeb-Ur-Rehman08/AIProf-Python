@@ -272,41 +272,22 @@ def list_assistants(request):
     # Sorting Options - Map labels to values
     sorting_options = {
         'newest_first': {
-            'label': 'Newest First',
+            'label': 'Recently Created',
             'value': '-created_at'
         },
-        'oldest_first': {
-            'label': 'Oldest First',
-            'value': 'created_at'
-        },
         'highest_interactions': {
-            'label': 'Highest Interactions',
+            'label': 'Most Popular',
             'value': '-interactions'
         },
-        'lowest_interactions': {
-            'label': 'Lowest Interactions',
-            'value': 'interactions'
-        },
         'most_reviews': {
-            'label': 'Most Reviews',
-            'value': '-total_reviews'
-        },
-        'least_reviews': {
-            'label': 'Least Reviews',
-            'value': 'total_reviews'
-        },
-        'name_asc': {
-            'label': 'Name (A-Z)',
-            'value': 'name'
-        },
-        'name_desc': {
-            'label': 'Name (Z-A)',
-            'value': '-name'
+            'label': 'Highly Rated',
+            'value': '-average_rating'
         }
+        
     }
     
     # Get sort parameter from request, default to 'Newest First'
-    sort_label = request.GET.get('sort', 'Newest First')
+    sort_label = request.GET.get('sort', 'Recently Created')
     sort_value = next(
         (opt['value'] for opt in sorting_options.values() if opt['label'] == sort_label),
         '-created_at'
@@ -317,27 +298,26 @@ def list_assistants(request):
     
     # Get rating counts in a single query
     rating_counts = (
-        AssistantRating.objects
-        .values('rating')
-        .annotate(count=Count('id'))
-        .order_by('-rating')
+        Assistant.objects
+        .values('average_rating')
+        .order_by('-average_rating')
     )
     
     # Format rating counts
     formatted_rating_counts = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
     for rating in rating_counts:
-        if rating['rating'] is not None:
-            rating_value = float(rating['rating'])
+        if rating['average_rating'] is not None:
+            rating_value = float(rating['average_rating'])
             if rating_value >= 4.8:
-                formatted_rating_counts[5] += rating['count']
+                formatted_rating_counts[5] += 1
             elif 4.0 <= rating_value < 4.8:
-                formatted_rating_counts[4] += rating['count']
+                formatted_rating_counts[4] += 1
             elif 3.0 <= rating_value < 4.0:
-                formatted_rating_counts[3] += rating['count']
+                formatted_rating_counts[3] += 1
             elif 2.0 <= rating_value < 3.0:
-                formatted_rating_counts[2] += rating['count']
+                formatted_rating_counts[2] += 1
             elif 1.0 <= rating_value < 2.0:
-                formatted_rating_counts[1] += rating['count']
+                formatted_rating_counts[1] += 1
     
     # Prepare context
     context = {
