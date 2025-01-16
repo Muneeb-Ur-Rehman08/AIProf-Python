@@ -1,20 +1,30 @@
-from typing import List, Dict, Optional, Any, Generator
+from typing import List, Dict, Optional, Any, Generator, Annotated, TypedDict
 from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 from langchain_core.prompts import (
     ChatPromptTemplate, 
     HumanMessagePromptTemplate, 
-    SystemMessagePromptTemplate, 
-    AIMessagePromptTemplate,
-    PromptTemplate
+    SystemMessagePromptTemplate
 )
+from langgraph.graph import StateGraph, END
+from langgraph.prebuilt.tool_executor import ToolExecutor
+from langchain_core.tools import tool, StructuredTool
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph.message import add_messages
+from langchain_core.messages import BaseMessage
+from langchain_core.messages import HumanMessage, AIMessage, AnyMessage
+from typing import Union
 
 import logging
 import uuid
+import re
 from django.db.models import Q
 import json
+from typing import TypeVar, Sequence
+from datetime import datetime, timezone
+from functools import partial
+from pydantic import BaseModel, Field
 
 from django.contrib.auth.models import User
-
 from app.modals.chat import get_llm
 from .models import Conversation
 from users.models import Assistant, DocumentChunk
@@ -23,73 +33,50 @@ from users.models import Assistant, DocumentChunk
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+class Message(BaseMessage):
+    role: str
+    content: str
+
+    @property
+    def type(self) -> str:
+        return self.role
+
+    def to_dict(self) -> dict:
+        return {"role": self.role, "content": self.content}
+
+class ChatState(BaseModel):
+    """Pydantic model for tracking conversation state."""
+    messages: Annotated[list[AnyMessage], add_messages]
+    user_id: str
+    assistant_id: str
+    knowledge_level: Optional[str] = None
+    context: Optional[str] = None
+    next_step: str = "get_context"
+    conversation_id: str
+    memory_id: Optional[str] = None
+    assistant_config: Dict[str, Any]
+    chat_history: Optional[List[Dict[str, Any]]] = None
+    chat_summary: Optional[str] = None
+
+    class Config:
+        arbitrary_types_allowed = True
+
 class ChatModule:
     def __init__(self):
-        """Initialize the chat module with necessary components."""
         self.llm = get_llm()
-        self.user_knowledge_levels = {}  # Store user knowledge assessment
-    
+        self.user_knowledge_levels = {}
+        self.memory_saver = MemorySaver()
+        self.workflow = self._create_workflow()
 
-    def _create_knowledge_assessment_prompt(self, assistant_config) -> ChatPromptTemplate:
-        """Create an interactive and welcoming prompt for assessing user's knowledge level."""
-        subject = assistant_config.get('subject', 'General Learning')
-        topic = assistant_config.get('topic', 'Comprehensive Understanding')
-        teacher_instructions = assistant_config.get('teacher_instructions', 'Interactive, adaptive knowledge assessment')
-        
-        system_message = f"""You are a friendly and supportive AI educator specializing in {subject} education.
-
-        Interaction Guidelines:
-        - Create a warm, encouraging learning environment
-        - Ask diagnostic questions that reveal knowledge depth
-        - Use conversational, approachable language
-        - Adapt questioning based on initial responses
-        - Provide constructive, motivational feedback
-
-        Assessment Goals:
-        - Understand the learner's current knowledge level
-        - Identify strengths and areas for growth
-        - Personalize the learning experience
-        - Build learner confidence
-
-        Focus Areas:
-        - Subject: {subject}
-        - Topic: {topic}
-        - Pedagogical Approach: {teacher_instructions}
-
-        Output Instructions:
-        Respond with a JSON object containing:
-        {{
-            "welcome_message": "Personalized greeting that makes the user feel comfortable",
-            "diagnostic_questions": [
-                {{
-                    "question": "Conversational, engaging question",
-                    "difficulty": "basic/intermediate/advanced",
-                    "learning_goal": "What this question helps assess"
-                }}
-            ]
-        }}
-        """
-        
-        human_message = f"""Let's explore your current understanding of {topic} in {subject}.
-
-        I'll ask you a few friendly questions to understand your knowledge level. 
-        There are no right or wrong answers - this is just to help me understand 
-        how I can best support your learning journey.
-
-        Please answer the following questions as openly and honestly as you can."""
-        
-        return ChatPromptTemplate.from_messages([
-            SystemMessagePromptTemplate.from_template(system_message),
-            HumanMessagePromptTemplate.from_template(human_message)
-        ])
-
-
-    def _create_contextual_rag_prompt(self, assistant_config, has_chat_history) -> ChatPromptTemplate:
+    def _create_contextual_rag_prompt(self, assistant_config: Dict[str, Any]) -> ChatPromptTemplate:
         """Create a context-aware, adaptive prompt that incorporates teacher instructions, Mermaid diagrams, previous interactions, provided context, and supports image or file-based questions and solutions."""
-
+   
         subject = assistant_config.get('subject', '')
         topic = assistant_config.get('topic', '')
         prompt = assistant_config.get('prompt', '')
+        if 'def ' in prompt or 'class ' in prompt or '{' in prompt:  # Simplified check for code presence
+            # Wrap in triple backticks and escape any curly braces
+            prompt = f"```{prompt.replace('{', '{{').replace('}', '}}')}```"
         teacher_instructions = assistant_config.get('teacher_instructions', '')
         prompt_instructions = assistant_config.get('prompt_instructions', '')
         user_name = assistant_config.get('user_name', '')
@@ -109,8 +96,8 @@ class ChatModule:
 
         ## Teaching Strategy (Guided by Teacher Instructions):
         - Use pedagogical approaches as defined by the teacher instructions provided.
-        - Tailor explanations and exercises to suit the user’s understanding and goals.
-        - Focus on engaging and effective teaching methods as per the teacher’s approach.
+        - Tailor explanations and exercises to suit the user's understanding and goals.
+        - Focus on engaging and effective teaching methods as per the teacher's approach.
 
         ## Diagram Usage (Mermaid):
         - If applicable, use **Mermaid diagrams** for visualizing non-textual concepts like processes or structures.
@@ -121,30 +108,32 @@ class ChatModule:
         1. **Analyze the user's query** and then explain using the provided **context**(but do not include the inner context in final response): {{context}}.
             - Explain the query thoroughly and ensure clarity first.
             - If the user submits a question via an image or file, process the image content and provide a relevant explanation based on it.
-            - Adapt your explanation based on the user’s knowledge level (beginner, intermediate, advanced).
+            - Adapt your explanation based on the user's knowledge level (beginner, intermediate, advanced).
             - **Do not use provided context directly in the final response**, but use provided context to tailor future responses.
         2. **Provide tailored exercises**:
-            - After confirming the user’s understanding or when the user changes the query, provide exercises suited to their level:
+            - After confirming the user's understanding or when the user changes the query, provide exercises suited to their level:
                 - Beginners: Focus on simple concept reinforcement.
                 - Intermediate users: Offer scenario-based exercises.
                 - Advanced users: Present real-world problems or case studies.
             - Instruct the user that they can complete the exercise by submitting text, an image, or a file (only when exercise is given to the user, do **not** on every response), **do not use these instructs in final response**.
         3. **Accept user solutions or questions**:
+            - **Accept solution in english, programming language, math, code etc.**
             - Allow the user to upload an image or file as part of their question or solution.
             - If the user submits a question in an image format, analyze the image and provide an explanation based on the image content.
             - After submitting, analyze the uploaded content (text, image, or file) and provide feedback or explanation.
         4. **Adapt to user history**:
-            - Use previous interactions (if available) to assess the user’s knowledge level and learning preferences (Human query and Assistant responses accordingly).
+            - Use previous interactions (if available) to assess the user's knowledge level and learning preferences (Human query and Assistant responses accordingly).
             - **Do not use chat history directly in the final response**, but use the chat history to tailor future responses.
-            - If no history is available, ask a brief question to assess the user’s understanding before starting the explanation.
+            - If no history is available, ask a brief question to assess the user's understanding before starting the explanation.
 
         
 
         ## Contextual Inputs:
         - **Provided Context**: {{context}} (strictly use this context to generate responses. If the query is unrelated to the context, please respond with a polite message stating that you lack knowledge about the query and **do not use context in the final response**).
-        - **Previous Interactions**: {{chat_history}} (to assess learning progress and knowledge level, but do **not** include or reference the chat history in final response).
+        - **Previous Interactions**: {{chat_history}} (Use the chat history to remember the interactions, but **do not** use it directly in the final response. Use it to generate response if user's query is related to chat history e.g if user ask about any query that related to previous question, then use chat history to generate response).
+        - **Previous Chat Summary**: {{chat_summary}} (**Learning Progress**: Assess the user's learning progress and knowledge level based on previous interactions. **Main Points**: Tailor the response to the user's understanding and goals.).
         - **Prompt Instructions**: {prompt_instructions} (use these to guide the response generation, but do **not** include them in the final answer).
-
+        
         Focus on generating a pedagogically sound, adaptive response tailored to the user's current query, learning history, and provided context without including the inner context in the final response. Allow the user to submit their question or solution as text, image, or file.
         """
 
@@ -158,190 +147,40 @@ class ChatModule:
             HumanMessagePromptTemplate.from_template(human_message)
         ])
 
-
-    def analyze_chat_history(self, assistant_id: str, user_id: str) -> Dict[str, Any]:
-        """Analyze chat history to generate learning insights."""
+    def get_relevant_context(self, state: ChatState) -> ChatState:
+        """Retrieve relevant context from DocumentChunk model with improved error handling."""
         try:
-            # Get chat history
-            chat_history = self.get_chat_history(
-                assistant_id=assistant_id,
-                user_id=user_id,
-                
-                limit=10  # Analyze last 10 interactions
+            if not state.messages:
+                state.context = "No message history available."
+                return state
+
+            results = DocumentChunk.similarity_search(
+                query=state.messages[-1].content, 
+                k=3, 
+                assistant_id=state.assistant_id
             )
             
-            if not chat_history:
-                return {
-                    "error": "No chat history found for analysis"
-                }
-
-            # Format chat history
-            chat_history_str = "\n".join([
-                f"Human: {chat['question']}\nAssistant: {chat['answer']}"
-                for chat in chat_history
+            # Ensure results is a list of dictionaries with the expected structure
+            relevant_chunks_str = "\n".join([
+                f"Content: {chunk.content}"
+                for chunk, similarity_score in results
             ])
-
-            # System message (instructions to the assistant)
-            system_message = """
-            You are an intelligent assistant tasked with summarizing chat histories.
-            Your summary should cover the following points:
-            1. The topics discussed between the Human and Assistant.
-            2. The current knowledge level of the Human based on their questions and conversations.
-            3. Any exercises or hands-on activities the Human has completed or discussed.
-            4. How much progress the Human has made in terms of understanding or learning the topics.
-            Be sure to clearly address each of these points in your summary.
-            """
-
-            # Human message (actual chat history)
-            human_message = """
-            Chat history:
-            {chat_history}
-            """
-
-            # Create ChatPromptTemplate with system and human messages
-            chat_prompt_template = ChatPromptTemplate.from_messages([
-                SystemMessagePromptTemplate.from_template(system_message),
-                HumanMessagePromptTemplate.from_template(human_message)
-            ])
-
-            chain = self.llm | chat_prompt_template
-
-
-            # Generate the prompt
-            summary_prompt = chain.invoke(chat_history_str)
-            return summary_prompt
-
-        except Exception as e:
-            logger.error(f"Error analyzing chat history: {e}")
-            return {
-                "error": f"Analysis failed: {str(e)}"
-            }
-
-    def assess_user_knowledge(self, assistant_config: dict, user_assistant_key: str) -> Dict[str, Any]:
-        try:
-            # Create knowledge assessment prompt
-            assessment_prompt = self._create_knowledge_assessment_prompt(assistant_config)
-            
-            # Create assessment chain
-            assessment_chain = (
-                assessment_prompt
-                | self.llm
-                | StrOutputParser()
-            )
-
-            # Generate assessment questions
-            assessment_result = assessment_chain.invoke({
-                "subject": assistant_config.get('subject', 'General Learning'),
-                "topic": assistant_config.get('topic', 'Comprehensive Understanding'),
-                "teacher_instructions": assistant_config.get('teacher_instructions', 'Interactive assessment')
-            })
-            
-            # Enhanced JSON parsing with error handling
-            try:
-                parsed_result = json.loads(assessment_result)
-                diagnostic_questions = parsed_result.get('questions', [])
-                assessment_context = parsed_result.get('assessment_context', {})
-            except json.JSONDecodeError:
-                logger.error(f"Failed to parse assessment result: {assessment_result}")
-                diagnostic_questions = []
-                assessment_context = {}
-
-            # Store assessment with more comprehensive information
-            self.user_knowledge_levels[user_assistant_key] = {
-                'diagnostic_questions': diagnostic_questions,
-                'knowledge_level': 'unassessed',
-                'assistant_id': assistant_config.get('id'),
-                'assessment_context': assessment_context
-            }
-
-            return {
-                'diagnostic_questions': diagnostic_questions,
-                'assessment_context': assessment_context,
-                'instructions': 'Please answer these diagnostic questions to help us understand your current knowledge level.'
-            }
-
-        except Exception as e:
-            logger.error(f"Knowledge assessment error: {e}")
-            return {'error': 'Assessment failed', 'details': str(e)}
-
-
-    def get_relevant_context(self, query: str, assistant_id: str, k: int = 3, api_key: Optional[str] = None) -> str:
-        """Retrieve relevant context from the DocumentChunk model based on similarity search."""
-        try:
-            # Step 1: Call the similarity_search class method from DocumentChunk
-            # doc_id = PDFDocument.objects.filter(assistant_id=assistant_id)
-            # chunks = DocumentChunk.objects.filter(document=doc_id.doc_id)
-            # logger.info(f"Length of chunks: {len(chunks)}")
-            results = DocumentChunk.similarity_search(query=query, k=k, api_key=api_key, assistant_id=assistant_id)
-
-            # logger.info(f"Relevent result: {[x for x in results.document]}")
-            
-            # Step 2: Filter results by assistant ID (assistant_id)
-            # relevant_chunks = [
-            #     chunk for chunk, _ in results
-            #     if chunk.document == doc_id
-            # ]
-            relevant_chunks = [
-                    {
-                        'chunk_id': chunk.id,
-                        'page_number': chunk.page_number,
-                        'document': chunk.document,
-                        'chunk_content': chunk.content,
-                        'similarity_score': similarity_score
-                    }
-                    for chunk, similarity_score in results
-                ]
-            
-            # Step 3: Extract and combine the content of the top-k relevant chunks
-            context = "\n".join([chunk['chunk_content'] for chunk in relevant_chunks])
-            
-            return context if context else "No relevant context found."
-        
-        except Exception as e:
-            logger.error(f"Error retrieving relevant context: {e}")
-            return "Error retrieving context."
-
-    def save_chat_history(self, user_id: str, assistant_id: str, 
-                         prompt: str, content: str, 
-                         conversation_id: Optional[uuid.UUID] = None) -> None:
-        """Save chat interaction to Django model."""
-        try:
-            
-            # Get the related models instances
-            user = User.objects.get(id=user_id)
-            assistant = Assistant.objects.get(id=assistant_id)
-
-            existing_conversation = Conversation.objects.filter(
-                Q(assistant_id=assistant) & Q(user_id=user)
-            ).first()
-
-            if existing_conversation:
-                # Use existing conversation
-                conversation_id = existing_conversation.conversation_id
                 
+            state.context = relevant_chunks_str if relevant_chunks_str else "No relevant context found."
             
-            # If no conversation_id provided, create a new one
-            else:
-                conversation_id = uuid.uuid4()
             
-            # Create new conversation entry
-            Conversation.objects.create(
-                user_id=user,
-                assistant_id=assistant,
-                prompt=prompt,
-                content=content,
-                conversation_id=conversation_id
-            )
-            
-            logger.info(f"Saved chat history for conversation {conversation_id}")
         except Exception as e:
-            logger.error(f"Error saving chat history: {e}")
-            raise
+            logger.error(f"Error retrieving relevant context: {str(e)}", exc_info=True)
+            state.context = f"Error retrieving context: {str(e)}"
+            
+        return state
 
-    def get_chat_history(self, assistant_id: str, user_id: str, 
-                        limit: int=1) -> List[Dict]:
+    def get_chat_history(self, state: ChatState, limit: int = 10) -> Dict[str, Any]:
         """Retrieve chat history from Django model."""
         try:
+            user_id = state.user_id
+            assistant_id = state.assistant_id
+
             # Base query
             existing_conversation = Conversation.objects.filter(
                 Q(assistant_id=assistant_id) & Q(user_id=user_id)
@@ -354,8 +193,9 @@ class ChatModule:
                 # Order by creation date and limit results
                 conversations = query.order_by('-created_at')[:limit]
 
-                # Convert query result to list of dicts for consistent output
-                return [
+                # Convert query result to a dictionary with 'chat_history' key
+                return {
+                    'chat_history': [
                     {
                         'question': conv.prompt,
                         'answer': conv.content,
@@ -364,152 +204,268 @@ class ChatModule:
                     }
                     for conv in conversations
                 ]
+                }
             else:
-                # Return an empty list if no conversation is found
-                return []
+                # Return an empty dictionary if no conversation is found
+                return {'chat_history': []}
         except Exception as e:
             logger.error(f"Error retrieving chat history: {e}")
-            return []
+            return {'chat_history': []}
 
-    def process_message(self, prompt: str, assistant_id: str, 
-                       user_id: str, assistant_config: dict,
-                       conversation_id: Optional[uuid.UUID] = None) -> Generator[Any, Any, Any]:
-        """Enhanced message processing with two-chain approach."""
+    def analyze_chat_history(self, state: ChatState) -> ChatState:
+        """Analyze chat history to generate learning insights."""
         try:
-            # Create a unique key for user-assistant knowledge tracking
-            user_assistant_key = f"{user_id}_{assistant_id}"
-
-            # Check if user's knowledge level is already assessed for this specific assistant
-            user_knowledge = self.user_knowledge_levels.get(user_assistant_key, {})
-
-
             # Get chat history
-            chat_history = self.get_chat_history(
-                assistant_id, 
-                user_id, 
-                
-            )
-            if chat_history:
-                has_chat_history = True
-            else:
-                has_chat_history = False
+            chat_history = self.get_chat_history(state, limit=10)
+            
+            if not chat_history or 'chat_history' not in chat_history:
+                state.chat_history = "No chat history found for analysis"
+                return state
+
+            # Extract the actual chat history entries
+            chat_history_entries = chat_history['chat_history']
+
+            # Format chat history
             chat_history_str = "\n".join([
                 f"Human: {chat['question']}\nAssistant: {chat['answer']}"
-                for chat in chat_history
+                for chat in chat_history_entries
             ])
 
-            analysis_result = self.analyze_chat_history(
-                    assistant_id=assistant_id,
-                    user_id=user_id
-                )
-            logger.info(f"Chat history summary: {analysis_result}")
-            # If no prior assessment or knowledge level is unassessed
-            if (not user_knowledge or 
-                user_knowledge.get('knowledge_level') == 'unassessed' or 
-                user_knowledge.get('assistant_id') != assistant_id):
-                
-                # Conduct knowledge assessment for this specific assistant
-                assessment_result = self.assess_user_knowledge(assistant_config, user_assistant_key)
-                logger.info(f"The result of assessment: {assessment_result}")
-                
-                # If assessment generated questions, return them
-                if 'diagnostic_questions' in assessment_result:
-                    return json.dumps({
-                        'type': 'knowledge_assessment',
-                        'data': assessment_result
-                    })
+            # System message (instructions to the assistant)
+            system_message = """
+            You are an intelligent assistant tasked with summarizing chat histories.
+            Your summary should cover the following points:
+            1. The topics discussed between the Human and Assistant.
+            2. The current knowledge level of the Human based on their questions and conversations.
+            3. Any exercises or hands-on activities the Human has completed or discussed.
+            4. How much progress the Human has made in terms of understanding or learning the topics.
+            Be sure to clearly address each of these points in your summary.
+            Summary should be in plain text.
+            """
 
-            # Retrieve context
-            context = self.get_relevant_context(prompt, assistant_id)
-            
-            # Create contextual RAG prompt
-            rag_prompt = self._create_contextual_rag_prompt(assistant_config, has_chat_history)
-            
-            # Prepare input for RAG chain
-            def prepare_rag_input(input_prompt):
-                return {
-                    "context": context,
-                    "question": input_prompt,
-                    "chat_history": analysis_result,
-                    "subject": assistant_config.get("subject", ""),
-                    "instructions": assistant_config.get("teacher_instructions", ""),
-                    "knowledge_level": user_knowledge.get('knowledge_level', 'basic'),
-                    "diagnostic_questions": json.dumps(user_knowledge.get('diagnostic_questions', [])),
-                    "assessment_context": json.dumps(user_knowledge.get('assessment_context', {}))
-                }
+            # Human message (actual chat history)
+            human_message = """{chat_history}"""
 
+            # Create ChatPromptTemplate with system and human messages
+            chat_prompt_template = ChatPromptTemplate.from_messages([
+                SystemMessagePromptTemplate.from_template(system_message),
+                HumanMessagePromptTemplate.from_template(human_message)
+            ])
+
+            chain = self.llm | chat_prompt_template
+            response = chain.invoke(chat_history_str)
+
+            # Generate the prompt
+            state.chat_summary = response.messages[-1].content
+            return state
+
+        except Exception as e:
+            logger.error(f"Error analyzing chat history: {e}")
+            state.chat_history = f"Analysis failed: {str(e)}"
+            return state
+
+    def assess_knowledge(self, state: ChatState) -> ChatState:
+        """Assess user's knowledge level with improved error handling."""
+        try:
+            user_assistant_key = f"{state.user_id}_{state.assistant_id}"
+            
+            if user_assistant_key not in self.user_knowledge_levels:
+                if not state.messages:
+                    state.knowledge_level = 'beginner'
+                    return state
+
+                assessment_prompt = ChatPromptTemplate.from_messages([
+                    SystemMessagePromptTemplate.from_template(
+                        "Based on the user's message, assess their knowledge level as either 'beginner', 'intermediate', or 'advanced'. Consider technical vocabulary, complexity of questions, and depth of understanding shown."
+                    ),
+                    HumanMessagePromptTemplate.from_template("{input}")
+                ])
+                
+                user_message = state.messages[-1].content
+                chain = assessment_prompt | self.llm | StrOutputParser()
+                knowledge_level = chain.invoke({"input": user_message}).strip().lower()
+                
+                # Validate knowledge level
+                valid_levels = {'beginner', 'intermediate', 'advanced'}
+                if knowledge_level not in valid_levels:
+                    knowledge_level = 'beginner'
+                
+                self.user_knowledge_levels[user_assistant_key] = knowledge_level
+            
+            state.knowledge_level = self.user_knowledge_levels[user_assistant_key]
+            
+        except Exception as e:
+            logger.error(f"Error in knowledge assessment: {str(e)}", exc_info=True)
+            state.knowledge_level = 'beginner'
+            
+        return state
+
+    def generate_response(self, state: ChatState) -> ChatState:
+        """Generate response with improved error handling and retry logic."""
+        max_retries = 3
+        retry_count = 0
+        
+        prompt_input = {
+            "subject": state.assistant_config['subject'],
+            "topic": state.assistant_config['topic'],
+            "prompt": f"```{state.messages[-1]}```" if state.messages else "No message available",
+            "teacher_instructions": state.assistant_config['teacher_instructions'],
+            "prompt_instructions": state.assistant_config['prompt_instructions'],
+            "user_name": state.assistant_config['user_name'],
+            "context": state.context or "No context available",
+            "chat_history": state.chat_history or "No chat history available",
+            "chat_summary": state.chat_summary or "No chat summary available",
+            "knowledge_level": state.knowledge_level or "No knowledge level available"
+        }
+        
+        try:
             # Create RAG chain
-            rag_chain = (
-                prepare_rag_input
-                | rag_prompt
-                | self.llm
-                | StrOutputParser()
-            )
-
+            rag_prompt = self._create_contextual_rag_prompt(state.assistant_config)
+            
+            rag_chain = rag_prompt | self.llm | StrOutputParser()
 
             # Generate response
-            response = rag_chain.stream(prompt)
-
-            full_response = ""
-            for chunk in response:
-                # logger.info(f"chunks from response: {chunk}")
-                full_response += chunk
-                yield chunk
-
-
-            # Save interaction
-            self.save_chat_history(
-                user_id=user_id,
-                assistant_id=assistant_id,
-                prompt=prompt,
-                content=full_response,
-                conversation_id=conversation_id
-            )
-
-            # return full_response
-
-        except Exception as e:
-            logger.error(f"Error processing message: {e}")
-            yield "I apologize, but I encountered an error processing your message. Please try again."
-        
-
-    def clear_chat_history(self, assistant_id: str, user_id: str, 
-                          conversation_id: Optional[uuid.UUID] = None) -> bool:
-        """Clear chat history for a specific assistant and user."""
-        try:
-            query = Conversation.objects.filter(
-                assistant_id=assistant_id,
-                user_id=user_id
-            )
+            response = rag_chain.invoke(prompt_input)
+            logger.info(f"\n\nresponse from generate_response is :{response}\n\n")
             
-            if conversation_id:
-                query = query.filter(conversation_id=conversation_id)
+            
+            if response and isinstance(response, str):
+                state.messages.append(AIMessage(content=response))
+                logger.debug(f"Appended AIMessage: {state.messages[-1]}")
+            else:
+                logger.error("Invalid response format received")
+                state.messages.append(AIMessage(content="I apologize, but I couldn't generate a proper response."))
                 
-            query.delete()
-            return True
         except Exception as e:
-            logger.error(f"Error clearing chat history: {e}")
-            return False
+            logger.debug(f"State after generate_response: {state.messages}")
+            logger.error(f"Error generating response (attempt {retry_count + 1}): {str(e)}", exc_info=True)
             
-    def get_conversation_list(self, user_id: str) -> List[Dict]:
-        """Get list of unique conversations for a user."""
-        try:
-            conversations = Conversation.objects.filter(
-                user_id=user_id
-            ).values(
-                'conversation_id',
-                'created_at'
-            ).distinct().order_by('-created_at')
-            
-            return [
-                {
-                    'conversation_id': str(conv['conversation_id']),
-                    'created_at': conv['created_at']
-                }
-                for conv in conversations
-            ]
-        except Exception as e:
-            logger.error(f"Error retrieving conversation list: {e}")
-            return []
-        
+        return state
 
+    def save_history(self, state: ChatState) -> ChatState:
+        """Save chat history with improved error handling and validation."""
+        try:
+            user = User.objects.get(id=state.user_id)
+            assistant = Assistant.objects.get(id=state.assistant_id)
+            
+            if len(state.messages) >= 2:
+                user_message = state.messages[-2].content
+                assistant_message = state.messages[-1].content
+            else:
+                user_message = "No user message available"
+                assistant_message = "No assistant message available"
+            
+            # Validate conversation_id
+            if not state.conversation_id:
+                state.conversation_id = uuid.uuid4()
+            
+            Conversation.objects.create(
+                user_id=user,
+                assistant_id=assistant,
+                prompt=user_message,
+                content=assistant_message,
+                conversation_id=state.conversation_id,
+                created_at=datetime.now()
+            )
+            
+        except Exception as e:
+            logger.error(f"Error saving chat history: {str(e)}", exc_info=True)
+            
+        return state
+
+    def _create_workflow(self) -> StateGraph:
+        """Create the conversation workflow graph."""
+        graph_builder = StateGraph(ChatState)
+        
+        # Add nodes
+        graph_builder.add_node("get_context", self.get_relevant_context)
+        graph_builder.add_node("assess_knowledge", self.assess_knowledge)
+        graph_builder.add_node("get_chat_history", self.get_chat_history)
+        graph_builder.add_node("analyze_chat_history", self.analyze_chat_history)
+        graph_builder.add_node("generate_response", self.generate_response)
+        graph_builder.add_node("save_history", self.save_history)
+        
+        # Define edges
+        graph_builder.add_edge("get_context", "assess_knowledge")
+        graph_builder.add_edge("assess_knowledge", "get_chat_history")
+        graph_builder.add_edge("get_chat_history", "analyze_chat_history")
+        graph_builder.add_edge("analyze_chat_history", "generate_response")
+        graph_builder.add_edge("generate_response", "save_history")
+        graph_builder.add_edge("save_history", END)
+        
+        graph_builder.set_entry_point("get_context")
+        
+        return graph_builder.compile(checkpointer=self.memory_saver)
+
+    def process_message(self, prompt: str, assistant_id: str, 
+                       user_id: str, assistant_config: Dict[str, Any] 
+                       ) -> Generator[Any, Any, Any]:
+        """Process a message through the workflow with improved error handling."""
+        try:
+            thread_id = f"{user_id}_{assistant_id}"
+            config = {"configurable": {"thread_id": thread_id, "checkpoint_ns": "default"}}
+
+            existing_conversation = Conversation.objects.filter(
+                Q(assistant_id=assistant_id) & Q(user_id=user_id)
+            ).first()
+
+            conversation_id = str(existing_conversation.conversation_id if existing_conversation 
+                               else uuid.uuid4())
+            
+            # Check if there is already a saved state for this conversation
+            saved_state = self.memory_saver.get_tuple(config)
+            
+            if saved_state:
+                # Convert `saved_state` into `ChatState` if needed
+                saved_state = ChatState(**saved_state.checkpoint)
+                saved_state.messages.append(HumanMessage(content=prompt))
+            else:
+                # Create a new state if no saved state is found
+                saved_state = ChatState(
+                    messages=[HumanMessage(content=prompt)],
+                    user_id=user_id,
+                    assistant_id=assistant_id,
+                    assistant_config=assistant_config,
+                    conversation_id=conversation_id
+                )
+
+            # Run the workflow and process the events
+            events_generator = self.workflow.stream(
+                saved_state,
+                config=config,
+                stream_mode="values"
+            )
+
+            # Keep track of seen messages and final state
+            seen_messages = set()
+            final_state = None
+
+            # Process events
+            for event in events_generator:
+                final_state = event
+                
+                if 'messages' in event:
+                    for message in event['messages']:
+                        if isinstance(message, AIMessage):
+                            message_content = message.content
+                            if message_content not in seen_messages:
+                                seen_messages.add(message_content)
+                                yield message_content
+
+            # Save the updated state after processing
+            if final_state:
+                metadata = {"timestamp": datetime.now(timezone.utc).isoformat()}
+                new_versions = {}
+                
+                # Convert final_state to a regular dictionary
+                final_state_dict = dict(final_state)
+                
+                # Ensure the final_state_dict has an 'id' key
+                if 'id' not in final_state_dict:
+                    final_state_dict['id'] = conversation_id
+                
+                self.memory_saver.put(config, final_state_dict, metadata, new_versions)
+                
+        except Exception as e:
+            logger.error(f"Error processing message: {str(e)}", exc_info=True)
+            yield "I apologize, but I encountered an error processing your message. Please try again."
