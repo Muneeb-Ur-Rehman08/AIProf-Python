@@ -31,7 +31,7 @@ urlpatterns = [
     path('api/create_assistant/', create_assistant, name='create_assistant'),
     path('', index_view, name='index'),
     path('auth/', auth_view, name='auth_view'),
-    path('chat/<str:assistant_id>/', assistant_chat_view, name='assistant_chat'),
+    path('assistant/c/<str:assistant_id>/', assistant_chat_view, name='assistant_chat'),
     path('assistants/', list_assistants, name='list_assistants'),
     # users app route
     path('', include('users.urls')),
@@ -40,6 +40,6 @@ urlpatterns = [
     path('logout/', logout, name='logout'),
     # demo app route
     path('accounts/', include('authentication.urls')),
-    path('assistant_detail/<str:assistant_id>/', assistant_detail, name='assistant_detail'),
+    path('assistant/d/<str:assistant_id>/', assistant_detail, name='assistant_detail'),
 ]
 

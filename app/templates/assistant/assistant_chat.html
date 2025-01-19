@@ -52,10 +52,10 @@
                                                             d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                                                     </svg>
                                                 </button>
-                                                <input type="text" name="prompt" id="prompt-input"
+                                                <textarea name="prompt" id="prompt-input"
                                                     class="flex-1 resize-none border-0 bg-transparent text-white placeholder-gray-400 focus:outline-none mx-2"
                                                     placeholder="Message Assistant..."
-                                                    onkeydown="if (event.key === 'Enter') { event.preventDefault(); sendPayload('{{ assistant.id }}'); }">
+                                                    onkeydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendPayload('{{ assistant.id }}'); }"></textarea>
                                                 <div class="flex items-center gap-2">
                                                     {% if chat_mode %}
                                                     <button type="button"
