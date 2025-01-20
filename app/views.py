@@ -371,13 +371,15 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
         interactions = Conversation.objects.filter(assistant_id=assistant_id).count()
         ratings = AssistantRating.objects.filter(assistant=assistant_id)
         is_creator = user_id == assistant.user_id.id
+        is_logged_in = request.user.id != None and request.user.id != ''
         
         # Return JSON response for GET requests
         return render(request, 'assistant/assistant.html', {
             'assistant': assistant,
             'interactions': interactions,
             'reviews_count': len(ratings),
-            'is_creator': is_creator
+            'is_creator': is_creator,
+            'is_logged_in': is_logged_in
         })
     
     else:  # POST request
@@ -403,6 +405,7 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
             interactions = Conversation.objects.filter(assistant_id=assistant_id).count()
             ratings = AssistantRating.objects.filter(assistant=assistant_id)
             is_creator = user_id == assistant.user_id.id
+            is_logged_in = request.user.id != None and request.user.id != ''
 
             # Return to the same page with updated context
             return render(request, 'assistant/assistant.html', {
@@ -410,6 +413,7 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
                 "interactions": interactions,
                 "reviews": len(ratings),
                 "is_creator": is_creator,
+                "is_logged_in": is_logged_in,
                 "success_message": "Rating updated successfully"
             })
 
@@ -417,5 +421,6 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
             logger.error(f"Error updating rating: {str(e)}")
             return render(request, 'assistant/assistant.html', {
                 "assistant": assistant,
+                "is_logged_in": is_logged_in,
                 "error_message": "Error updating rating"
             })
