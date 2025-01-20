@@ -42,10 +42,12 @@ def assistant_chat_view(request, assistant_id):
     assistant = Assistant.objects.get(id=assistant_id)
     is_creator = request.user.id == assistant.user_id.id
     chat_mode = True  # Set this based on your routing/URL logic
+    assistants = Assistant.objects.filter(user_id=request.user.id)
 
     return render(request, 'assistant/chat_wrapper.html', {
         'assistant': assistant, 
         'is_creator': is_creator, 
-        'chat_mode': chat_mode
+        'chat_mode': chat_mode,
+        'assistants': assistants
     })
 
