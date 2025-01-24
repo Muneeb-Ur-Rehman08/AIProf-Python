@@ -4,13 +4,55 @@
 
 {% if chat_mode %}
     <!-- header -->
-  {% include 'modal/navbar.html' %}
-
+    {% include 'modal/navbar.html' %}
 {% endif %}
-    <div class="flex-grow pb-5">
-        <div class="h-full">
-            <div class="flex h-full w-full">
-            <div class="flex grow flex-col h-full">
+
+<div class="flex-grow pb-5 h-full">
+    <div class="h-full">
+        <div class="flex h-full w-full">
+            {% if chat_mode %}
+            <button class="fixed top-[4.5rem] left-3 z-50 bg-gray-800 hover:bg-gray-700 text-white h-8 w-8 rounded-lg flex items-center justify-center md:hidden" _="on click toggle .hidden on #sidebar 
+                on click toggle .hidden on #sidebar-toggle
+            " id="sidebar-toggle">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                    <path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/>
+                </svg>
+            </button>
+            <!-- New Sidebar -->
+            <div class="hidden md:flex w-64 flex-shrink-0 bg-gray-900 border-r border-gray-800 h-[calc(100vh-75px)]" id="sidebar">
+                <div class="flex flex-col w-full">
+                    <div class="px-4 py-3 border-b border-gray-800 flex justify-between items-center">
+                        <h2 class="text-lg font-semibold text-white">Assistants</h2>
+                        <button class="md:hidden bg-gray-800 hover:bg-gray-700 text-white h-8 w-8 rounded-lg flex items-center justify-center" _="on click toggle .hidden on #sidebar
+                            on click toggle .hidden on #sidebar-toggle
+                        ">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                <path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto">
+                        {% for assistant in assistants %}
+
+                        <a href="{% url 'assistant_chat' assistant.id %}"
+                           class="flex items-center px-4 py-3 hover:bg-gray-800 {% if assistant.id == current_assistant.id %}bg-gray-800{% endif %}">
+                            <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center mr-3">
+                                <span class="text-white text-sm">{{ assistant.name|slice:":2" }}</span>
+                            </div>
+                            <div>
+                                <p class="text-white font-medium">{{ assistant.name }}</p>
+                                <p class="text-gray-400 text-sm">{{ assistant.description|truncatechars:30 }}</p>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <!-- Existing chat content -->
+            <div class="flex grow flex-col h-full" _="on click toggle .hidden on #sidebar 
+                on click toggle .hidden on #sidebar-toggle
+            ">
                 <div class="relative mb-2 flex-shrink-0">
                     <div class="hidden md:flex justify-center py-1">
                         <h2 class="text-lg font-bold tracking-wider">{{ assistant.name | default:"AI Professor" }}</h2>
@@ -52,10 +94,10 @@
                                                             d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                                                     </svg>
                                                 </button>
-                                                <input type="text" name="prompt" id="prompt-input"
+                                                <textarea name="prompt" id="prompt-input"
                                                     class="flex-1 resize-none border-0 bg-transparent text-white placeholder-gray-400 focus:outline-none mx-2"
                                                     placeholder="Message Assistant..."
-                                                    onkeydown="if (event.key === 'Enter') { event.preventDefault(); sendPayload('{{ assistant.id }}'); }">
+                                                    onkeydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendPayload('{{ assistant.id }}'); }"></textarea>
                                                 <div class="flex items-center gap-2">
                                                     {% if chat_mode %}
                                                     <button type="button"
@@ -88,5 +130,5 @@
                 </div>
             </div>
         </div>
-
     </div>
+</div>

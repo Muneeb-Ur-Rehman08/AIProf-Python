@@ -5,7 +5,11 @@
         {%if assistant  %}
         <div class="flex items-center flex-col md:flex-row gap-6 justify-between border-b border-gray-700 pb-4">
             <div class="flex items-center">
-                <img src="https://i.pravatar.cc/150?img=1" alt="App Logo" class="w-16 h-16 mr-4 rounded-full">
+                <div class="avatar">
+                    <div class="w-16 rounded-full mr-4">
+                        <p class="text-center text-white bg-gray-500 rounded-full h-full flex items-center justify-center capitalize">{{ assistant.name|slice:":1" }}</p>
+                    </div>
+                </div>
                 <div>
                     <h1 class="text-3xl font-bold">{{assistant.name}}</h1>
                     <p class="text-lg">{{assistant.description}}</p>
@@ -34,6 +38,7 @@
                 Edit
             </a>
             {% endif %}
+            {% if is_logged_in %}
             <a 
                 class="px-4 py-2 rounded transition-colors duration-200 fadeInUp wow"
                 style="background: var(--clr-main); border: 1px solid var(--clr-main); color: white;"
@@ -43,6 +48,7 @@
             >
                 Chat
             </a>
+            {% endif %}
             </div>
         </div>
         <div class="flex justify-center mt-8">
