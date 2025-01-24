@@ -9,7 +9,8 @@
     <!-- Subjects Dropdown -->
     <div class="dropdown w-full mb-4">
       <label tabindex="0"
-        class="btn btn-block border-gray-300 border justify-between bg-white text-black hover:bg-gray-100 rounded-lg">
+        class="btn btn-block border-gray-300 border justify-between bg-white text-black hover:bg-gray-100 rounded-lg"
+        id="subject-dropdown-label">
         Select a Subject
         <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -37,6 +38,8 @@
               <input type="checkbox" id="subject-{{ subject.name }}" class="checkbox checkbox-sm" name="subject"
                 value="{{ subject.name }}" hx-trigger="change" hx-get="{% url 'list_assistants' %}"
                 hx-target="#assistants-list"
+                name="subject"
+                hx-replace-url="true"
                 hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword']" />
               <span class="label-text text-black">{{ subject.name }}</span>
             </label>
@@ -52,7 +55,8 @@
     <!-- Topics Dropdown -->
     <div class="dropdown w-full mb-4">
       <label tabindex="0"
-        class="btn btn-block border-gray-300 border justify-between bg-white text-black hover:bg-gray-100 rounded-lg ">
+        class="btn btn-block border-gray-300 border justify-between bg-white text-black hover:bg-gray-100 rounded-lg"
+        id="topic-dropdown-label">
         Select a Topic
         <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -81,6 +85,8 @@
               <input type="checkbox" id="topic-{{ topic.id }}" class="checkbox checkbox-sm" name="topic"
                 value="{{ topic.name }}" hx-trigger="change" hx-get="{% url 'list_assistants' %}"
                 hx-target="#assistants-list"
+                name="topic"
+                hx-replace-url="true"
                 hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']" />
               <span class="label-text text-black">{{ topic.name }}</span>
             </label>
@@ -229,4 +235,36 @@
       }
     });
   }
+
+  // Update label text based on selected checkboxes
+  function updateDropdownLabel(checkboxName, labelId) {
+    const selectedItems = Array.from(document.querySelectorAll(`input[name="${checkboxName}"]:checked`))
+      .map(checkbox => checkbox.nextElementSibling.textContent.trim());
+
+
+    let labelText = 'Select a ' + (checkboxName === 'subject' ? 'Subject' : 'Topic');
+    if (selectedItems.length > 0) {
+      labelText = selectedItems.slice(0, 2).join(', ');
+      if (selectedItems.length > 2) {
+        labelText += ` & ${selectedItems.length - 2} more`;
+      }
+    }
+
+    const elements = document.querySelectorAll(`[id="${labelId}"]`);
+    
+    elements.forEach(element => {
+      console.log(element, 'element'); // Debugging output
+      element.textContent = labelText;
+    });
+  }
+
+  // Attach event listeners to subject and topic checkboxes
+  ['subject', 'topic'].forEach(type => {
+    const checkboxes = document.querySelectorAll(`input[name="${type}"]`);
+    checkboxes.forEach(checkbox => {
+      checkbox.addEventListener('change', () => updateDropdownLabel(type, `${type}-dropdown-label`));
+    });
+    // Initial label update
+    updateDropdownLabel(type, `${type}-dropdown-label`);
+  });
 </script>

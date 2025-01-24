@@ -4,7 +4,7 @@
         {% for assistant in assistants %}
             {% if assistant.subject and assistant.topic and assistant.description %}
             <a href="{% url 'assistant_detail' assistant_id=assistant.id %}">
-                <div class="card rounded-lg border bg-white hover:bg-gray-50 hover:scale-95 text-card-foreground shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md">
+                <div class="card rounded-lg border bg-white hover:bg-gray-100 text-card-foreground shadow-sm overflow-hidden transition-all duration-300 hover:shadow-lg">
                     <!-- Card Header with Avatar -->
                     <div class="flex items-center gap-4 px-4 pt-4 pb-2">
                         <div class="avatar">
@@ -27,7 +27,7 @@
                         </p>
 
                         <!-- Ratings with Half Star -->
-                        <div class="flex items-center gap-1 mb-4">
+                        <div class="flex items-center gap-1">
                             {% for i in "12345" %}
                             <div class="relative inline-block w-3 h-3">
                                 <span class="mask mask-star-2 bg-gray-300 absolute inset-0"></span>

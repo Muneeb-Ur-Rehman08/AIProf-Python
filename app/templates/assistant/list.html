@@ -82,13 +82,11 @@
     </div>
 
   </div>
-  <div>
-   
 
+  <div>
     <div class="hidden lg:flex">
       {% include 'assistant/form_filters.html' %}
     </div>
-
  
     <main class="flex-1 lg:ml-72 pt-14" style="z-index: 1;" id="assistants-list" hx-get="{% url 'list_assistants' %}" hx-trigger="load"
       hx-replace-url="false">
