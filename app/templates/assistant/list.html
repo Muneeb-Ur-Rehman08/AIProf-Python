@@ -2,42 +2,39 @@
 {% load static %}
 {% block content %}
 <!-- Search Input -->
-<div class="h-full mx-3" style="min-height: 100vh;" hx-replace-url="{% url 'list_assistants' %}">
-  {% block navbar %}
-
-    <div id="navbar" class="fixed top-0 left-0 right-0 z-20">
-      {% include 'modal/navbar.html' %}
-  </div>
-  {% endblock %}
-  <div id="search-bar" class="sticky top-28 z-20">
-    <div class="grid grid-cols-12 gap-x-2.5 sm:gap-x-1.5 lg:gap-x-0 gap-2">
-
-      <div class="drawer inline-block w-auto col-span-2 sm:col-span-1 lg:hidden">
-        <input id="my-drawer" type="checkbox" class="drawer-toggle" />
-        <div class="drawer-content ">
-          <!-- Page content here -->
-          <label for="my-drawer" class="btn drawer-button">
-            <img src="{% static 'assets/images/filter.png' %}" class="w-6 h-6" alt="Filter">
-          </label>
-        </div>
-        <div class="drawer-side">
-          <label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
-          <ul class="menu bg-base-200 text-base-content min-h-full w-full sm:w-96 p-4 z-50">
-            <div class="flex items-center  justify-between mb-2">
-              <p class="text-lg font-semibold">Select filters</p>
-              <label for="my-drawer" class="btn text-2xl text-sky-500 drawer-button lg:hidden mb-4">x</label>
+<div class="min-h-screen bg-gradient-to-b from-purple-50 to-white text-black" hx-replace-url="{% url 'list_assistants' %}">
+ 
+    {% include 'modal/navbar.html' %}
+  
+  <div class="sticky top-14 z-30 bg-white p-4 border-b">
+    <div class="flex items-center gap-4">
+        <div class="relative lg:hidden">
+          <input id="my-drawer" type="checkbox" class="drawer-toggle" />
+          <div class="drawer-content">
+            <label for="my-drawer" class="btn border-gray-300 border bg-white text-black hover:bg-gray-100">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+            </label>
+          </div>
+          <div class="drawer-side z-50">
+            <label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+            <div class="bg-white min-h-full w-80 p-4">
+              <div class="flex justify-between items-center p-4 border-b">
+                <h3 class="font-semibold text-lg">Filters</h3>
+                <label for="my-drawer"
+                  class="btn btn-sm btn-circle border-gray-300 border bg-white text-black hover:bg-gray-100">✕</label>
+              </div>
+              {% include 'assistant/form_filters.html' %}
             </div>
-            {% include 'assistant/form_filters.html' %}
-          </ul>
-        </div>
+          </div>
       </div>
-      <div class="w-full col-span-10 sm:col-span-5 lg:col-span-3">
-        <label id="search-input" class="input input-bordered flex items-center gap-2 bg-transparent">
+      <div class="w-full lg:w-64">
+        <label id="search-input" class="input input-bordered flex items-center gap-2 bg-transparent w-full">
           <input type="text" hx-push-url="true" class="grow" autocomplete="off" placeholder="Search"
             hx-get="{% url 'list_assistants' %}" hx-target="#assistants-list" hx-trigger="keyup changed delay:500ms"
-            name="keyword"
-            hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']"
-            />
+            name="keyword" hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword']" />
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4">
             <path fill-rule="evenodd"
               d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
@@ -47,9 +44,9 @@
       </div>
 
       <!-- Sort dropdown -->
-      <div class="w-full col-span-3 sm:col-span-2 lg:col-span-2">
+      <div class="hidden sm:block">
         <select 
-          class="select select-bordered w-full"
+          class="select select-bordered w-full bg-white"
           name="sort"
           hx-get="{% url 'list_assistants' %}"
           hx-push-url="true"
@@ -67,7 +64,7 @@
       </div>
 
       <!-- Created by me filter -->
-      <div class="w-full col-span-3 sm:col-span-2 lg:col-span-1 flex items-center">
+      <!-- <div class="flex items-center">
         <label class="cursor-pointer label gap-2">
           <span class="label-text">Created by me</span>
           <input type="checkbox" 
@@ -81,24 +78,20 @@
                  {% if created_by_me %}checked{% endif %}
           >
         </label>
-      </div>
+      </div> -->
     </div>
-    
-  </div>
-  <!-- Filters Section -->
-  <div class="flex gap-x-2 pt-32 py-2">
-      <!-- Main content area -->
-    
-        <div class="hidden lg:block lg:w-1/3">
-          {% include 'assistant/form_filters.html' %}
-        </div>
 
-      <!-- Assistants list content -->
-      <div class="w-full lg:w-w-2/3" id="assistants-list"  hx-get="{% url 'list_assistants' %}"
-        hx-trigger="load" hx-replace-url="false">
-        <!-- Content loaded dynamically -->
-      </div>
+  </div>
+
+  <div>
+    <div class="hidden lg:flex">
+      {% include 'assistant/form_filters.html' %}
     </div>
+ 
+    <main class="flex-1 lg:ml-72 pt-14" style="z-index: 1;" id="assistants-list" hx-get="{% url 'list_assistants' %}" hx-trigger="load"
+      hx-replace-url="false">
+    
+    </main>
   </div>
 </div>
 
@@ -113,15 +106,15 @@
       searchBar.classList.remove('top-28');
       searchBar.classList.add('top-16');
       searchInput.classList.remove('bg-transparent');
-      searchInput.classList.add('bg-dark-200');
-      navbar.classList.add('bg-base-100', 'sticky-menu', 'active');
+      searchInput.classList.add('bg-purple-600');
+      navbar.classList.add('bg-purple-600',"shadow-xl" , "overflow-hidden");
     } else {
       searchBar.style.transition = 'top 0.3s ease';
       searchBar.classList.remove('top-16');
       searchBar.classList.add('top-28');
-      searchInput.classList.remove('bg-dark-200');
+      searchInput.classList.remove('bg-purple-600');
       searchInput.classList.add('bg-transparent');
-      navbar.classList.remove('bg-base-100', 'sticky-menu', 'active');
+      navbar.classList.remove('bg-purple-600', "shadow-xl" , "overflow-hidden");
     }
   }
 
