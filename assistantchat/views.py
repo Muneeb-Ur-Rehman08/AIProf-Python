@@ -14,6 +14,7 @@ from decimal import Decimal
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 import os
+from django.shortcuts import render
 
 logger = logging.getLogger(__name__)
 
@@ -121,3 +122,10 @@ def chat_query(request, ass_id: Optional[str] = None):
     except Exception as e:
         logger.error(f"Error in chat query endpoint: {e}")
         return StreamingHttpResponse("Failed to process chat query", content_type='text/plain')
+
+@login_required(login_url='accounts/login/')
+def voice_chat(request):
+    """
+    Render the voice chat interface
+    """
+    return render(request, 'voice.html')

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Voice Assistant</title>
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .chat-box {
+            height: 400px;
+            border: 1px solid #ccc;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 10px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+        .status {
+            margin-top: 10px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chat-box" id="chatBox"></div>
+        <div class="controls">
+            <button id="startBtn">Start Voice Chat</button>
+            <button id="stopBtn" disabled>Stop</button>
+        </div>
+        <div class="status" id="status">Status: Ready</div>
+    </div>
+
+    <script>
+        let socket;
+        let mediaRecorder;
+        let audioChunks = [];
+        const chatBox = document.getElementById('chatBox');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const status = document.getElementById('status');
+
+        startBtn.addEventListener('click', startVoiceChat);
+        stopBtn.addEventListener('click', stopVoiceChat);
+
+        async function startVoiceChat() {
+            try {
+                // Request microphone access
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                // Setup WebSocket
+                const wsScheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+                const wsUrl = `${wsScheme}${window.location.host}/ws/voice/`;
+                socket = new WebSocket(wsUrl);
+                
+                // Setup MediaRecorder
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                    if (mediaRecorder.state === "inactive") {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        socket.send(audioBlob);
+                        audioChunks = [];
+                    }
+                };
+
+                // Start recording
+                mediaRecorder.start(1000); // Collect data every second
+                
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                status.textContent = 'Status: Recording...';
+
+                socket.onopen = function() {
+                    console.log('WebSocket connected');
+                    appendMessage('system', 'Connected and recording...');
+                };
+
+                socket.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                    status.textContent = 'Status: Connection error';
+                };
+
+                socket.onmessage = function(e) {
+                    const data = JSON.parse(e.data);
+                    appendMessage(data.role, data.message);
+                };
+
+                socket.onclose = function() {
+                    stopRecording();
+                    status.textContent = 'Status: Disconnected';
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                };
+
+            } catch (err) {
+                console.error('Error accessing microphone:', err);
+                status.textContent = 'Status: Microphone access denied';
+            }
+        }
+
+        function stopVoiceChat() {
+            if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                mediaRecorder.stop();
+            }
+            if (socket) {
+                socket.close();
+            }
+            status.textContent = 'Status: Stopped';
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
+
+        function appendMessage(role, message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = `${role}: ${message}`;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>

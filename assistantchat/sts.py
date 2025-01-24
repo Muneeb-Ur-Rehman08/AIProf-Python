@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from livekit.agents import AutoSubscribe, JobContext, WorkerOptions, cli, llm
 from livekit.agents.voice_assistant import VoiceAssistant
 from livekit.plugins import openai, silero
-import os
+from api import AssistantFnc
 
 load_dotenv()
 
@@ -16,13 +16,20 @@ async def entrypoint(ctx: JobContext):
     )
 
     await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
+    fnc_ctx = AssistantFnc()
 
     assistant = VoiceAssistant(
         vad=silero.VAD.load(),
         stt=openai.STT(),
-        llm=openai.LLM(),
-        tts=openai.TTS(),
+        llm=openai.LLM(
+            model="gpt-4o-mini",
+        ),
+        tts=openai.TTS(
+            model="tts-1-hd",
+            voice="nova",
+        ),
         chat_ctx=initial_context,
+        fnc_ctx=fnc_ctx,
     )
 
     assistant.start(ctx.room)
@@ -33,7 +40,7 @@ async def entrypoint(ctx: JobContext):
 
 
 if __name__ == "__main__":
-    cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint,))
+    cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint))
 
 
 
