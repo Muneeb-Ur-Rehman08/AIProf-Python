@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'allauth_ui',
     "slippers",
     "django_htmx",
+    "channels",
 ]
 
 MIDDLEWARE = [
@@ -71,6 +72,12 @@ MIDDLEWARE = [
     'django_htmx.middleware.HtmxMiddleware',
 
 ]
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 ROOT_URLCONF = 'app.urls'
 
@@ -234,7 +241,7 @@ SOCIALACCOUNT_AUTO_SIGNUP = True
 # AllAuth UI theme
 ALLAUTH_UI_THEME='cupcake'
 
-CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app', 'https://*.up.railway.app']
+CSRF_TRUSTED_ORIGINS = [ 'https://*.up.railway.app', 'http://localhost:8000']
 
 
 # Email settings
