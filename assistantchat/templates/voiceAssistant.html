@@ -16,6 +16,25 @@
         color: gray;
         font-style: italic;
       }
+      .typing-indicator {
+        display: inline-block;
+        margin-left: 5px;
+      }
+      .typing-indicator span {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background-color: #90949c;
+        border-radius: 50%;
+        margin-right: 5px;
+        animation: typing 1s infinite ease-in-out;
+      }
+      .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+      .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+      @keyframes typing {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+      }
     </style>
   </head>
   <body>
@@ -28,48 +47,15 @@
       let socket;
       let mediaRecorder;
       let isRecording = false;
-      let audioQueue = [];
-      let isPlayingAudio = false;
-      let recognition;
+      let audioChunks = [];
+      let audioContext;
+      let analyser;
+      let isSpeaking = false;
+      let silenceTimer;
+      const SILENCE_THRESHOLD = 15; // Adjusted to suit typical microphone noise levels
+      const SILENCE_DURATION = 3000; // 3 seconds of silence before processing
+      let currentStreamingDiv = null;
 
-      // Initialize Speech Recognition
-      function initializeSpeechRecognition() {
-        const SpeechRecognition =
-          window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = false;
-        recognition.lang = "en-US";
-
-        recognition.onresult = (event) => {
-          const transcript =
-            event.results[event.results.length - 1][0].transcript;
-          console.log("Speech detected:", transcript);
-          addMessage("User", transcript);
-
-          if (socket && socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify({ transcript }));
-            recognition.stop(); // Stop listening while assistant is processing
-          }
-        };
-
-        recognition.onerror = (event) => {
-          console.error("Speech recognition error:", event.error);
-          addMessage("System", "Error: " + event.error);
-        };
-
-        recognition.onend = (event) => {
-          console.log("Speech recognition ended");
-          console.log("Restarting speech recognition");
-          transcript = event.results[event.results.length - 1][0].transcript;
-          console.log("Transcript:", transcript);
-          socket.send(JSON.stringify({ transcript }));
-          addMessage("User", transcript);
-          recognition.start();
-        };
-      }
-
-      // Initialize WebSocket Connection
       function initializeWebSocket() {
         if (socket) {
           socket.close();
@@ -83,6 +69,7 @@
         socket.onopen = () => {
           console.log("WebSocket connected");
           socket.send(JSON.stringify({ control: "start_conversation" }));
+          startRecording();
         };
 
         socket.onclose = () => {
@@ -101,85 +88,180 @@
           const data = JSON.parse(event.data);
           console.log("Received message:", data);
 
-          if (data.type === "assistant_response") {
-            addMessage("Assistant", data.message);
+          if (data.type === "assistant_stream") {
+            // Handle streaming chunks
+            appendStreamingMessage(data.chunk);
+          } else if (data.type === "assistant_response") {
+            // Handle final response with audio
+            finalizeStreamingMessage(data.message);
             if (data.audio_data) {
-              playAudioData(data.audio_data);
-            } else {
+              await playAudioData(data.audio_data);
               startRecording();
             }
-          } else if (data.type === "transcription") {
-            addMessage("User", data.text);
           }
         };
       }
 
-      async function playAudioData(audioBase64) {
-        return new Promise((resolve) => {
-          // Create audio context for streaming
-          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-          
-          // Convert base64 to array buffer
-          const audioData = base64ToArrayBuffer(audioBase64);
-          
-          // Decode the audio data
-          audioContext.decodeAudioData(audioData, (buffer) => {
-            const source = audioContext.createBufferSource();
-            source.buffer = buffer;
-            source.connect(audioContext.destination);
-            
-            source.onended = () => {
-              console.log("Audio finished, resuming listening");
-              resolve();
-              recognition.start();
-            };
-
-            console.log("Assistant speaking...");
-            recognition.stop();
-            source.start(0);
-          }).catch(error => {
-            console.error("Error decoding audio:", error);
-            resolve();
-            recognition.start();
-          });
-        });
-      }
-
-      // Helper function to convert base64 to ArrayBuffer
-      function base64ToArrayBuffer(base64) {
-        const binaryString = window.atob(base64);
-        const length = binaryString.length;
-        const bytes = new Uint8Array(length);
-        
-        for (let i = 0; i < length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        
-        return bytes.buffer;
-      }
-
       async function startRecording() {
         try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+          });
+          mediaRecorder = new MediaRecorder(stream, {
+            mimeType: 'audio/webm'  // Simplified MIME type
+          });
+          audioChunks = [];
           isRecording = true;
-          console.log("Starting speech recognition");
-          addMessage("System", "Listening...");
-          recognition.start();
+
+          // Set up audio analysis
+          audioContext = new (window.AudioContext ||
+            window.webkitAudioContext)();
+          const source = audioContext.createMediaStreamSource(stream);
+          analyser = audioContext.createAnalyser();
+          analyser.fftSize = 512;
+          analyser.smoothingTimeConstant = 0.3;
+          source.connect(analyser);
+
+          monitorAudio();
+
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+              audioChunks.push(event.data);
+            }
+          };
+
+          mediaRecorder.onstop = () => {
+            if (audioChunks.length > 0) {
+              sendAudioToServer();
+            }
+          };
+
+          document.getElementById("startBtn").disabled = true;
+          document.getElementById("stopBtn").disabled = false;
+          addMessage("System", "Recording started...");
+
+          mediaRecorder.start(1000);
         } catch (err) {
-          console.error("Speech recognition error:", err);
-          addMessage("System", "Speech recognition error: " + err.message);
+          console.error("Error accessing microphone:", err);
+          addMessage("System", "Error accessing microphone: " + err.message);
         }
+      }
+
+      function monitorAudio() {
+        // Get time-domain data instead of frequency data
+        const dataArray = new Uint8Array(analyser.fftSize);
+        analyser.getByteTimeDomainData(dataArray);
+
+        // Calculate RMS (Root Mean Square) of the signal
+        let sumOfSquares = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          // center the audio samples at 0 (microphone samples are 0-255 with 128 as silence)
+          const centeredSample = dataArray[i] - 128;
+          sumOfSquares += centeredSample * centeredSample;
+        }
+        const rms = Math.sqrt(sumOfSquares / dataArray.length);
+
+        // You can tune this threshold based on ambient noise levels.
+        // Lower threshold = more sensitive to quiet sounds; higher threshold = less sensitive.
+        const AMPLITUDE_THRESHOLD = 10;
+
+        console.log("rms", rms, AMPLITUDE_THRESHOLD);
+        // Check if speaking
+        if (rms > AMPLITUDE_THRESHOLD) {
+            
+          // If not already speaking, update state and clear silence timer
+          if (!isSpeaking) {
+            isSpeaking = true;
+            audioChunks = []; // Reset audio chunks when speech starts
+          }
+        }
+        // Check if we transitioned to silence while previously speaking
+        else if (isSpeaking) {
+          silenceTimer = setTimeout(() => {
+            isSpeaking = false;
+            if (mediaRecorder && mediaRecorder.state === "recording") {
+              mediaRecorder.stop();
+            }
+          }, SILENCE_DURATION);
+        }
+
+        // Continue monitoring if still recording
+        if (isRecording) {
+          requestAnimationFrame(monitorAudio);
+        }
+      }
+
+      function sendAudioToServer() {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });  // Simplified MIME type
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = () => {
+          const base64Audio = reader.result.split(',')[1];
+          if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ 
+              audio_data: base64Audio,
+              format: 'webm'
+            }));
+          }
+        };
+        audioChunks = [];
+        clearTimeout(silenceTimer);
+        mediaRecorder.start(1000); // Restart recording after stopping
       }
 
       function stopRecording() {
         if (isRecording) {
-          mediaRecorder.stop();
+          if (audioContext) {
+            audioContext.close();
+          }
+          clearTimeout(silenceTimer);
+          if (mediaRecorder && mediaRecorder.state !== "inactive") {
+            mediaRecorder.stop();
+            mediaRecorder.stream.getTracks().forEach((track) => track.stop());
+          }
           isRecording = false;
-          console.log("Recording stopped");
+          isSpeaking = false;
+          addMessage("System", "Recording stopped");
         }
       }
 
+      async function playAudioData(audioBase64) {
+        return new Promise((resolve) => {
+          const audioContext = new (window.AudioContext ||
+            window.webkitAudioContext)();
+          const audioData = base64ToArrayBuffer(audioBase64);
+          audioContext
+            .decodeAudioData(audioData, (buffer) => {
+              const source = audioContext.createBufferSource();
+              source.buffer = buffer;
+              source.connect(audioContext.destination);
+
+              source.onended = () => {
+                resolve();
+              };
+
+              source.start(0);
+            })
+            .catch((error) => {
+              console.error("Error decoding audio:", error);
+              resolve();
+            });
+        });
+      }
+
+      function base64ToArrayBuffer(base64) {
+        const binaryString = window.atob(base64);
+        const length = binaryString.length;
+        const bytes = new Uint8Array(length);
+
+        for (let i = 0; i < length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        return bytes.buffer;
+      }
+
       document.getElementById("startBtn").addEventListener("click", () => {
-        initializeSpeechRecognition();
         initializeWebSocket();
       });
 
@@ -194,9 +276,61 @@
       function addMessage(sender, text) {
         const messagesDiv = document.getElementById("messages");
         const msg = document.createElement("div");
+        msg.className = sender.toLowerCase();
         msg.innerHTML = `<strong>${sender}:</strong> ${text}`;
         messagesDiv.appendChild(msg);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+
+      function appendStreamingMessage(chunk) {
+        const messagesDiv = document.getElementById("messages");
+        
+        // Create new streaming message container if doesn't exist
+        if (!currentStreamingDiv) {
+          currentStreamingDiv = document.createElement("div");
+          currentStreamingDiv.className = "assistant-stream";
+          currentStreamingDiv.innerHTML = `<strong>Assistant:</strong> `;
+          
+          // Add typing indicator
+          const typingIndicator = document.createElement("div");
+          typingIndicator.className = "typing-indicator";
+          typingIndicator.innerHTML = `<span></span><span></span><span></span>`;
+          currentStreamingDiv.appendChild(typingIndicator);
+          
+          messagesDiv.appendChild(currentStreamingDiv);
+        }
+
+        // Remove typing indicator before adding new content
+        const typingIndicator = currentStreamingDiv.querySelector(".typing-indicator");
+        if (typingIndicator) {
+          typingIndicator.remove();
+        }
+
+        // Append new chunk
+        const textNode = document.createTextNode(chunk);
+        currentStreamingDiv.appendChild(textNode);
+
+        // Add typing indicator back
+        const newTypingIndicator = document.createElement("div");
+        newTypingIndicator.className = "typing-indicator";
+        newTypingIndicator.innerHTML = `<span></span><span></span><span></span>`;
+        currentStreamingDiv.appendChild(newTypingIndicator);
+
+        // Scroll to bottom
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+
+      function finalizeStreamingMessage(finalMessage) {
+        if (currentStreamingDiv) {
+          // Remove typing indicator
+          const typingIndicator = currentStreamingDiv.querySelector(".typing-indicator");
+          if (typingIndicator) {
+            typingIndicator.remove();
+          }
+          
+          // Reset the streaming div for next message
+          currentStreamingDiv = null;
+        }
       }
 
       window.addEventListener("beforeunload", () => {

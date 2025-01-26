@@ -34,60 +34,79 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
         await self.send(json.dumps({"type": "assistant_response", "message": greeting, "audio_data": audio_data}))
 
     async def process_audio_data(self, audio_base64):
-        audio_bytes = base64.b64decode(audio_base64)
-        with tempfile.NamedTemporaryFile(delete=True, suffix=".webm") as temp_audio:
-            temp_audio.write(audio_bytes)
-            temp_audio_path = temp_audio.name
-            transcription = await self.transcribe_audio(audio_base64)
-
-        if transcription:
-            await self.send(json.dumps({"type": "transcription", "text": transcription}))
-            await self.get_assistant_response(transcription)
-        else:
-            await self.send(json.dumps({"type": "system", "message": "No speech detected."}))
-
-    async def transcribe_audio(self, audio_data):
         try:
-            # Create a temporary file with delete=False to ensure we can close it before reading
-            with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as temp_file:
-                temp_path = temp_file.name
-                # Write the decoded audio data
-                temp_file.write(base64.b64decode(audio_data))
+            audio_bytes = base64.b64decode(audio_base64)
             
-            # Now read the file for transcription
+            # Create temporary file with .webm extension
+            with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as temp_audio:
+                temp_audio.write(audio_bytes)
+                temp_audio_path = temp_audio.name
+                
             try:
-                with open(temp_path, "rb") as audio_file:
-                    transcript = await self.client.audio.transcriptions.create(
-                        model="whisper-1",
-                        file=audio_file
-                    )
-                return transcript.text
+                transcription = await self.transcribe_audio(temp_audio_path)
+                if transcription:
+                    print(f"Transcription: {transcription}")
+                    await self.send(json.dumps({"type": "transcription", "text": transcription}))
+                    await self.get_assistant_response(transcription)
+                else:
+                    await self.send(json.dumps({"type": "system", "message": "No speech detected."}))
             finally:
-                # Clean up the temporary file
+                # Clean up temporary file
                 try:
-                    os.unlink(temp_path)
+                    os.unlink(temp_audio_path)
                 except OSError:
                     pass
-                    
+        except Exception as e:
+            print(f"Error processing audio: {str(e)}")
+            await self.send(json.dumps({"type": "system", "message": "Error processing audio."}))
+
+    async def transcribe_audio(self, audio_path):
+        try:
+            with open(audio_path, "rb") as audio_file:
+                transcript = self.client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=audio_file
+                )
+                return transcript.text
         except Exception as e:
             print(f"Error in transcribe_audio: {str(e)}")
             return None
 
     async def get_assistant_response(self, user_text):
+        system_message = "You are a helpful assistant. You have to answer the user's question and provide a helpful response. Use always english language. You are a helpful assistant. You have to answer the user's question and provide a helpful response. Use always english language. Give short answers."
         try:
-            response = self.client.chat.completions.create(
+            # Remove await since client methods are synchronous
+            stream = self.client.chat.completions.create(
                 model="gpt-4o-mini",
-                messages=[{"role": "user", "content": user_text}],
-                temperature=0.7
+                messages=[{"role": "system", "content": system_message}, {"role": "user", "content": user_text}],
+                temperature=0.7,
+                stream=True  # Enable streaming
             )
-            # Access the message content correctly from the response object
-            message = response.choices[0].message.content
-            audio_data = await self.text_to_speech(message)
+
+            accumulated_message = ""
+            
+            # Process each chunk as it arrives
+            for chunk in stream:
+                if chunk.choices[0].delta.content is not None:
+                    content = chunk.choices[0].delta.content
+                    accumulated_message += content
+                    
+                    # Send the chunk immediately to the frontend
+                    await self.send(json.dumps({
+                        "type": "assistant_stream",
+                        "chunk": content
+                    }))
+
+            # After streaming is complete, generate and send the audio
+            audio_data = await self.text_to_speech(accumulated_message)
+            
+            # Send the complete message with audio
             await self.send(json.dumps({
-                "type": "assistant_response", 
-                "message": message, 
+                "type": "assistant_response",
+                "message": accumulated_message,
                 "audio_data": audio_data
             }))
+
         except Exception as e:
             print(f"Error in get_assistant_response: {str(e)}")
             await self.send(json.dumps({
@@ -96,6 +115,7 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
             }))
 
     async def text_to_speech(self, text):
+        # Remove await since client methods are synchronous
         speech_response = self.client.audio.speech.create(
             model="tts-1-hd",
             voice="nova",
