@@ -9,6 +9,7 @@ from openai import OpenAI
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 class VoiceAssistantConsumer(AsyncWebsocketConsumer):
+    print("VoiceAssistantConsumer")
     async def connect(self):
         await self.accept()
         await self.send(json.dumps({"type": "system", "message": "Connected to Voice Assistant."}))
@@ -36,16 +37,21 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
     async def process_audio_data(self, audio_base64):
         try:
             audio_bytes = base64.b64decode(audio_base64)
-            
+            print(f"Audio bytes: {audio_bytes}")
             # Create temporary file with .webm extension
-            with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as temp_audio:
+            # with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as temp_audio:
+            #     temp_audio.write(audio_bytes)
+            #     temp_audio_path = temp_audio
+            temp_audio_path = "temp_audio.webm"
+            with open(temp_audio_path, "wb") as temp_audio:
                 temp_audio.write(audio_bytes)
-                temp_audio_path = temp_audio.name
-                
+            print("Saved to:", temp_audio_path)
+            print("Does file exist after close?", os.path.exists(temp_audio_path))
             try:
-                transcription = await self.transcribe_audio(temp_audio_path)
+                print(f"Enter in trans:")
+                transcription = await self.transcribe_audio(temp_audio_path, audio_bytes)
+                print(f"Transcription DinDong: {transcription}")
                 if transcription:
-                    print(f"Transcription: {transcription}")
                     await self.send(json.dumps({"type": "transcription", "text": transcription}))
                     await self.get_assistant_response(transcription)
                 else:
@@ -53,19 +59,24 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
             finally:
                 # Clean up temporary file
                 try:
-                    os.unlink(temp_audio_path)
+                    if os.path.exists(temp_audio_path):
+                        os.remove(temp_audio_path)
                 except OSError:
                     pass
         except Exception as e:
             print(f"Error processing audio: {str(e)}")
             await self.send(json.dumps({"type": "system", "message": "Error processing audio."}))
 
-    async def transcribe_audio(self, audio_path):
+    async def transcribe_audio(self, audio_path, audio_bytes):
         try:
             with open(audio_path, "rb") as audio_file:
+                # Create a file object with name and content type
+                audio_file_obj = {
+                    "file": ("audio.webm", audio_file, "audio/webm")
+                }
                 transcript = self.client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=audio_file
+                    model="whisper-1", 
+                    file=audio_file_obj["file"]
                 )
                 return transcript.text
         except Exception as e:

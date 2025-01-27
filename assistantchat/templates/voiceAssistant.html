@@ -52,7 +52,7 @@
       let analyser;
       let isSpeaking = false;
       let silenceTimer;
-      const SILENCE_THRESHOLD = 15; // Adjusted to suit typical microphone noise levels
+      const SILENCE_THRESHOLD = 10; // Adjusted to suit typical microphone noise levels
       const SILENCE_DURATION = 3000; // 3 seconds of silence before processing
       let currentStreamingDiv = null;
 
@@ -108,7 +108,7 @@
             audio: true,
           });
           mediaRecorder = new MediaRecorder(stream, {
-            mimeType: 'audio/webm'  // Simplified MIME type
+            mimeType: 'audio/webm;codecs=opus'  // Simplified MIME type
           });
           audioChunks = [];
           isRecording = true;
@@ -192,7 +192,7 @@
       }
 
       function sendAudioToServer() {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });  // Simplified MIME type
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' });  // Simplified MIME type
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = () => {

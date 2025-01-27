@@ -73,12 +73,6 @@ MIDDLEWARE = [
 
 ]
 
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
-    },
-}
-
 ROOT_URLCONF = 'app.urls'
 
 TEMPLATES = [
@@ -100,6 +94,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'app.wsgi.application'
 ASGI_APPLICATION = 'app.asgi.application'
+
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
 
 
 # print("User:", os.getenv('SUPABASE_USER'))
