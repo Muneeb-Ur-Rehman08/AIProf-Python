@@ -280,7 +280,7 @@ def list_assistants(request):
             'value': '-interactions'
         },
         'most_reviews': {
-            'label': 'Highly Rated',
+            'label': 'Highly Rated',
             'value': '-average_rating'
         }
         
@@ -340,6 +340,10 @@ def list_assistants(request):
         "current_sort": sort_label,
         "rating_counts": formatted_rating_counts
     }
+
+    sort_options = {opt['label']: opt['value'] for opt in sorting_options.values()}
+
+    logger.info(f"Sorting option look like this: {sort_options}")
     
     # Return appropriate template
     if request.htmx:

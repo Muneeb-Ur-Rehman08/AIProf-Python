@@ -15,6 +15,9 @@ from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 import os
 from langgraph.store.memory import InMemoryStore
+from PIL import Image
+import pytesseract
+import PyPDF2
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +48,28 @@ def chat_query(request, ass_id=None):
             return StreamingHttpResponse("User not authenticated", content_type='text/plain')
 
         chat_module = ChatModule()
+
+
+        # Handle file uploads (images, PDFs)
+        if 'file' in request.FILES:
+            uploaded_file = request.FILES['file']
+            file_extension = uploaded_file.name.split('.')[-1].lower()
+
+            if file_extension in ['jpg', 'jpeg', 'png']:
+                # Process image (use OCR for text extraction)
+                image = Image.open(uploaded_file)
+                extracted_text = pytesseract.image_to_string(image)
+                prompt += f"\nExtracted from image: {extracted_text}"
+            elif file_extension == 'pdf':
+                # Process PDF (extract text from PDF)
+                pdf_reader = PyPDF2.PdfFileReader(uploaded_file)
+                extracted_text = ''
+                for page_num in range(pdf_reader.numPages):
+                    extracted_text += pdf_reader.getPage(page_num).extract_text()
+                prompt += f"\nExtracted from PDF: {extracted_text}"
+
+
+
         # Get user and assistant details
         user = User.objects.get(id=request.user.id)
         user_id = str(user.id)
@@ -90,8 +115,9 @@ def chat_query(request, ass_id=None):
 
             chat_module.save_chat_history(user_id, assistant_id, offloaded_messages)
 
+            current_summary = offloaded_messages[-1]['chat_summary'] or "No summary"
 
-            chat_summary = chat_module.analyze_chat_history(offloaded_messages)
+            chat_summary = chat_module.analyze_chat_history(offloaded_messages, current_summary)
 
 
             # Remove the oldest 10 messages from memory
@@ -105,14 +131,44 @@ def chat_query(request, ass_id=None):
         for idx, message in enumerate(chat_history):
             memory_store.put(namespace, f"chat-{idx}", message)
 
-        # Initialize chat module
+        mermaid_instructions = '''
+            Help me with short and to the point diagrams wherever you see fit using 
+            mermaid.js code, as example given below. Double make sure the code error-free 
+            and provide one graph per block:\n
+            
+            note: pie is always in percentage without mentioning %
+            
+            ```mermaid
+            pie title NETFLIX
+                 "Time spent looking for movie" : 90
+                 "Time spent watching it" : 10
+                
+            sequenceDiagram
+                Alice ->> Bob: Hello Bob, how are you?
+                Bob-->>John: How about you John?
+                Bob--x Alice: I am good thanks!
+                Bob-x John: I am good thanks!
+                Note right of John: Bob thinks a long<br/>long time, so long<br/>that the text does<br/>not fit on a row.
+            
+                Bob-->Alice: Checking with John...
+                Alice->John: Yes... John, how are you?
+
+            graph LR
+                A[Square Rect] -- Link text --> B((Circle))
+                A --> C(Round Rect)
+                B --> D(Rhombus)
+                C --> D
+            
+            ```
+        '''
 
         # Define assistant configuration
         assistant_config = {
             "subject": assistant.subject,
             "topic": assistant.topic,
             "teacher_instructions": assistant.teacher_instructions,
-            "user_name": user.first_name
+            "user_name": user.first_name,
+            "prompt_instructions": mermaid_instructions
         }
 
         # Process the message with chat history
@@ -138,6 +194,8 @@ def chat_query(request, ass_id=None):
                     key = f"chat-{len(memory_store.search(namespace))}"
                     memory_store.put(namespace, next_key, {"User": prompt, "AI": full_response, "summary": chat_summary})
                     # logger.info(f"chat history saved to memory{chat_history}")
+
+                    logger.info(f"Saved memory: namespace={namespace}, key={key}, data={{'user': '{prompt}', 'assistant': '{full_response}', 'summary': '{chat_summary}'}}")
                 except Exception as e:
                     logger.error(f"Error saving chat memory: {e}")
             except Exception as e:

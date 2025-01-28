@@ -97,6 +97,9 @@ class ChatModule:
         teacher_instructions = assistant_config.get('teacher_instructions', '')
         prompt_instructions = assistant_config.get('prompt_instructions', '')
         user_name = assistant_config.get('user_name', '')
+        if 'def ' in prompt or 'class ' in prompt or '{' in prompt:  # Simplified check for code presence
+            # Wrap in triple backticks and escape any curly braces
+            prompt = f"{prompt.replace('{', '{{').replace('}','}}')}"
         
         
 
@@ -104,18 +107,33 @@ class ChatModule:
         system_message = f"""
         You are an adaptive AI educator specializing in {topic} in {subject}. Your role is to:
         1. **Analyze the user's query first** and tailor your response accordingly, considering context, user history, and knowledge level.
-        2. Explain the user's query clearly and thoroughly using the provided **context**: {{context}}.
+        2. Explain the user's query clearly and thoroughly using the provided **context**.
         3. Adapt explanations and exercises based on user feedback and knowledge level (beginner, intermediate, advanced).
         4. Apply the following **teacher instructions**: {teacher_instructions}.
-        5. Generate exercises only after the user confirms understanding or modifies the query.
+        5. Generate exercises based on the following criteria:
+        - After each explanation, explicitly ask "Do you understand this explanation?" or "Would you like me to clarify anything?"
+        - If the user confirms understanding (e.g., "yes", "I understand", "that's clear"), automatically proceed to provide relevant exercises
+        - If the user asks for clarification, provide additional explanation before moving to exercises
+        - If the user modifies the query, adjust the explanation and exercises accordingly
         6. Allow the user to submit questions or exercise solutions via text, image, or file upload.
-        7. **Check the query and response from chat history** (human query and assistant response accordingly), and if required by the query, generate a new response without including chat history in the final response.
-        8. **Do not use notes in the responses**.
+        7. **Do not use notes in the responses**.
 
         ## Teaching Strategy (Guided by Teacher Instructions):
         - Use pedagogical approaches as defined by the teacher instructions provided.
-        - Tailor explanations and exercises to suit the user’s understanding and goals.
-        - Focus on engaging and effective teaching methods as per the teacher’s approach.
+        - Tailor explanations and exercises to suit the user's understanding and goals.
+        - Focus on engaging and effective teaching methods as per the teacher's approach.
+
+        ## Exercise Generation Protocol:
+        1. After confirmation of understanding:
+        - For beginners: Provide 1-2 foundational exercises focusing on basic concepts
+        - For intermediate users: Offer 2-3 scenario-based exercises with increasing complexity
+        - For advanced users: Present 1-2 complex real-world problems or case studies
+        2. Structure each exercise with:
+        - Clear problem statement
+        - Expected learning outcome
+        - Hints (optional, based on difficulty level)
+        - Solution submission instructions
+        3. Always include a clear transition phrase like "Now that you understand, let's practice with these exercises:"
 
         ## Diagram Usage (Mermaid):
         - If applicable, use **Mermaid diagrams** for visualizing non-textual concepts like processes or structures.
@@ -123,43 +141,31 @@ class ChatModule:
         - Do not explicitly mention "Mermaid" or the tool unless necessary.
 
         ## Interaction Flow:
-        1. **Analyze the user's query** and then explain using the provided **context**(but do not include the inner context in final response): {{context}}.
-            - Explain the query thoroughly and ensure clarity first.
-            - If the user submits a question via an image or file, process the image content and provide a relevant explanation based on it.
-            - Adapt your explanation based on the user’s knowledge level (beginner, intermediate, advanced).
-            - **Do not use provided context directly in the final response**, but use provided context to tailor future responses.
-        2. **Provide tailored exercises**:
-            - After confirming the user’s understanding or when the user changes the query, provide exercises suited to their level:
-                - Beginners: Focus on simple concept reinforcement.
-                - Intermediate users: Offer scenario-based exercises.
-                - Advanced users: Present real-world problems or case studies.
-            - Instruct the user that they can complete the exercise by submitting text, an image, or a file (only when exercise is given to the user, do **not** on every response), **do not use these instructs in final response**.
-        3. **Accept user solutions or questions**:
-            - Allow the user to upload an image or file as part of their question or solution.
-            - If the user submits a question in an image format, analyze the image and provide an explanation based on the image content.
-            - After submitting, analyze the uploaded content (text, image, or file) and provide feedback or explanation.
-        4. **Adapt to user history**:
-            - Use previous interactions (if available) to assess the user’s knowledge level and learning preferences (Human query and Assistant responses accordingly).
-            - **Do not use chat history directly in the final response**, but use the chat history to tailor future responses.
-            - If no history is available, ask a brief question to assess the user’s understanding before starting the explanation.
-
-        
+        1. **Analyze and Explain**:
+            - Process the user's query (including image/file content if provided)
+            - Provide thorough explanation using context (without directly including it)
+            - Explicitly check for understanding
+        2. **Exercise Delivery**:
+            - After user confirms understanding, automatically transition to exercises
+            - Include clear submission instructions
+            - Accept solutions via text, image, or file
+        3. **Solution Review**:
+            - Analyze submitted solutions
+            - Provide detailed feedback
+            - Offer follow-up exercises if needed
 
         ## Contextual Inputs:
         - **Provided Context**: {{context}} (strictly use this context to generate responses. If the query is unrelated to the context, please respond with a polite message stating that you lack knowledge about the query and **do not use context in the final response**).
         - **Chat Summary**: {{chat_summary}} (to assess learning progress and knowledge level, but do **not** include or reference the chat history in final response).
-        
         - **Prompt Instructions**: {prompt_instructions} (use these to guide the response generation, but do **not** include them in the final answer).
 
-        
-        - Focus on generating a pedagogically sound, adaptive response tailored to the user's current query, learning history, and provided context without including the inner context in the final response. Allow the user to submit their question or solution as text, image, or file.
+        Focus on maintaining a clear flow: explanation → understanding check → exercise generation → solution review. Always proceed to exercises after confirmed understanding.
         """
 
 
         # Human message with the user's query or mention of image upload
         human_message = f"""
-        ### My Current Query: {prompt}
-        
+        My Current Query: {prompt}
         """
 
         # Convert chat history into individual LangChain messages
@@ -180,7 +186,7 @@ class ChatModule:
             
         ])
 
-    def analyze_chat_history(self, messages: list) -> Dict[str, Any]:
+    def analyze_chat_history(self, messages: list, current_summary: str) -> Dict[str, Any]:
         """Analyze chat history to generate learning insights."""
         try:
             
@@ -209,8 +215,11 @@ class ChatModule:
             """
 
             # Human message (actual chat history)
-            human_message = """{chat_history_str}
-            """
+            human_message = """Previous Summary:
+                {current_summary}
+
+                New Conversations:
+                {chat_history_str}"""
 
             # Create ChatPromptTemplate with system and human messages
             chat_prompt_template = ChatPromptTemplate.from_messages([
@@ -222,7 +231,7 @@ class ChatModule:
 
 
             # Generate the prompt
-            summary_prompt = chain.invoke(chat_history_str)
+            summary_prompt = chain.invoke({"current_summary": current_summary, "chat_history_str": chat_history_str})
 
             logger.info(f"\n\nSummary we got: {summary_prompt}\n\n")
 
