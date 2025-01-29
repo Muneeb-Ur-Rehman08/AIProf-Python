@@ -34,7 +34,7 @@
         <label id="search-input" class="input input-bordered flex items-center gap-2 bg-transparent w-full">
           <input type="text" hx-push-url="true" class="grow" autocomplete="off" placeholder="Search"
             hx-get="{% url 'list_assistants' %}" hx-target="#assistants-list" hx-trigger="keyup changed delay:500ms"
-            name="keyword" hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword']" />
+            name="keyword" hx-include="[name='subject']:checked,[name='topic']:checked,[name='filter_rating']:checked,[name='sort'],[name='created_by_me'],[name='keyword']" />
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4">
             <path fill-rule="evenodd"
               d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
@@ -52,7 +52,7 @@
           hx-push-url="true"
           hx-target="#assistants-list"
           hx-trigger="change"
-          hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort'],[name='created_by_me']"
+          hx-include="[name='subject']:checked,[name='topic']:checked,[name='filter_rating']:checked,[name='sort'],[name='created_by_me'],[name='keyword']"
         >
           <option value="" disabled>Select sorting option</option>
           {% for value, label in sorting_options.items %}
@@ -88,8 +88,9 @@
       {% include 'assistant/form_filters.html' %}
     </div>
  
-    <main class="flex-1 lg:ml-72 pt-14" style="z-index: 1;" id="assistants-list" hx-get="{% url 'list_assistants' %}" hx-trigger="load"
-      hx-replace-url="false">
+    <main class="flex-1 lg:ml-72 pt-14" style="z-index: 1;" id="assistants-list">
+
+      {% include 'assistant/list_partials.html' %}
     
     </main>
   </div>
