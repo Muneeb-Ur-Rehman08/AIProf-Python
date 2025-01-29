@@ -402,22 +402,20 @@ class DocumentChunk(models.Model):
         return f"Chunk {self.page_number} of {self.document.title}"
     
     @classmethod
-    def similarity_search(cls, query: str, assistant_id: str, k: int = 5):
+    def similarity_search(cls, query: str, assistant_id: str, k: int = 5, api_key: Optional[str] = None):
         """
         Find most similar document chunks to the query using cosine similarity.
         
         Args:
             query (str): Search query text
             k (int, optional): Number of top similar chunks. Defaults to 5.
-            api_key (str): OpenAI API key
+            api_key (str, optional): OpenAI API key
         
         Returns:
             List of tuples with chunks and similarity scores
         """
         try:
-            api_key = os.getenv("OPENAI_API_KEY")
-            
-            client = OpenAI(api_key=api_key)
+            client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
 
             # Generate query embedding
             query_response = client.embeddings.create(

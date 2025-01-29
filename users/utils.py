@@ -133,34 +133,3 @@ def generate_instruction_stream(
             'status': 'error',
             'message': str(e)
         }) + '\n'
-
-
-def generate_welcome_message(
-    name: str,
-    subject: str, 
-    topic: str, 
-    current_instructions: str,
-    description: str
-) :
-    # Langchain Setup
-    llm = get_llm()
-
-    # Construct detailed prompt
-    full_prompt = f"""
-    Generate a welcome message that introduces the assistant using the provided context. The message should be friendly and inviting, encouraging the user to explore the topic further.
-
-    Context:
-    - Teacher: {name}
-    - Subject: {subject}
-    - Topic: {topic}
-    - Description: {description}
-    - Current Instructions: {current_instructions}
-    """
-
-    # Initialize message 
-    messages = [HumanMessage(content=full_prompt)]
-
-    # Generate response
-    response = llm.invoke(messages)
-
-    return response.content

@@ -470,5 +470,3 @@ def create_assistant_view(request, ass_id):
 def get_topics(request, subject_id):
     topics = Topic.objects.filter(subject_id=subject_id)
     return JsonResponse({'topics': [topic.name for topic in topics]})
-
-
