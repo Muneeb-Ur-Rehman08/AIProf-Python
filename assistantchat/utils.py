@@ -190,7 +190,7 @@ class ChatModule:
         """Analyze chat history to generate learning insights."""
         try:
             
-            
+            logger.info(f"\n\n Start creating summary\n\n")
             if not messages:
                 return {
                     "error": "No chat history found for analysis"
@@ -201,7 +201,7 @@ class ChatModule:
                 f"Human: {chat['User']}\nAssistant: {chat['AI']}"
                 for chat in messages
             ])
-            logger.info(f"The messages string for analyze chats: {chat_history_str}")
+            logger.info(f"\n\nThe messages string for analyze chats")
            # System message (instructions to the assistant)
             system_message = """
             You are an intelligent assistant tasked with summarizing chat histories.
@@ -210,13 +210,16 @@ class ChatModule:
             2. The current knowledge level of the Human based on their questions and conversations.
             3. Any exercises or hands-on activities the Human has completed or discussed.
             4. How much progress the Human has made in terms of understanding or learning the topics.
+            5. Use current summary if available and generate new summary using current summary and chat_history.
             Be sure to clearly address each of these points in your summary.
             Summary should be in plain text.
+
+            Current Summart:
+                {current_summary}
             """
 
             # Human message (actual chat history)
-            human_message = """Previous Summary:
-                {current_summary}
+            human_message = """
 
                 New Conversations:
                 {chat_history_str}"""
@@ -227,15 +230,15 @@ class ChatModule:
                 HumanMessagePromptTemplate.from_template(human_message)
             ])
 
-            chain = self.llm | chat_prompt_template
+            chain = chat_prompt_template | self.llm 
 
 
             # Generate the prompt
             summary_prompt = chain.invoke({"current_summary": current_summary, "chat_history_str": chat_history_str})
 
-            logger.info(f"\n\nSummary we got: {summary_prompt}\n\n")
+            logger.info(f"\n\nSummary we got: {summary_prompt.content}\n\n")
 
-            return summary_prompt.messages[-1].content
+            return summary_prompt.content
 
         except Exception as e:
             logger.error(f"Error analyzing chat history: {e}")
@@ -248,7 +251,7 @@ class ChatModule:
         try:
 
             # Join messages to provide full context
-            combined_messages = "User: ".join([entry["User"] for entry in messages if "User" in entry])
+            combined_messages = "\n".join([entry["User"] for entry in messages if "User" in entry])
 
             assessment_prompt = ChatPromptTemplate.from_messages([
                 SystemMessagePromptTemplate.from_template(
@@ -406,9 +409,12 @@ class ChatModule:
 
             knowledge_level = self.assess_user_knowledge(messages=chat_history)
 
-            chat_summary = [entry["summary"] for entry in chat_history if "summary" in entry]
+            chat_summary = next(
+                (entry["summary"] for entry in chat_history if "summary" in entry),
+                "No summary available. Use chat history only to generate chat summary."
+            )
 
-            logger.info(f"chat_summary in process_message: {chat_summary[-1]}")
+            logger.info(f"chat_summary in process_message: {chat_summary}")
 
 
             # # If no prior assessment or knowledge level is unassessed
@@ -431,7 +437,7 @@ class ChatModule:
                 return {
                     "context": context,
                     "question": prompt,
-                    "chat_summary": chat_summary[-1] or "",
+                    "chat_summary": chat_summary,
                     "subject": assistant_config.get("subject", ""),
                     "instructions": assistant_config.get("teacher_instructions", ""),
                     "knowledge_level": knowledge_level,

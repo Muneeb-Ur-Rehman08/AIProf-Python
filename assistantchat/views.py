@@ -81,7 +81,8 @@ def chat_query(request, ass_id=None):
 
         # Define the namespace
         namespace = ("chat", user_id, assistant_id)
-        chat_summary = "helo abc hello"
+        
+        count = 0
         # Retrieve all keys and values in the namespace
         try:
             items = memory_store.search(namespace)  # Retrieve all items in namespace
@@ -94,7 +95,16 @@ def chat_query(request, ass_id=None):
             chat_history, keys = [], []
 
         # Define sliding window parameters
-        MAX_MEMORY_SIZE = 20  # Maximum allowed entries in memory
+        MAX_MEMORY_SIZE = 3  # Maximum allowed entries in memory
+
+        chat_summary = next(
+            (entry["summary"] for entry in chat_history if "summary" in entry),
+            "No summary available. Use chat history only to generate chat summary."
+        )
+        knowledge_level = next(
+            (entry["knowledge_level"] for entry in chat_history if "knowledge_level" in entry),
+            "No knowledge level available. Use chat history only to generate assessment."
+        )
 
         # Add the new user message to memory
         next_key = f"chat-{len(keys)}"
@@ -107,29 +117,23 @@ def chat_query(request, ass_id=None):
         # Dynamically apply sliding window logic if memory exceeds MAX_MEMORY_SIZE
         if len(chat_history) >= MAX_MEMORY_SIZE:
 
-            logger.info(f"\n\n Now we are in saving memory")
+            oldest_keys = keys[:2]
             # Offload the oldest 10 messages to the database
-            offloaded_messages = chat_history[:10]
-
-            logger.info(f"\n\nstart Save to db in views\n\n")
+            offloaded_messages = chat_history[:2]
 
             chat_module.save_chat_history(user_id, assistant_id, offloaded_messages)
 
-            current_summary = offloaded_messages[-1]['chat_summary'] or "No summary"
+            logger.info(f"\n\nCurrent sumamry : {chat_summary}\n\n")
 
-            chat_summary = chat_module.analyze_chat_history(offloaded_messages, current_summary)
+            chat_summary = chat_module.analyze_chat_history(offloaded_messages, chat_summary)
 
+            knowledge_level = chat_module.assess_user_knowledge(offloaded_messages)
+            
 
-            # Remove the oldest 10 messages from memory
-            chat_history = chat_history[10:]
+            # **Delete old messages using BaseStore.delete()**
+            for key in oldest_keys:
+                memory_store.delete(namespace, key)
 
-            # Add the generated summary to memory
-            chat_history.append({"summary": chat_summary})
-
-
-        # Save updated chat history back to the memory store
-        for idx, message in enumerate(chat_history):
-            memory_store.put(namespace, f"chat-{idx}", message)
 
         mermaid_instructions = '''
             Help me with short and to the point diagrams wherever you see fit using 
@@ -192,10 +196,10 @@ def chat_query(request, ass_id=None):
                 # Save the current interaction in memory
                 try:
                     key = f"chat-{len(memory_store.search(namespace))}"
-                    memory_store.put(namespace, next_key, {"User": prompt, "AI": full_response, "summary": chat_summary})
-                    # logger.info(f"chat history saved to memory{chat_history}")
+                    memory_store.put(namespace, next_key, {"User": prompt, "AI": full_response, "summary": chat_summary, "knowledge_level": knowledge_level})
+                   
 
-                    logger.info(f"Saved memory: namespace={namespace}, key={key}, data={{'user': '{prompt}', 'assistant': '{full_response}', 'summary': '{chat_summary}'}}")
+                    # logger.info(f"Saved memory: namespace={namespace}, key={key}, data={{'user': '{prompt}', 'assistant': '{full_response}', 'summary': '{chat_summary}'}}")
                 except Exception as e:
                     logger.error(f"Error saving chat memory: {e}")
             except Exception as e:

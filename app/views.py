@@ -296,63 +296,46 @@ def list_assistants(request):
     # Apply sorting
     assistants = assistants.order_by(sort_value)
     
-    # Get rating counts in a single query
-    rating_counts = (
-        Assistant.objects
-        .values('average_rating')
-        .order_by('-average_rating')
-    )
     
-    # Format rating counts
-    formatted_rating_counts = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
-    for rating in rating_counts:
-        if rating['average_rating'] is not None:
-            rating_value = float(rating['average_rating'])
-            if rating_value >= 4.8:
-                formatted_rating_counts[5] += 1
-            elif 4.0 <= rating_value < 4.8:
-                formatted_rating_counts[4] += 1
-            elif 3.0 <= rating_value < 4.0:
-                formatted_rating_counts[3] += 1
-            elif 2.0 <= rating_value < 3.0:
-                formatted_rating_counts[2] += 1
-            elif 1.0 <= rating_value < 2.0:
-                formatted_rating_counts[1] += 1
     
     # Prepare context
-    context = {
-        "subjects_data": subjects_data,
-        "filtered_assistants": [
-            {
-                "id": str(a.id),
-                "name": a.name,
-                "subject": a.subject,
-                "topic": a.topic,
-                "description": a.description,
-                "created_at": a.created_at,
-                "interactions": a.interactions,
-                "average_rating": a.average_rating,
-                "total_reviews": a.total_reviews
-            }
-            for a in assistants
-        ],
-        "sorting_options": {opt['value']: opt['label'] for opt in sorting_options.values()},
-        "current_sort": sort_label,
-        "rating_counts": formatted_rating_counts
-    }
+    # context = {
+    #     "subjects_data": subjects_data,
+    #     "filtered_assistants": [
+    #         {
+    #             "id": str(a.id),
+    #             "name": a.name,
+    #             "subject": a.subject,
+    #             "topic": a.topic,
+    #             "description": a.description,
+    #             "created_at": a.created_at,
+    #             "interactions": a.interactions,
+    #             "average_rating": a.average_rating,
+    #             "total_reviews": a.total_reviews
+    #         }
+    #         for a in assistants
+    #     ],
+    #     "sorting_options": {opt['value']: opt['label'] for opt in sorting_options.values()},
+    #     "current_sort": sort_label,
+    #     "rating_counts": formatted_rating_counts
+    # }
 
-    sort_options = {opt['label']: opt['value'] for opt in sorting_options.values()}
-
-    logger.info(f"Sorting option look like this: {sort_options}")
     
     # Return appropriate template
     if request.htmx:
         return render(request, 'assistant/list_partials.html', {
-            'assistants': context["filtered_assistants"],
+            'assistants': assistants,
             'current_sort': sort_label
         })
     
-    return render(request, 'assistant/list.html', context)
+    return render(request, 'assistant/list.html', {
+            'assistants': assistants,
+            'current_sort': sort_label,
+            "sorting_options": {opt['value']: opt['label'] for opt in sorting_options.values()},
+            "current_sort": sort_label,
+            "subjects_data": subjects_data
+
+        })
 
 
 
