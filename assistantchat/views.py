@@ -95,7 +95,7 @@ def chat_query(request, ass_id=None):
             chat_history, keys = [], []
 
         # Define sliding window parameters
-        MAX_MEMORY_SIZE = 20  # Maximum allowed entries in memory
+        MAX_MEMORY_SIZE = 3  # Maximum allowed entries in memory
 
         chat_summary = next(
             (entry["summary"] for entry in chat_history if "summary" in entry),
@@ -117,9 +117,9 @@ def chat_query(request, ass_id=None):
         # Dynamically apply sliding window logic if memory exceeds MAX_MEMORY_SIZE
         if len(chat_history) >= MAX_MEMORY_SIZE:
 
-            oldest_keys = keys[:10]
+            oldest_keys = keys[:2]
             # Offload the oldest 10 messages to the database
-            offloaded_messages = chat_history[:10]
+            offloaded_messages = chat_history[:2]
 
             chat_module.save_chat_history(user_id, assistant_id, offloaded_messages)
 
