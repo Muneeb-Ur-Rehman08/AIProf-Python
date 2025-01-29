@@ -1,135 +1,189 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-import openai
+from langchain_openai import ChatOpenAI
 import os
 import base64
-import tempfile
+import io
 from openai import OpenAI
+import requests
+import wave
+import numpy as np
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+def get_llm(model):
+    api_key = os.environ.get("OPENAI_API_KEY")
+    return ChatOpenAI(
+        api_key=api_key,
+        model=model,
+        temperature=0.5,
+        max_retries=3
+    )
+
+client = OpenAI()
+
+
+# Fetch the audio file and convert it to a base64 encoded string
+url = "https://openaiassets.blob.core.windows.net/$web/API/docs/audio/alloy.wav"
+response = requests.get(url)
+response.raise_for_status()
+wav_data = response.content
+encoded_string = base64.b64encode(wav_data).decode('utf-8')
+
 
 class VoiceAssistantConsumer(AsyncWebsocketConsumer):
-    print("VoiceAssistantConsumer")
+    MODEL_NAME = "gpt-4o-mini-audio-preview"
+    VOICE_ID = "alloy"
+    AUDIO_FORMAT = "pcm16"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.audio_data = None
+        try:
+            self.llm = get_llm(self.MODEL_NAME)
+        except Exception as e:
+            print(f"Error initializing LLM: {str(e)}")
+            self.llm = None
+
     async def connect(self):
+        """
+        Called when the websocket is handshaking.
+        """
         await self.accept()
-        await self.send(json.dumps({"type": "system", "message": "Connected to Voice Assistant."}))
-        self.client = OpenAI()
+        await self.send(
+            json.dumps({"type": "system", "message": "Connected to Voice Assistant."})
+        )
 
     async def disconnect(self, close_code):
+        """
+        Called when websocket closes.
+        """
         pass
 
     async def receive(self, text_data=None, bytes_data=None):
+        """
+        Called whenever the client sends something over WebSocket.
+        """
         if text_data:
             data = json.loads(text_data)
-
+            # "control" signals the beginning of conversation
             if data.get("control") == "start_conversation":
                 await self.send_greeting()
+
+            # "audio_data" => user has sent base64 WAV for STT
             elif "audio_data" in data:
-                await self.process_audio_data(data["audio_data"])
+                await self.get_response_from_audio(data["audio_data"])
+
+            # "transcript" => user typed or recognized text
             elif "transcript" in data:
-                await self.get_assistant_response(data["transcript"])
+                await self.get_chat_response(data["transcript"])
 
     async def send_greeting(self):
+        """
+        Sends an initial text greeting (no TTS, since we can't do openai.Audio.speech).
+        """
         greeting = "Hello! How can I assist you today?"
-        audio_data = await self.text_to_speech(greeting)
-        await self.send(json.dumps({"type": "assistant_response", "message": greeting, "audio_data": audio_data}))
-
-    async def process_audio_data(self, audio_base64):
-        try:
-            audio_bytes = base64.b64decode(audio_base64)
-            print(f"Audio bytes: {audio_bytes}")
-            # Create temporary file with .webm extension
-            # with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as temp_audio:
-            #     temp_audio.write(audio_bytes)
-            #     temp_audio_path = temp_audio
-            temp_audio_path = "temp_audio.webm"
-            with open(temp_audio_path, "wb") as temp_audio:
-                temp_audio.write(audio_bytes)
-            print("Saved to:", temp_audio_path)
-            print("Does file exist after close?", os.path.exists(temp_audio_path))
-            try:
-                print(f"Enter in trans:")
-                transcription = await self.transcribe_audio(temp_audio_path, audio_bytes)
-                print(f"Transcription DinDong: {transcription}")
-                if transcription:
-                    await self.send(json.dumps({"type": "transcription", "text": transcription}))
-                    await self.get_assistant_response(transcription)
-                else:
-                    await self.send(json.dumps({"type": "system", "message": "No speech detected."}))
-            finally:
-                # Clean up temporary file
-                try:
-                    if os.path.exists(temp_audio_path):
-                        os.remove(temp_audio_path)
-                except OSError:
-                    pass
-        except Exception as e:
-            print(f"Error processing audio: {str(e)}")
-            await self.send(json.dumps({"type": "system", "message": "Error processing audio."}))
-
-    async def transcribe_audio(self, audio_path, audio_bytes):
-        try:
-            with open(audio_path, "rb") as audio_file:
-                # Create a file object with name and content type
-                audio_file_obj = {
-                    "file": ("audio.webm", audio_file, "audio/webm")
+        await self.send(
+            json.dumps(
+                {
+                    "type": "assistant_response",
+                    "message": greeting,
+                    "audio_data": None,  # No TTS here
                 }
-                transcript = self.client.audio.transcriptions.create(
-                    model="whisper-1", 
-                    file=audio_file_obj["file"]
-                )
-                return transcript.text
-        except Exception as e:
-            print(f"Error in transcribe_audio: {str(e)}")
-            return None
+            )
+        )
 
-    async def get_assistant_response(self, user_text):
-        system_message = "You are a helpful assistant. You have to answer the user's question and provide a helpful response. Use always english language. You are a helpful assistant. You have to answer the user's question and provide a helpful response. Use always english language. Give short answers."
+    def convert_wav_to_pcm16(self, wav_base64):
+        """
+        Converts a base64 WAV file to PCM16 format for OpenAI API.
+        """
         try:
-            # Remove await since client methods are synchronous
-            stream = self.client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "system", "content": system_message}, {"role": "user", "content": user_text}],
-                temperature=0.7,
-                stream=True  # Enable streaming
+            # Decode base64 to raw WAV bytes
+            wav_bytes = base64.b64decode(wav_base64)
+
+            # Read WAV file
+            with wave.open(io.BytesIO(wav_bytes), "rb") as wav_file:
+                sample_width = wav_file.getsampwidth()
+                frame_rate = wav_file.getframerate()
+                channels = wav_file.getnchannels()
+                pcm_data = wav_file.readframes(wav_file.getnframes())
+
+            if sample_width != 2:
+                raise ValueError("Audio must be 16-bit PCM")
+
+            if channels > 1:
+                # Convert stereo to mono (average channels)
+                pcm_array = np.frombuffer(pcm_data, dtype=np.int16)
+                pcm_array = pcm_array.reshape((-1, channels)).mean(axis=1).astype(np.int16)
+                pcm_data = pcm_array.tobytes()
+
+            return base64.b64encode(pcm_data).decode('utf-8')
+
+        except Exception as e:
+            print(f"Error converting WAV to PCM16: {e}")
+            return None
+        
+
+    async def get_response_from_audio(self, audio_data_b64):
+        try:
+
+            pcm16_audio = self.convert_wav_to_pcm16(audio_data_b64)
+            if not pcm16_audio:
+                raise ValueError("Failed to convert audio to PCM16 format")
+        
+            completion = client.chat.completions.create(
+                model=self.MODEL_NAME,
+                modalities=["text", "audio"],
+                audio={"voice": self.VOICE_ID, "format": self.AUDIO_FORMAT},
+                stream=True,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": """
+                        you are a helpful assistant. who does short and concise answers. default audio response should be less 5 second unless user asks for more.
+                        """
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "input_audio",
+                                "input_audio": {
+                                    "data": pcm16_audio,
+                                    "format": self.AUDIO_FORMAT
+                                }
+
+                            }
+                        ]
+                    },
+                ]
             )
 
-            accumulated_message = ""
-            
-            # Process each chunk as it arrives
-            for chunk in stream:
-                if chunk.choices[0].delta.content is not None:
-                    content = chunk.choices[0].delta.content
-                    accumulated_message += content
-                    
-                    # Send the chunk immediately to the frontend
-                    await self.send(json.dumps({
-                        "type": "assistant_stream",
-                        "chunk": content
-                    }))
+            for chunk in completion:
+                print(chunk)
 
-            # After streaming is complete, generate and send the audio
-            audio_data = await self.text_to_speech(accumulated_message)
-            
-            # Send the complete message with audio
-            await self.send(json.dumps({
-                "type": "assistant_response",
-                "message": accumulated_message,
-                "audio_data": audio_data
-            }))
+            # transcript = completion.choices[0].message.audio.transcript
+            # audio_data = completion.choices[0].message.audio.data
+
+            # await self.send(
+            #     json.dumps(
+            #         {
+            #             "type": "assistant_response",
+            #             "message": transcript,
+            #             "audio_data": audio_data,
+            #         }
+            #     )
+            # )
 
         except Exception as e:
-            print(f"Error in get_assistant_response: {str(e)}")
-            await self.send(json.dumps({
-                "type": "system",
-                "message": f"Error: {str(e)}"
-            }))
+            error_message = f"Error processing audio: {str(e)}"
+            await self.send(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "message": error_message,
+                        "audio_data": None,
+                    }
+                )
+            )
 
-    async def text_to_speech(self, text):
-        # Remove await since client methods are synchronous
-        speech_response = self.client.audio.speech.create(
-            model="tts-1-hd",
-            voice="nova",
-            input=text
-        )
-        return base64.b64encode(speech_response.content).decode("utf-8")
+
+
