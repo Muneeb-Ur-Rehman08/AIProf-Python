@@ -146,7 +146,7 @@ class ChatModule:
             - Provide thorough explanation using context (without directly including it)
             - Explicitly check for understanding
         2. **Exercise Delivery**:
-            - After user confirms understanding, automatically transition to exercises
+            - After user confirms understanding or change the topic or query, automatically transition to exercises
             - Include clear submission instructions
             - Accept solutions via text, image, or file
         3. **Solution Review**:
