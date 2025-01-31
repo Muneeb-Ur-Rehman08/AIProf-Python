@@ -242,6 +242,7 @@ def list_assistants(request):
     topics = request.GET.getlist('topic')
     
     if subjects:
+        logger.info(f"subjects: {subjects}")
         filters &= Q(subject__in=subjects)
     if topics:
         filters &= Q(topic__in=topics)
@@ -366,7 +367,8 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
             'interactions': interactions,
             'reviews_count': len(ratings),
             'is_creator': is_creator,
-            'is_logged_in': is_logged_in
+            'is_logged_in': is_logged_in,
+            "reviews_by": ratings,
         })
     
     else:  # POST request

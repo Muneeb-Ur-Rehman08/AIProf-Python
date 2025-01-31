@@ -1,0 +1,296 @@
+<div class="flex h-screen flex-col bg-white">
+    <header class="sticky top-0 z-50 flex h-16 items-center border-b bg-white px-6 shadow-sm">
+        <div class="flex items-center gap-2.5">
+            <div class="bg-gradient-to-r from-blue-500 to-indigo-500 p-2 rounded-xl"><svg
+                    xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="lucide lucide-brain h-6 w-6 text-white">
+                    <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z">
+                    </path>
+                    <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z">
+                    </path>
+                    <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"></path>
+                    <path d="M17.599 6.5a3 3 0 0 0 .399-1.375"></path>
+                    <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"></path>
+                    <path d="M3.477 10.896a4 4 0 0 1 .585-.396"></path>
+                    <path d="M19.938 10.5a4 4 0 0 1 .585.396"></path>
+                    <path d="M6 18a4 4 0 0 1-1.967-.516"></path>
+                    <path d="M19.967 17.484A4 4 0 0 1 18 18"></path>
+                </svg></div><span
+                class="text-xl font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">AiProf</span>
+        </div>
+        <div class="ml-auto flex items-center gap-2"><button
+                class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent h-10 w-10 text-gray-500 hover:text-gray-900"><svg
+                    xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="lucide lucide-settings h-5 w-5">
+                    <path
+                        d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z">
+                    </path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg></button><button
+                class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-10 w-10 rounded-full"
+                type="button" id="radix-:r0:" aria-haspopup="menu" aria-expanded="false" data-state="closed"><span
+                    class="sr-only">User menu</span>
+                <div class="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500"></div>
+            </button></div>
+    </header>
+    <div class="flex flex-1 overflow-hidden">
+        <div class="w-80 border-r bg-white">
+            <div class="p-4 border-b bg-white">
+                <h2 class="text-xl font-semibold text-gray-800">Assistants</h2>
+            </div>
+            <div dir="ltr" class="relative overflow-hidden h-[calc(100vh-9rem)]"
+                style="position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;">
+                <style>
+                    [data-radix-scroll-area-viewport] {
+                        scrollbar-width: none;
+                        -ms-overflow-style: none;
+                        -webkit-overflow-scrolling: touch;
+                    }
+
+                    [data-radix-scroll-area-viewport]::-webkit-scrollbar {
+                        display: none
+                    }
+                </style>
+                <div data-radix-scroll-area-viewport="" class="h-full w-full rounded-[inherit]"
+                    style="overflow: hidden scroll;">
+                    <div style="min-width: 100%; display: table;">
+                        <div class="p-4 space-y-2">
+                            <div class="group relative rounded-lg p-3 hover:bg-white transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white font-medium shadow-md transition-transform group-hover:scale-105">
+                                        R</div>
+                                    <div>
+                                        <div class="font-semibold text-gray-900">React Expert</div>
+                                        <div class="text-sm text-gray-500">Frontend development specialist</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="group relative rounded-lg p-3 hover:bg-white transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-medium shadow-md transition-transform group-hover:scale-105">
+                                        N</div>
+                                    <div>
+                                        <div class="font-semibold text-gray-900">Node.js Guru</div>
+                                        <div class="text-sm text-gray-500">Backend development expert</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="group relative rounded-lg p-3 hover:bg-white transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-medium shadow-md transition-transform group-hover:scale-105">
+                                        U</div>
+                                    <div>
+                                        <div class="font-semibold text-gray-900">UI Designer</div>
+                                        <div class="text-sm text-gray-500">Design system specialist</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="group relative rounded-lg p-3 hover:bg-white transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-purple-500 to-violet-500 text-white font-medium shadow-md transition-transform group-hover:scale-105">
+                                        D</div>
+                                    <div>
+                                        <div class="font-semibold text-gray-900">DevOps Pro</div>
+                                        <div class="text-sm text-gray-500">Infrastructure expert</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="group relative rounded-lg p-3 hover:bg-white transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-medium shadow-md transition-transform group-hover:scale-105">
+                                        A</div>
+                                    <div>
+                                        <div class="font-semibold text-gray-900">AI Assistant</div>
+                                        <div class="text-sm text-gray-500">Machine learning specialist</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="group relative rounded-lg p-3 hover:bg-white transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white font-medium shadow-md transition-transform group-hover:scale-105">
+                                        S</div>
+                                    <div>
+                                        <div class="font-semibold text-gray-900">Security Expert</div>
+                                        <div class="text-sm text-gray-500">Cybersecurity specialist</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="group relative rounded-lg p-3 hover:bg-white transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-medium shadow-md transition-transform group-hover:scale-105">
+                                        D</div>
+                                    <div>
+                                        <div class="font-semibold text-gray-900">Database Admin</div>
+                                        <div class="text-sm text-gray-500">Data management expert</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="group relative rounded-lg p-3 hover:bg-white transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-teal-500 to-green-500 text-white font-medium shadow-md transition-transform group-hover:scale-105">
+                                        T</div>
+                                    <div>
+                                        <div class="font-semibold text-gray-900">Testing Pro</div>
+                                        <div class="text-sm text-gray-500">QA automation specialist</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="group relative rounded-lg p-3 hover:bg-white transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-medium shadow-md transition-transform group-hover:scale-105">
+                                        M</div>
+                                    <div>
+                                        <div class="font-semibold text-gray-900">Mobile Dev</div>
+                                        <div class="text-sm text-gray-500">Cross-platform expert</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <main class="flex-1 flex flex-col">
+            <div class="px-8 py-6 border-b bg-white">
+                <h1 class="text-3xl font-bold tracking-tight text-gray-900">QTeach</h1>
+            </div>
+            <div class="flex-1 overflow-auto p-6"></div>
+            <div class="border-t bg-white p-4">
+                <div class="flex items-center gap-2"><button
+                        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 border border-input bg-background hover:text-accent-foreground h-10 w-10 rounded-full hover:bg-gray-100 flex-shrink-0"><svg
+                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-paperclip h-5 w-5 text-gray-500">
+                            <path
+                                d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48">
+                            </path>
+                        </svg><span class="sr-only">Attach file</span></button>
+                    <div class="relative flex-1"><textarea
+                            class="flex w-full border px-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-12 py-3 min-h-[3rem] max-h-32 resize-none bg-white border-gray-200 rounded-full"
+                            placeholder="Message Assistant..." rows="1"></textarea>
+                        <div class="absolute right-2 bottom-1.5 flex items-center"><button
+                                class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:text-accent-foreground h-8 w-8 rounded-full hover:bg-gray-100 mr-1"><svg
+                                    xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" class="lucide lucide-mic h-5 w-5 text-gray-500">
+                                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                    <line x1="12" x2="12" y1="19" y2="22"></line>
+                                </svg><span class="sr-only">Voice input</span></button><button
+                                class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"><svg
+                                    xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" class="lucide lucide-send h-5 w-5 text-white">
+                                    <path d="m22 2-7 20-4-9-9-4Z"></path>
+                                    <path d="M22 2 11 13"></path>
+                                </svg><span class="sr-only">Send message</span></button></div>
+                    </div><button
+                        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 border border-input bg-background hover:text-accent-foreground h-10 w-10 rounded-full hover:bg-gray-100 flex-shrink-0"><svg
+                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-wand-sparkles h-5 w-5 text-gray-500">
+                            <path
+                                d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72">
+                            </path>
+                            <path d="m14 7 3 3"></path>
+                            <path d="M5 6v4"></path>
+                            <path d="M19 14v4"></path>
+                            <path d="M10 2v2"></path>
+                            <path d="M7 8H3"></path>
+                            <path d="M21 16h-4"></path>
+                            <path d="M11 3H9"></path>
+                        </svg><span class="sr-only">Voice mode</span></button>
+                </div>
+            </div>
+        </main>
+        <div class="w-80 border-l bg-white">
+            <div class="p-4 border-b bg-white flex items-center justify-between">
+                <h2 class="text-xl font-semibold text-gray-800">Notes</h2><button
+                    class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:text-accent-foreground h-10 w-10 rounded-full hover:bg-gray-100"><svg
+                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="lucide lucide-plus h-5 w-5">
+                        <path d="M5 12h14"></path>
+                        <path d="M12 5v14"></path>
+                    </svg></button>
+            </div>
+            <div dir="ltr" class="relative overflow-hidden h-[calc(100vh-9rem)]"
+                style="position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;">
+                <style>
+                    [data-radix-scroll-area-viewport] {
+                        scrollbar-width: none;
+                        -ms-overflow-style: none;
+                        -webkit-overflow-scrolling: touch;
+                    }
+
+                    [data-radix-scroll-area-viewport]::-webkit-scrollbar {
+                        display: none
+                    }
+                </style>
+                <div data-radix-scroll-area-viewport="" class="h-full w-full rounded-[inherit]"
+                    style="overflow: hidden scroll;">
+                    <div style="min-width: 100%; display: table;">
+                        <div class="p-4 space-y-4">
+                            <div
+                                class="group rounded-lg border bg-white p-3 hover:bg-gray-50 transition-colors cursor-pointer shadow-sm">
+                                <div class="space-y-1">
+                                    <h3 class="font-medium leading-none text-gray-900">React Hooks</h3>
+                                    <p class="text-sm text-gray-500 line-clamp-2">Understanding useEffect and its
+                                        dependencies...</p>
+                                    <p class="text-xs text-gray-400">2 mins ago</p>
+                                </div>
+                            </div>
+                            <div
+                                class="group rounded-lg border bg-white p-3 hover:bg-gray-50 transition-colors cursor-pointer shadow-sm">
+                                <div class="space-y-1">
+                                    <h3 class="font-medium leading-none text-gray-900">Next.js 13 Features</h3>
+                                    <p class="text-sm text-gray-500 line-clamp-2">App router and server components
+                                        overview...</p>
+                                    <p class="text-xs text-gray-400">5 mins ago</p>
+                                </div>
+                            </div>
+                            <div
+                                class="group rounded-lg border bg-white p-3 hover:bg-gray-50 transition-colors cursor-pointer shadow-sm">
+                                <div class="space-y-1">
+                                    <h3 class="font-medium leading-none text-gray-900">TypeScript Tips</h3>
+                                    <p class="text-sm text-gray-500 line-clamp-2">Advanced type inference and utility
+                                        types...</p>
+                                    <p class="text-xs text-gray-400">10 mins ago</p>
+                                </div>
+                            </div>
+                            <div
+                                class="group rounded-lg border bg-white p-3 hover:bg-gray-50 transition-colors cursor-pointer shadow-sm">
+                                <div class="space-y-1">
+                                    <h3 class="font-medium leading-none text-gray-900">CSS Grid Layout</h3>
+                                    <p class="text-sm text-gray-500 line-clamp-2">Building responsive layouts with
+                                        grid...</p>
+                                    <p class="text-xs text-gray-400">15 mins ago</p>
+                                </div>
+                            </div>
+                            <div
+                                class="group rounded-lg border bg-white p-3 hover:bg-gray-50 transition-colors cursor-pointer shadow-sm">
+                                <div class="space-y-1">
+                                    <h3 class="font-medium leading-none text-gray-900">State Management</h3>
+                                    <p class="text-sm text-gray-500 line-clamp-2">Comparing Redux, Zustand, and Jotai...
+                                    </p>
+                                    <p class="text-xs text-gray-400">20 mins ago</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
