@@ -21,7 +21,7 @@ from django.template.loader import TemplateDoesNotExist
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from .add import populate_subjects_and_topics
-from .utils import generate_instruction_stream
+from .utils import generate_instruction_stream, generate_welcome_message
 from app.modals.chat import get_llm
 
 
@@ -258,6 +258,14 @@ def create_assistant(request, ass_id: Optional[str] = None):
         # Explicitly set is_published only when save button is clicked
         if data.get('save_button_clicked') == 'true':
             assistant.is_published = True
+            # welcome_message = generate_welcome_message(
+            #     data.name,
+            #     data.subject, 
+            #     data.topic, 
+            #     data.current_instructions,
+            #     data.description
+            # )
+            # assistant.welcome_message = welcome_message
             changes_made = True
 
 
