@@ -8,9 +8,9 @@
   {% endblock %}
 
   <!-- Search Input -->
-  <div class="bg-white p-2 border-b">
-    <div class="flex items-center gap-4">
-      <div class="relative lg:hidden">
+  <div class="bg-white p-2 border-b z-30">
+    <div class="flex items-center gap-7 pl-3">
+      <div class="relative md:hidden">
         <input id="my-drawer" type="checkbox" class="drawer-toggle" />
         <div class="drawer-content">
           <label for="my-drawer" class="btn border-gray-300 border bg-white text-black hover:bg-gray-100">
@@ -20,9 +20,9 @@
             </svg>
           </label>
         </div>
-        <div class="drawer-side">
-          <label for="my-drawer" aria-label="close sidebar" class="drawer-overlay z-20"></label>
-          <div class="bg-white min-h-full w-80 p-4 relative z-30">
+        <div class="drawer-side z-50">
+          <label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+          <div class="bg-white min-h-full w-80 p-4 relative">
             <div class="flex justify-between items-center p-4 border-b">
               <h3 class="font-semibold text-lg">Filters</h3>
               <label for="my-drawer"
@@ -102,11 +102,11 @@
 <div class="pt-32">
   <div class="bg-gradient-to-b from-purple-50 to-white text-black" hx-replace-url="{% url 'list_assistants' %}">
     <div>
-      <div class="hidden lg:flex">
-        {% include 'assistant/form_filters.html' %}
+      <div class="hidden md:flex">
+        {% include 'assistant/form_filters.html'  %}
       </div>
    
-      <main class="flex-1 lg:ml-72" style="z-index: 1;" id="assistants-list" 
+      <main class="flex-1 md:ml-72" style="z-index: 1;" id="assistants-list" 
         hx-get="{% url 'list_assistants' %}" 
         hx-trigger="load"
         hx-replace-url="false">

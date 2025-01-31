@@ -242,6 +242,7 @@ def list_assistants(request):
     topics = request.GET.getlist('topic')
     
     if subjects:
+        logger.info(f"subjects: {subjects}")
         filters &= Q(subject__in=subjects)
     if topics:
         filters &= Q(topic__in=topics)
@@ -295,30 +296,7 @@ def list_assistants(request):
     
     # Apply sorting
     assistants = assistants.order_by(sort_value)
-    
-    # Get rating counts in a single query
-    rating_counts = (
-        Assistant.objects
-        .values('average_rating')
-        .order_by('-average_rating')
-    )
-    
-    # Format rating counts
-    formatted_rating_counts = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
-    for rating in rating_counts:
-        if rating['average_rating'] is not None:
-            rating_value = float(rating['average_rating'])
-            if rating_value >= 4.8:
-                formatted_rating_counts[5] += 1
-            elif 4.0 <= rating_value < 4.8:
-                formatted_rating_counts[4] += 1
-            elif 3.0 <= rating_value < 4.0:
-                formatted_rating_counts[3] += 1
-            elif 2.0 <= rating_value < 3.0:
-                formatted_rating_counts[2] += 1
-            elif 1.0 <= rating_value < 2.0:
-                formatted_rating_counts[1] += 1
-    
+
     # Prepare context
     context = {
         "subjects_data": subjects_data,
@@ -337,8 +315,7 @@ def list_assistants(request):
             for a in assistants
         ],
         "sorting_options": {opt['value']: opt['label'] for opt in sorting_options.values()},
-        "current_sort": sort_label,
-        "rating_counts": formatted_rating_counts
+        "current_sort": sort_label
     }
     
     # Return appropriate template
@@ -379,7 +356,8 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
             'interactions': interactions,
             'reviews_count': len(ratings),
             'is_creator': is_creator,
-            'is_logged_in': is_logged_in
+            'is_logged_in': is_logged_in,
+            "reviews_by": ratings,
         })
     
     else:  # POST request

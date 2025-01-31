@@ -2,7 +2,7 @@
 {% block content %}
 
 <div class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-16">
-    <header class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-sm shadow-sm z-10">
+    <!-- <header class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-sm shadow-sm z-10">
         <div class="max-w-7xl mx-auto px-4 py-2 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-4">
@@ -25,50 +25,89 @@
                         <p class="text-sm text-gray-500">Computer Science • Web Development</p>
                     </div>
                 </div>
-                <div class="flex items-center space-x-4"><button
-                        class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 h-10 px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700"><svg
+                <div class="flex items-center space-x-4">
+                    {% if is_logged_in %}
+                    <a href="{% url 'assistant_chat' assistant.id %}"
+                        class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 h-10 px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700">
+                        <svg
                             xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             class="lucide lucide-message-circle mr-2 h-4 w-4">
                             <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path>
-                        </svg>Chat</button></div>
+                        </svg>
+                        Chat
+                    </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
-    </header>
-    <div class="max-w-7xl mx-auto px-4 py-8">
+    </header> -->
+    <div class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-sm shadow-sm z-10">
+        {% block navbar %}
+        {% include 'modal/navbar.html' %}
+        {% endblock %}
+    </div>
+    <div class="max-w-7xl mx-auto p-4">
+        {% if assistant %}
         <div class="mb-8">
-            <a href="{% url 'list_assistants' %}"
-                class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 h-10 px-4 py-2 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-100 transition-colors mb-4"><svg
-                    xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    class="lucide lucide-arrow-left mr-2 h-4 w-4">
-                    <path d="m12 19-7-7 7-7"></path>
-                    <path d="M19 12H5"></path>
-                </svg>Back to Assistants
-            </a>
-            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight mb-4">React Hooks</h1>
-            <div class="flex flex-wrap gap-2 mb-4">
-                <div class="inline-flex items-center rounded-full border font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent hover:bg-gray-200/60 text-sm bg-indigo-100 text-indigo-800 px-3 py-1"
-                    data-v0-t="badge"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round" class="lucide lucide-book-open w-4 h-4 mr-1 inline">
-                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                    </svg>Computer Science</div>
-                <div class="inline-flex items-center rounded-full border font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent hover:bg-slate-200/60 text-sm bg-purple-100 text-purple-800 px-3 py-1"
-                    data-v0-t="badge"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round" class="lucide lucide-code-xml w-4 h-4 mr-1 inline">
-                        <path d="m18 16 4-4-4-4"></path>
-                        <path d="m6 8-4 4 4 4"></path>
-                        <path d="m14.5 4-5 16"></path>
-                    </svg>Web Development</div>
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight">{{ assistant.name }}</h1>
+                <div class="flex gap-4">
+                    <a href="{% url 'list_assistants' %}"
+                        class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 h-10 px-4 py-2 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-arrow-left mr-2 h-4 w-4">
+                            <path d="m12 19-7-7 7-7"></path>
+                            <path d="M19 12H5"></path>
+                        </svg>Back
+                    </a>
+                    {% if is_logged_in %}
+                    <a href="{% url 'assistant_chat' assistant.id %}"
+                        class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 h-10 px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-message-circle mr-2 h-4 w-4">
+                            <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path>
+                        </svg>
+                        Chat
+                    </a>
+                    {% endif %}
+                </div>
             </div>
-            <p class="text-xl text-gray-600 max-w-3xl leading-relaxed">Master React hooks through curated video lessons
-                and comprehensive documentation.</p>
+            <div class="flex justify-between md:justify-start gap-2 mb-4">
+                <div>
+                    <div class="inline-flex items-center rounded-full border font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent hover:bg-gray-200/60 text-sm bg-indigo-100 text-indigo-800 px-3 py-1"
+                        data-v0-t="badge"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-book-open w-4 h-4 mr-1 inline">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                        </svg>{{ assistant.subject }}</div>
+                    <div class="inline-flex items-center rounded-full border font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent hover:bg-slate-200/60 text-sm bg-purple-100 text-purple-800 px-3 py-1"
+                        data-v0-t="badge"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-code-xml w-4 h-4 mr-1 inline">
+                            <path d="m18 16 4-4-4-4"></path>
+                            <path d="m6 8-4 4 4 4"></path>
+                            <path d="m14.5 4-5 16"></path>
+                        </svg>{{ assistant.topic }}</div>
+                </div>
+            </div>
         </div>
         <div class="grid md:grid-cols-3 gap-8">
             <div class="md:col-span-2 space-y-8">
+                <div class="relative">
+                    <p id="short-desc" class="text-xl text-gray-600 max-w-3xl leading-relaxed line-clamp-3 text-justify">{{ assistant.description }}</p>
+                    <button  _="on click 
+                    toggle .line-clamp-3 on #short-desc
+                    if my innerText is 'Read more' 
+                        put 'Show less' into my innerText 
+                    else 
+                        put 'Read more' into my innerText" id="desc-toggle" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium ">Read more</button>
+                </div>
                 <div class="relative rounded-xl overflow-hidden shadow-2xl bg-gray-900">
                     <div class="aspect-video bg-gray-800 flex items-center justify-center relative">
                         <div
@@ -121,53 +160,44 @@
                                 <p class="text-lg font-medium text-gray-900">Total Interactions</p>
                                 <p class="text-sm text-gray-600">Engagement metric</p>
                             </div>
-                        </div><span class="text-3xl font-bold text-indigo-600">7</span>
+                        </div><span class="text-3xl font-bold text-indigo-600">{{assistant.interactions|default:0}}</span>
                     </div>
                 </div>
                 <div class="space-y-6">
                     <h3 class="text-2xl font-semibold text-gray-900">Latest Reviews</h3>
-                    <div class="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden transition-all hover:shadow-lg"
-                        data-v0-t="card">
-                        <div
-                            class="p-6 bg-white hover:bg-gradient-to-br hover:from-indigo-50 hover:to-purple-50 transition-all duration-300">
-                            <div class="flex items-center mb-4"><svg xmlns="http://www.w3.org/2000/svg" width="24"
+                    {% for last_review in reviews_by %}
+                    <div class="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden transition-all hover:shadow-lg" data-v0-t="card">
+                        <div class="p-6 bg-white hover:bg-gradient-to-br hover:from-indigo-50 hover:to-purple-50 transition-all duration-300">
+                            <div class="flex items-center mb-4">
+                                {% for star in "12345"|make_list %}
+                                {% if star|add:"0" <= last_review.rating|add:"0" %}
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24"
                                     height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                     stroke-linecap="round" stroke-linejoin="round"
                                     class="lucide lucide-star h-5 w-5 text-yellow-400 mr-1">
                                     <polygon
                                         points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
                                     </polygon>
-                                </svg><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round" class="lucide lucide-star h-5 w-5 text-yellow-400 mr-1">
+                                </svg>
+                                {% else %}
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                    height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round"
+                                    class="lucide lucide-star h-5 w-5 text-gray-300 mr-1">
                                     <polygon
                                         points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
                                     </polygon>
-                                </svg><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round" class="lucide lucide-star h-5 w-5 text-yellow-400 mr-1">
-                                    <polygon
-                                        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
-                                    </polygon>
-                                </svg><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round" class="lucide lucide-star h-5 w-5 text-yellow-400 mr-1">
-                                    <polygon
-                                        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
-                                    </polygon>
-                                </svg><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round" class="lucide lucide-star h-5 w-5 text-yellow-400 mr-1">
-                                    <polygon
-                                        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
-                                    </polygon>
-                                </svg><span class="text-gray-600 ml-2">5.0</span></div>
-                            <p class="text-gray-600 mb-4">This course is incredibly helpful. The instructor explains
-                                complex concepts in a very understandable way.</p>
-                            <p class="text-sm text-gray-500">- Sarah J., 2 days ago</p>
+                                </svg>
+                                {% endif %}
+                                {% endfor %}
+                                <p class="text-gray-600 ml-2">{{last_review.rating}}</p>
+                            </div>
+                            <p class="text-gray-600 mb-4">{{last_review.review}}</p>
+                            <p class="text-sm text-gray-500">- {{last_review.user.username}}, {{last_review.created_at|date:"F j, Y"}}</p>
                         </div>
                     </div>
-                    <div class="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden transition-all hover:shadow-lg"
+                    {% endfor %}
+                    <!-- <div class="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden transition-all hover:shadow-lg"
                         data-v0-t="card">
                         <div
                             class="p-6 bg-white hover:bg-gradient-to-br hover:from-indigo-50 hover:to-purple-50 transition-all duration-300">
@@ -248,7 +278,7 @@
                                 my understanding of React Hooks.</p>
                             <p class="text-sm text-gray-500">- Emily L., 2 weeks ago</p>
                         </div>
-                    </div>
+                    </div> -->
                 </div>
             </div>
             <div class="space-y-8">
@@ -262,14 +292,15 @@
                             <polygon
                                 points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
                             </polygon>
-                        </svg><span class="text-4xl font-bold text-gray-900 mb-1">4.7</span><span
+                        </svg>
+                        <span class="text-4xl font-bold text-gray-900 mb-1">{{assistant.average_rating}}</span><span
                             class="text-lg font-medium text-gray-600">Overall Rating</span>
                         <div class="flex items-center mt-2"><svg xmlns="http://www.w3.org/2000/svg" width="24"
                                 height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                 stroke-linecap="round" stroke-linejoin="round"
                                 class="lucide lucide-message-square h-5 w-5 text-indigo-500 mr-2">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                            </svg><span class="text-sm text-gray-600">Based on 42 reviews</span>
+                            </svg><span class="text-sm text-gray-600">Based on {{reviews}} reviews</span>
                         </div>
                     </div>
                 </div>
@@ -340,5 +371,6 @@
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 {% endblock %}

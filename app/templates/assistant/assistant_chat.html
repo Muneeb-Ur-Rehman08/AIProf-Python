@@ -2,128 +2,235 @@
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/chat.css' %}">
 
-{% if chat_mode %}
-    <!-- header -->
-    {% include 'modal/navbar.html' %}
-{% endif %}
 
-<div class="flex-grow pb-5 h-full">
-    <div class="h-full">
-        <div class="flex h-full w-full">
-            {% if chat_mode %}
-            <button class="fixed top-[4.5rem] left-3 z-50 bg-gray-800 hover:bg-gray-700 text-white h-8 w-8 rounded-lg flex items-center justify-center md:hidden" _="on click toggle .hidden on #sidebar 
-                on click toggle .hidden on #sidebar-toggle
-            " id="sidebar-toggle">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                    <path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/>
-                </svg>
-            </button>
-            <!-- New Sidebar -->
-            <div class="hidden md:flex w-64 flex-shrink-0 bg-gray-900 border-r border-gray-800 h-[calc(100vh-75px)]" id="sidebar">
-                <div class="flex flex-col w-full">
-                    <div class="px-4 py-3 border-b border-gray-800 flex justify-between items-center">
-                        <h2 class="text-lg font-semibold text-white">Assistants</h2>
-                        <button class="md:hidden bg-gray-800 hover:bg-gray-700 text-white h-8 w-8 rounded-lg flex items-center justify-center" _="on click toggle .hidden on #sidebar
-                            on click toggle .hidden on #sidebar-toggle
-                        ">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                                <path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="flex-1 overflow-y-auto">
-                        {% for assistant in assistants %}
+<div class="flex flex-col h-screen bg-white text-black">
+    <div class="flex items-center justify-between border-b h-14 px-4 bg-gray-50">
+        <div class="flex items-center space-x-2"><svg class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                </path>
+            </svg><span class="text-xl font-semibold text-gray-800">AiProf</span></div>
+       
+            <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-10 w-10"><svg
+                xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-settings h-6 w-6">
+                <path
+                    d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z">
+                </path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg></button>
+    </div>
+    <div class="flex flex-1 overflow-hidden">
+        <div
+            class="translate-x-0 fixed inset-y-0 left-0 z-50 w-72 transform border-r bg-white transition-transform duration-200 ease-in-out lg:relative lg:translate-x-0">
+            <div class="flex h-16 items-center justify-between border-b px-4">
+                <div class="flex-1 max-w-2xl mx-auto relative px-4"><svg xmlns="http://www.w3.org/2000/svg" width="24"
+                    height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round"
+                    class="lucide lucide-search absolute left-7 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.3-4.3"></path>
+                </svg><input
+                    class="flex h-10 border bg-white px-3 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-full pl-10 pr-4 py-2 rounded-full border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                    placeholder="Search assistants..." type="search" value="">
+                </div><button
+                    class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-10 w-10 lg:hidden"><svg
+                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="lucide lucide-menu h-6 w-6">
+                        <line x1="4" x2="20" y1="12" y2="12"></line>
+                        <line x1="4" x2="20" y1="6" y2="6"></line>
+                        <line x1="4" x2="20" y1="18" y2="18"></line>
+                    </svg></button>
+            </div>
+            <div class="p-4">
+                <div dir="ltr" class="relative overflow-hidden h-[calc(100vh-8rem)]"
+                    style="position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;">
+                    <style>
+                        [data-radix-scroll-area-viewport] {
+                            scrollbar-width: none;
+                            -ms-overflow-style: none;
+                            -webkit-overflow-scrolling: touch;
+                        }
 
-                        <a href="{% url 'assistant_chat' assistant.id %}"
-                           class="flex items-center px-4 py-3 hover:bg-gray-800 {% if assistant.id == current_assistant.id %}bg-gray-800{% endif %}">
-                            <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center mr-3">
-                                <span class="text-white text-sm">{{ assistant.name|slice:":2" }}</span>
-                            </div>
-                            <div>
-                                <p class="text-white font-medium">{{ assistant.name }}</p>
-                                <p class="text-gray-400 text-sm">{{ assistant.description|truncatechars:30 }}</p>
-                            </div>
-                        </a>
-                        {% endfor %}
+                        [data-radix-scroll-area-viewport]::-webkit-scrollbar {
+                            display: none
+                        }
+                    </style>
+                    <div data-radix-scroll-area-viewport="" class="h-full w-full rounded-[inherit]"
+                        style="overflow: hidden scroll;">
+                        <div style="min-width: 100%; display: table;">
+                            <div class="space-y-2"><button
+                                    class="flex w-full items-center space-x-3 rounded-lg p-2 hover:bg-gray-100">
+                                    <div
+                                        class="flex h-10 w-10 items-center justify-center rounded-full text-white bg-pink-500">
+                                        R</div>
+                                    <div class="text-left">
+                                        <div class="font-medium">React Expert</div>
+                                        <div class="text-sm text-gray-500">Frontend development specialist</div>
+                                    </div>
+                                </button><button
+                                    class="flex w-full items-center space-x-3 rounded-lg p-2 hover:bg-gray-100">
+                                    <div
+                                        class="flex h-10 w-10 items-center justify-center rounded-full text-white bg-green-500">
+                                        N</div>
+                                    <div class="text-left">
+                                        <div class="font-medium">Node.js Guru</div>
+                                        <div class="text-sm text-gray-500">Backend development expert</div>
+                                    </div>
+                                </button><button
+                                    class="flex w-full items-center space-x-3 rounded-lg p-2 hover:bg-gray-100">
+                                    <div
+                                        class="flex h-10 w-10 items-center justify-center rounded-full text-white bg-blue-500">
+                                        U</div>
+                                    <div class="text-left">
+                                        <div class="font-medium">UI Designer</div>
+                                        <div class="text-sm text-gray-500">Design system specialist</div>
+                                    </div>
+                                </button><button
+                                    class="flex w-full items-center space-x-3 rounded-lg p-2 hover:bg-gray-100">
+                                    <div
+                                        class="flex h-10 w-10 items-center justify-center rounded-full text-white bg-purple-500">
+                                        D</div>
+                                    <div class="text-left">
+                                        <div class="font-medium">DevOps Pro</div>
+                                        <div class="text-sm text-gray-500">Infrastructure expert</div>
+                                    </div>
+                                </button><button
+                                    class="flex w-full items-center space-x-3 rounded-lg p-2 hover:bg-gray-100">
+                                    <div
+                                        class="flex h-10 w-10 items-center justify-center rounded-full text-white bg-orange-500">
+                                        A</div>
+                                    <div class="text-left">
+                                        <div class="font-medium">AI Assistant</div>
+                                        <div class="text-sm text-gray-500">Machine learning specialist</div>
+                                    </div>
+                                </button><button
+                                    class="flex w-full items-center space-x-3 rounded-lg p-2 hover:bg-gray-100">
+                                    <div
+                                        class="flex h-10 w-10 items-center justify-center rounded-full text-white bg-red-500">
+                                        S</div>
+                                    <div class="text-left">
+                                        <div class="font-medium">Security Expert</div>
+                                        <div class="text-sm text-gray-500">Cybersecurity specialist</div>
+                                    </div>
+                                </button><button
+                                    class="flex w-full items-center space-x-3 rounded-lg p-2 hover:bg-gray-100">
+                                    <div
+                                        class="flex h-10 w-10 items-center justify-center rounded-full text-white bg-indigo-500">
+                                        D</div>
+                                    <div class="text-left">
+                                        <div class="font-medium">Database Admin</div>
+                                        <div class="text-sm text-gray-500">Data management expert</div>
+                                    </div>
+                                </button></div>
+                        </div>
                     </div>
                 </div>
             </div>
-            {% endif %}
-            <!-- Existing chat content -->
-            <div class="flex grow flex-col h-full" _="on click toggle .hidden on #sidebar 
-                on click toggle .hidden on #sidebar-toggle
-            ">
-                <div class="relative mb-2 flex-shrink-0">
-                    <div class="hidden md:flex justify-center py-1">
-                        <h2 class="text-lg font-bold tracking-wider">{{ assistant.name | default:"AI Professor" }}</h2>
-                    </div>
+        </div>
+        <div class="flex flex-1 flex-col">
+            <header class="flex h-16 items-center justify-between border-b px-4"><button
+                    class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-10 w-10 lg:hidden"><svg
+                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="lucide lucide-menu h-6 w-6">
+                        <line x1="4" x2="20" y1="12" y2="12"></line>
+                        <line x1="4" x2="20" y1="6" y2="6"></line>
+                        <line x1="4" x2="20" y1="18" y2="18"></line>
+                    </svg></button>
+                <h1 class="text-xl font-semibold">QTeach</h1>
+                <div class="w-10"></div>
+            </header>
+            <main class="flex-1 bg-gray-50/50 overflow-auto"></main>
+            <div class="border-t p-4">
+                <div class="flex items-center space-x-2"><button
+                        class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-10 w-10"><svg
+                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-paperclip h-5 w-5 text-gray-500">
+                            <path
+                                d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48">
+                            </path>
+                        </svg></button>
+                    <div class="relative flex-1"><button
+                            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8"><svg
+                                xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="lucide lucide-mic h-5 w-5 text-gray-500">
+                                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" x2="12" y1="19" y2="22"></line>
+                            </svg></button><textarea
+                            class="w-full resize-none rounded-lg border border-gray-300 pl-12 pr-12 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Message Assistant..." rows="1"
+                            style="min-height: 40px; max-height: 120px;"></textarea><button
+                            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 text-primary-foreground absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-blue-500 hover:bg-blue-600"><svg
+                                xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="lucide lucide-send h-5 w-5 text-white">
+                                <path d="m22 2-7 20-4-9-9-4Z"></path>
+                                <path d="M22 2 11 13"></path>
+                            </svg></button></div>
                 </div>
+            </div>
+        </div>
+        <div class="hidden w-80 border-l bg-white lg:block">
+            <div class="flex h-16 items-center justify-between border-b px-4">
+                <h2 class="text-xl font-semibold">Notes</h2><button
+                    class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-10 w-10"><svg
+                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="lucide lucide-plus h-5 w-5">
+                        <path d="M5 12h14"></path>
+                        <path d="M12 5v14"></path>
+                    </svg></button>
+            </div>
+            <div dir="ltr" class="relative overflow-hidden h-[calc(100vh-8rem)]"
+                style="position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;">
+                <style>
+                    [data-radix-scroll-area-viewport] {
+                        scrollbar-width: none;
+                        -ms-overflow-style: none;
+                        -webkit-overflow-scrolling: touch;
+                    }
 
-                <div class="relative grow overflow-hidden">
-                    <div class="flex h-full flex-col">
-                        <div class="flex-1 overflow-hidden">
-                            <div class="h-full">
-                                <div class="relative h-full">
-                                    <div class="absolute inset-0 overflow-y-auto">
-                                        <div class="flex flex-col text-sm md:pb-9 pb-16 chat-window" id="chat-container">
-                                            <!-- Messages will be dynamically inserted here -->
-                                        </div>
-                                    </div>
-                                </div>
+                    [data-radix-scroll-area-viewport]::-webkit-scrollbar {
+                        display: none
+                    }
+                </style>
+                <div data-radix-scroll-area-viewport="" class="h-full w-full rounded-[inherit]"
+                    style="overflow: hidden scroll;">
+                    <div style="min-width: 100%; display: table;">
+                        <div class="p-4">
+                            <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
+                                <h3 class="font-medium">React Hooks</h3>
+                                <p class="mt-1 text-sm text-gray-500">Understanding useEffect and its dependencies...
+                                </p>
+                                <p class="mt-2 text-xs text-gray-400">2 mins ago</p>
                             </div>
-                        </div>
-
-                        <!-- Message Input Area -->
-                        <div class="w-full fixed md:relative bottom-0 left-0 right-0 bg-gray-900"
-                            style="border-top: 1px solid var(--clr-main)">
-                            <div>
-                                <div class="m-auto text-base px-3 md:px-5 lg:px-4 xl:px-5">
-                                    <div></div>
-                                    <form class="max-w-[720px] mx-auto " onsubmit="event.preventDefault();">
-                                        <div class="relative flex items-center">
-                                            <div
-                                                class="flex w-full cursor-text items-center rounded-xl px-3 py-2 transition-colors bg-white/10">
-                                                <!-- Microphone button -->
-                                                <button type="button" id="mic-button"
-                                                    class="p-1.5 rounded-lg text-white hover:bg-black/10"
-                                                    onclick="toggleSpeechRecognition()">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                                                        viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                                                    </svg>
-                                                </button>
-                                                <textarea name="prompt" id="prompt-input"
-                                                    class="flex-1 resize-none border-0 bg-transparent text-white placeholder-gray-400 focus:outline-none mx-2"
-                                                    placeholder="Message Assistant..."
-                                                    onkeydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendPayload('{{ assistant.id }}'); }"></textarea>
-                                                <div class="flex items-center gap-2">
-                                                    {% if chat_mode %}
-                                                    <button type="button"
-                                                        class="p-1.5 rounded-lg text-white hover:bg-black/10">
-                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                                                            xmlns="http://www.w3.org/2000/svg">
-                                                            <path fill-rule="evenodd" clip-rule="evenodd"
-                                                                d="M9 7C9 4.23858 11.2386 2 14 2C16.7614 2 19 4.23858 19 7V15C19 18.866 15.866 22 12 22C8.13401 22 5 18.866 5 15V9C5 8.44772 5.44772 8 6 8C6.55228 8 7 8.44772 7 9V15C7 17.7614 9.23858 20 12 20C14.7614 20 17 17.7614 17 15V7C17 5.34315 15.6569 4 14 4C12.3431 4 11 5.34315 11 7V15C11 15.5523 11.4477 16 12 16C12.5523 16 13 15.5523 13 15V9C13 8.44772 13.4477 8 14 8C14.5523 8 15 8.44772 15 9V15C15 16.6569 13.6569 18 12 18C10.3431 18 9 16.6569 9 15V7Z"
-                                                                fill="currentColor" />
-                                                        </svg>
-                                                    </button>
-                                                    {% endif %}
-                                                    <button type="button" onclick="sendPayload('{{ assistant.id }}')"
-                                                        class="p-1.5 rounded-full transition-colors hover:opacity-70 bg-white text-black">
-                                                        <svg width="20" height="20" viewBox="0 0 32 32" fill="none"
-                                                            xmlns="http://www.w3.org/2000/svg">
-                                                            <path fill-rule="evenodd" clip-rule="evenodd"
-                                                                d="M15.1918 8.90615C15.6381 8.45983 16.3618 8.45983 16.8081 8.90615L21.9509 14.049C22.3972 14.4953 22.3972 15.2189 21.9509 15.6652C21.5046 16.1116 20.781 16.1116 20.3347 15.6652L17.1428 12.4734V22.2857C17.1428 22.9169 16.6311 23.4286 15.9999 23.4286C15.3688 23.4286 14.8571 22.9169 14.8571 22.2857V12.4734L11.6652 15.6652C11.2189 16.1116 10.4953 16.1116 10.049 15.6652C9.60265 15.2189 9.60265 14.4953 10.049 14.049L15.1918 8.90615Z"
-                                                                fill="currentColor" />
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
+                            <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
+                                <h3 class="font-medium">Next.js 13 Features</h3>
+                                <p class="mt-1 text-sm text-gray-500">App router and server components overview...</p>
+                                <p class="mt-2 text-xs text-gray-400">5 mins ago</p>
+                            </div>
+                            <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
+                                <h3 class="font-medium">TypeScript Tips</h3>
+                                <p class="mt-1 text-sm text-gray-500">Advanced type inference and utility types...</p>
+                                <p class="mt-2 text-xs text-gray-400">10 mins ago</p>
+                            </div>
+                            <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
+                                <h3 class="font-medium">CSS Grid Layout</h3>
+                                <p class="mt-1 text-sm text-gray-500">Building responsive layouts with grid...</p>
+                                <p class="mt-2 text-xs text-gray-400">15 mins ago</p>
+                            </div>
+                            <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
+                                <h3 class="font-medium">State Management</h3>
+                                <p class="mt-1 text-sm text-gray-500">Comparing Redux, Zustand, and Jotai...</p>
+                                <p class="mt-2 text-xs text-gray-400">20 mins ago</p>
                             </div>
                         </div>
                     </div>
