@@ -10,7 +10,7 @@ from venv import logger
 # Django core imports
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Count
+from django.db.models import Q, Count, F, Case, When, Value, IntegerField
 from django.http import Http404, HttpResponse, JsonResponse, StreamingHttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
@@ -277,7 +277,7 @@ def list_assistants(request):
         },
         'highest_interactions': {
             'label': 'Most Popular',
-            'value': '-interactions'
+            'value': F('interactions').desc(nulls_last=True)
         },
         'most_reviews': {
             'label': 'Highly Rated',
@@ -294,7 +294,7 @@ def list_assistants(request):
     )
     
     # Apply sorting
-    assistants = assistants.order_by(sort_value)
+    assistants = assistants.values().order_by(sort_value)
     
     
     
