@@ -9,11 +9,8 @@
                 <!-- Card Header with Avatar -->
                 <div class="flex items-center gap-4 px-4 pt-4 pb-2">
                     <div class="avatar">
-                        <div class="relative flex h-16 w-16 shrink-0 overflow-hidden rounded-full">
-                            <span
-                                class="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 text-lg font-semibold text-indigo-700 capitalize">
-                                {{ assistant.name|slice:":1" }}
-                            </span>
+                        <div class="w-16 rounded-full border-2 border-white">
+                            <img src="https://api.dicebear.com/7.x/bottts/svg?seed={{ assistant.name }}" alt="{{ assistant.name | default:'AI Professor' }}" />
                         </div>
                     </div>
                     <div>

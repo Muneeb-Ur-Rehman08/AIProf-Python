@@ -1,241 +1,316 @@
 <!-- Main Chat Wrapper -->
 {% load static %}
-<link rel="stylesheet" href="{% static 'css/chat.css' %}">
+<link rel="stylesheet" href="{% static 'css/chat.css' %}" />
 
-
-<div class="flex flex-col h-screen bg-white text-black">
-    <div class="flex items-center justify-between border-b h-14 px-4 bg-gray-50">
-        <div class="flex items-center space-x-2"><svg class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
-                </path>
-            </svg><span class="text-xl font-semibold text-gray-800">AiProf</span></div>
-       
-            <button
-            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-10 w-10"><svg
-                xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                class="lucide lucide-settings h-6 w-6">
-                <path
-                    d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z">
-                </path>
-                <circle cx="12" cy="12" r="3"></circle>
-            </svg></button>
-    </div>
-    <div class="flex flex-1 overflow-hidden">
+<div
+  class="flex flex-col {% if chat_mode %}h-screen{% else %}lg:h-[calc(100vh-3.5rem)] h-[calc(100vh-7.5rem)]{% endif %} bg-white text-black w-full"
+>
+  {% if chat_mode %} {% include 'modal/header.html' %} {% endif %}
+  <div class="flex flex-1 overflow-hidden">
+    {% if chat_mode %}
+    <div
+      class="translate-x-0 fixed inset-y-0 left-0 z-50 w-72 transform border-r bg-white transition-transform duration-200 ease-in-out lg:relative lg:translate-x-0"
+      id="assistant-chat-left-sidebar"
+    >
+      <div class="flex h-16 items-center justify-between border-b px-4">
+        <div class="flex-1 max-w-2xl mx-auto relative px-4">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-search absolute left-7 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.3-4.3"></path>
+          </svg>
+          <input
+            class="flex h-10 border bg-white px-3 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-full pl-10 pr-4 py-2 rounded-full border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+            placeholder="Search assistants..."
+            type="search"
+            value=""
+          />
+        </div>
+        {% if chat_mode %}
+        <button
+          class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-10 w-10 lg:hidden transition-transform duration-200 ease-in-out"
+          _="on click toggle .hidden on #assistant-chat-left-sidebar"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-menu h-6 w-6"
+          >
+            <line x1="4" x2="20" y1="12" y2="12"></line>
+            <line x1="4" x2="20" y1="6" y2="6"></line>
+            <line x1="4" x2="20" y1="18" y2="18"></line>
+          </svg>
+        </button>
+        {% endif %}
+      </div>
+      <div class="p-4">
         <div
-            class="translate-x-0 fixed inset-y-0 left-0 z-50 w-72 transform border-r bg-white transition-transform duration-200 ease-in-out lg:relative lg:translate-x-0">
-            <div class="flex h-16 items-center justify-between border-b px-4">
-                <div class="flex-1 max-w-2xl mx-auto relative px-4"><svg xmlns="http://www.w3.org/2000/svg" width="24"
-                    height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round"
-                    class="lucide lucide-search absolute left-7 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <path d="m21 21-4.3-4.3"></path>
-                </svg><input
-                    class="flex h-10 border bg-white px-3 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-full pl-10 pr-4 py-2 rounded-full border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                    placeholder="Search assistants..." type="search" value="">
-                </div><button
-                    class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-10 w-10 lg:hidden"><svg
-                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="lucide lucide-menu h-6 w-6">
-                        <line x1="4" x2="20" y1="12" y2="12"></line>
-                        <line x1="4" x2="20" y1="6" y2="6"></line>
-                        <line x1="4" x2="20" y1="18" y2="18"></line>
-                    </svg></button>
-            </div>
-            <div class="p-4">
-                <div dir="ltr" class="relative overflow-hidden h-[calc(100vh-8rem)]"
-                    style="position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;">
-                    <style>
-                        [data-radix-scroll-area-viewport] {
-                            scrollbar-width: none;
-                            -ms-overflow-style: none;
-                            -webkit-overflow-scrolling: touch;
-                        }
+          dir="ltr"
+          class="relative overflow-hidden h-[calc(100vh-8rem)]"
+          style="
+            position: relative;
+            --radix-scroll-area-corner-width: 0px;
+            --radix-scroll-area-corner-height: 0px;
+          "
+        >
+          <style>
+            [data-radix-scroll-area-viewport] {
+              scrollbar-width: none;
+              -ms-overflow-style: none;
+              -webkit-overflow-scrolling: touch;
+            }
 
-                        [data-radix-scroll-area-viewport]::-webkit-scrollbar {
-                            display: none
-                        }
-                    </style>
-                    <div data-radix-scroll-area-viewport="" class="h-full w-full rounded-[inherit]"
-                        style="overflow: hidden scroll;">
-                        <div style="min-width: 100%; display: table;">
-                            <div class="space-y-2"><button
-                                    class="flex w-full items-center space-x-3 rounded-lg p-2 hover:bg-gray-100">
-                                    <div
-                                        class="flex h-10 w-10 items-center justify-center rounded-full text-white bg-pink-500">
-                                        R</div>
-                                    <div class="text-left">
-                                        <div class="font-medium">React Expert</div>
-                                        <div class="text-sm text-gray-500">Frontend development specialist</div>
-                                    </div>
-                                </button><button
-                                    class="flex w-full items-center space-x-3 rounded-lg p-2 hover:bg-gray-100">
-                                    <div
-                                        class="flex h-10 w-10 items-center justify-center rounded-full text-white bg-green-500">
-                                        N</div>
-                                    <div class="text-left">
-                                        <div class="font-medium">Node.js Guru</div>
-                                        <div class="text-sm text-gray-500">Backend development expert</div>
-                                    </div>
-                                </button><button
-                                    class="flex w-full items-center space-x-3 rounded-lg p-2 hover:bg-gray-100">
-                                    <div
-                                        class="flex h-10 w-10 items-center justify-center rounded-full text-white bg-blue-500">
-                                        U</div>
-                                    <div class="text-left">
-                                        <div class="font-medium">UI Designer</div>
-                                        <div class="text-sm text-gray-500">Design system specialist</div>
-                                    </div>
-                                </button><button
-                                    class="flex w-full items-center space-x-3 rounded-lg p-2 hover:bg-gray-100">
-                                    <div
-                                        class="flex h-10 w-10 items-center justify-center rounded-full text-white bg-purple-500">
-                                        D</div>
-                                    <div class="text-left">
-                                        <div class="font-medium">DevOps Pro</div>
-                                        <div class="text-sm text-gray-500">Infrastructure expert</div>
-                                    </div>
-                                </button><button
-                                    class="flex w-full items-center space-x-3 rounded-lg p-2 hover:bg-gray-100">
-                                    <div
-                                        class="flex h-10 w-10 items-center justify-center rounded-full text-white bg-orange-500">
-                                        A</div>
-                                    <div class="text-left">
-                                        <div class="font-medium">AI Assistant</div>
-                                        <div class="text-sm text-gray-500">Machine learning specialist</div>
-                                    </div>
-                                </button><button
-                                    class="flex w-full items-center space-x-3 rounded-lg p-2 hover:bg-gray-100">
-                                    <div
-                                        class="flex h-10 w-10 items-center justify-center rounded-full text-white bg-red-500">
-                                        S</div>
-                                    <div class="text-left">
-                                        <div class="font-medium">Security Expert</div>
-                                        <div class="text-sm text-gray-500">Cybersecurity specialist</div>
-                                    </div>
-                                </button><button
-                                    class="flex w-full items-center space-x-3 rounded-lg p-2 hover:bg-gray-100">
-                                    <div
-                                        class="flex h-10 w-10 items-center justify-center rounded-full text-white bg-indigo-500">
-                                        D</div>
-                                    <div class="text-left">
-                                        <div class="font-medium">Database Admin</div>
-                                        <div class="text-sm text-gray-500">Data management expert</div>
-                                    </div>
-                                </button></div>
-                        </div>
+            [data-radix-scroll-area-viewport]::-webkit-scrollbar {
+              display: none;
+            }
+          </style>
+          <div
+            data-radix-scroll-area-viewport=""
+            class="h-full w-full rounded-[inherit]"
+            style="overflow: hidden scroll"
+          >
+            <div style="min-width: 100%; display: table">
+              <div class="space-y-2">
+                {% for assistant in assistants %}
+                <button
+                  class="flex w-full items-center space-x-3 rounded-lg p-2 hover:bg-gray-100"
+                >
+                  <div
+                    class="flex h-10 w-10 items-center justify-center rounded-full text-white bg-pink-500"
+                  >
+                    {{ assistant.name|slice:":2"|upper }}
+                  </div>
+                  <div class="text-left">
+                    <div class="font-medium">{{ assistant.name }}</div>
+                    <div class="text-sm text-gray-500">
+                      {{ assistant.description|truncatechars:30 }}
                     </div>
-                </div>
+                  </div>
+                </button>
+                {% endfor %}
+              </div>
             </div>
+          </div>
         </div>
-        <div class="flex flex-1 flex-col">
-            <header class="flex h-16 items-center justify-between border-b px-4"><button
-                    class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-10 w-10 lg:hidden"><svg
-                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="lucide lucide-menu h-6 w-6">
-                        <line x1="4" x2="20" y1="12" y2="12"></line>
-                        <line x1="4" x2="20" y1="6" y2="6"></line>
-                        <line x1="4" x2="20" y1="18" y2="18"></line>
-                    </svg></button>
-                <h1 class="text-xl font-semibold">QTeach</h1>
-                <div class="w-10"></div>
-            </header>
-            <main class="flex-1 bg-gray-50/50 overflow-auto"></main>
-            <div class="border-t p-4">
-                <div class="flex items-center space-x-2"><button
-                        class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-10 w-10"><svg
-                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            class="lucide lucide-paperclip h-5 w-5 text-gray-500">
-                            <path
-                                d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48">
-                            </path>
-                        </svg></button>
-                    <div class="relative flex-1"><button
-                            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8"><svg
-                                xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round" class="lucide lucide-mic h-5 w-5 text-gray-500">
-                                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
-                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                                <line x1="12" x2="12" y1="19" y2="22"></line>
-                            </svg></button><textarea
-                            class="w-full resize-none rounded-lg border border-gray-300 pl-12 pr-12 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Message Assistant..." rows="1"
-                            style="min-height: 40px; max-height: 120px;"></textarea><button
-                            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 text-primary-foreground absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-blue-500 hover:bg-blue-600"><svg
-                                xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round" class="lucide lucide-send h-5 w-5 text-white">
-                                <path d="m22 2-7 20-4-9-9-4Z"></path>
-                                <path d="M22 2 11 13"></path>
-                            </svg></button></div>
-                </div>
-            </div>
-        </div>
-        <div class="hidden w-80 border-l bg-white lg:block">
-            <div class="flex h-16 items-center justify-between border-b px-4">
-                <h2 class="text-xl font-semibold">Notes</h2><button
-                    class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-10 w-10"><svg
-                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="lucide lucide-plus h-5 w-5">
-                        <path d="M5 12h14"></path>
-                        <path d="M12 5v14"></path>
-                    </svg></button>
-            </div>
-            <div dir="ltr" class="relative overflow-hidden h-[calc(100vh-8rem)]"
-                style="position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;">
-                <style>
-                    [data-radix-scroll-area-viewport] {
-                        scrollbar-width: none;
-                        -ms-overflow-style: none;
-                        -webkit-overflow-scrolling: touch;
-                    }
-
-                    [data-radix-scroll-area-viewport]::-webkit-scrollbar {
-                        display: none
-                    }
-                </style>
-                <div data-radix-scroll-area-viewport="" class="h-full w-full rounded-[inherit]"
-                    style="overflow: hidden scroll;">
-                    <div style="min-width: 100%; display: table;">
-                        <div class="p-4">
-                            <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
-                                <h3 class="font-medium">React Hooks</h3>
-                                <p class="mt-1 text-sm text-gray-500">Understanding useEffect and its dependencies...
-                                </p>
-                                <p class="mt-2 text-xs text-gray-400">2 mins ago</p>
-                            </div>
-                            <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
-                                <h3 class="font-medium">Next.js 13 Features</h3>
-                                <p class="mt-1 text-sm text-gray-500">App router and server components overview...</p>
-                                <p class="mt-2 text-xs text-gray-400">5 mins ago</p>
-                            </div>
-                            <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
-                                <h3 class="font-medium">TypeScript Tips</h3>
-                                <p class="mt-1 text-sm text-gray-500">Advanced type inference and utility types...</p>
-                                <p class="mt-2 text-xs text-gray-400">10 mins ago</p>
-                            </div>
-                            <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
-                                <h3 class="font-medium">CSS Grid Layout</h3>
-                                <p class="mt-1 text-sm text-gray-500">Building responsive layouts with grid...</p>
-                                <p class="mt-2 text-xs text-gray-400">15 mins ago</p>
-                            </div>
-                            <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
-                                <h3 class="font-medium">State Management</h3>
-                                <p class="mt-1 text-sm text-gray-500">Comparing Redux, Zustand, and Jotai...</p>
-                                <p class="mt-2 text-xs text-gray-400">20 mins ago</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
+    {% endif %}
+    <div class="flex flex-1 flex-col w-full">
+      <header
+        class="flex h-16 items-center justify-between border-b px-4 bg-white"
+      >
+        {% if chat_mode %}
+        <button
+          class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-10 w-10 lg:hidden transition-transform duration-200 ease-in-out"
+          _="on click toggle .hidden on #assistant-chat-left-sidebar"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-menu h-6 w-6"
+          >
+            <line x1="4" x2="20" y1="12" y2="12"></line>
+            <line x1="4" x2="20" y1="6" y2="6"></line>
+            <line x1="4" x2="20" y1="18" y2="18"></line>
+          </svg>
+        </button>
+        {% endif %}
+        <h1 class="text-xl font-semibold text-black">{{assistant.name}}</h1>
+        <div class="w-10"></div>
+      </header>
+      <main class="flex-1 bg-white overflow-auto" id="chat-container"></main>
+      <div class="border-t p-4 bg-white">
+        <form class="flex items-center space-x-2"
+          onsubmit="event.preventDefault();"
+        >
+          <div class="flex items-center justify-center w-10 h-10 cursor-pointer" onclick="document.getElementById('file-input').click();">
+            <input type="file" id="file-input" style="display: none;" >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="lucide lucide-paperclip text-gray-500"
+            >
+              <path
+                d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"
+              ></path>
+            </svg>
+          </div>
+          <div class="relative flex-1">
+            <div class="flex items-center justify-center w-8 h-8 rounded absolute left-2 top-5 -translate-y-1/2 cursor-pointer" id="mic-button"  onclick="toggleSpeechRecognition()">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide lucide-mic text-gray-500 hover:text-gray-700"
+              >
+                <path
+                  d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"
+                ></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" x2="12" y1="19" y2="22"></line>
+              </svg>
+            </div>
+            <textarea
+              name="prompt"
+              id="prompt-input"
+              class="w-full rounded-lg border border-gray-300 pl-12 pr-12 py-2 focus:outline-none focus:ring focus:ring-gray-200 text-black bg-white"
+              placeholder="Message Assistant..."
+              rows="1"
+              style="min-height: 40px; max-height: 120px"
+              onkeydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendPayload('{{ assistant.id }}'); }"
+            ></textarea>
+            <div class="flex items-center justify-center w-8 h-8 rounded text-white absolute right-2 top-5 cursor-pointer -translate-y-1/2 bg-purple-600 hover:bg-purple-700">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide lucide-send"
+                onclick="sendPayload('{{ assistant.id }}')"
+              >
+                <path d="m22 2-7 20-4-9-9-4Z"></path>
+                <path d="M22 2 11 13"></path>
+              </svg>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% if chat_mode %}
+    <div class="hidden w-80 border-l bg-white lg:block"
+      id="assistant-chat-right-sidebar"
+    >
+      <div class="flex h-16 items-center justify-between border-b px-4">
+        <h2 class="text-xl font-semibold">Notes</h2>
+        <button
+          class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-10 w-10"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-plus h-5 w-5"
+          >
+            <path d="M5 12h14"></path>
+            <path d="M12 5v14"></path>
+          </svg>
+        </button>
+      </div>
+      <div
+        dir="ltr"
+        class="relative overflow-hidden h-[calc(100vh-8rem)]"
+        style="
+          position: relative;
+          --radix-scroll-area-corner-width: 0px;
+          --radix-scroll-area-corner-height: 0px;
+        "
+      >
+        <style>
+          [data-radix-scroll-area-viewport] {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            -webkit-overflow-scrolling: touch;
+          }
+
+          [data-radix-scroll-area-viewport]::-webkit-scrollbar {
+            display: none;
+          }
+        </style>
+        <div
+          data-radix-scroll-area-viewport=""
+          class="h-full w-full rounded-[inherit]"
+          style="overflow: hidden scroll"
+        >
+          <div style="min-width: 100%; display: table">
+            <div class="p-4">
+              <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
+                <h3 class="font-medium">React Hooks</h3>
+                <p class="mt-1 text-sm text-gray-500">
+                  Understanding useEffect and its dependencies...
+                </p>
+                <p class="mt-2 text-xs text-gray-400">2 mins ago</p>
+              </div>
+              <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
+                <h3 class="font-medium">Next.js 13 Features</h3>
+                <p class="mt-1 text-sm text-gray-500">
+                  App router and server components overview...
+                </p>
+                <p class="mt-2 text-xs text-gray-400">5 mins ago</p>
+              </div>
+              <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
+                <h3 class="font-medium">TypeScript Tips</h3>
+                <p class="mt-1 text-sm text-gray-500">
+                  Advanced type inference and utility types...
+                </p>
+                <p class="mt-2 text-xs text-gray-400">10 mins ago</p>
+              </div>
+              <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
+                <h3 class="font-medium">CSS Grid Layout</h3>
+                <p class="mt-1 text-sm text-gray-500">
+                  Building responsive layouts with grid...
+                </p>
+                <p class="mt-2 text-xs text-gray-400">15 mins ago</p>
+              </div>
+              <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
+                <h3 class="font-medium">State Management</h3>
+                <p class="mt-1 text-sm text-gray-500">
+                  Comparing Redux, Zustand, and Jotai...
+                </p>
+                <p class="mt-2 text-xs text-gray-400">20 mins ago</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
 </div>
