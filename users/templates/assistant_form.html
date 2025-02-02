@@ -3,38 +3,39 @@
 
 <!-- Tab buttons for mobile -->
 <div class="flex h-screen w-full flex-col items-center">
-
-  {% include 'modal/navbar.html' %}
+  <!-- Update header container styling -->
+  <div class="w-full">
+    {% include 'modal/header.html' %}
+  </div>
 
   <div id="assistant-form" class="relative flex w-full grow overflow-hidden" hx-replace-url="true">
 
     <!-- Tab buttons for mobile - Moved outside -->
-    <div class="md:hidden fixed top-14 left-0 right-0 z-10 flex justify-center py-2 bg-gray-900">
-      <div class="flex w-11/12 overflow-hidden p-1.5 self-center outline-none bg-gray-800/50 rounded-lg mb-4">
+    <div class="md:hidden fixed top-14 left-0 right-0 z-10 flex justify-center py-2 bg-white">
+      <div class="flex w-11/12 overflow-hidden p-1.5 self-center outline-none bg-gray-100 rounded-lg mb-4">
         <button onclick="switchTab('form')" id="formTab"
-          class="flex-1 py-2 px-4 text-white rounded-lg transition-all duration-300 hover:bg-purple-400">
+          class="flex-1 py-2 px-4 text-gray-800 rounded-lg transition-all duration-300">
           Create Assistant
         </button>
         <button onclick="switchTab('chat')" id="chatTab" 
-          class="flex-1 py-2 px-4 text-white rounded-lg transition-all duration-300 hover:bg-purple-400">
+          class="flex-1 py-2 px-4 text-gray-800 rounded-lg transition-all duration-300">
           Chat
         </button>
       </div>
     </div>
 
     <div id="assistantForm" hx-encoding="multipart/form-data" hx-swap="none"
-      class="flex w-full justify-center md:w-1/2">
-      <div class="h-full grow overflow-hidden">
+      class="flex w-full justify-center md:w-1/2 bg-gray-100">
+      <div class="h-full grow">
           <div class="flex h-full flex-col px-2 pt-2">
-
             <div class="grow overflow-hidden">
               <div class="flex h-full grow overflow-y-auto px-2 pt-6 md:pt-2 text-sm">
                 <div class="grow">
                   {% csrf_token %}
                   <div class="mb-6">
                     <div
-                      class="relative size-20 mx-auto rounded-full bg-gray-200 flex items-center justify-center border-2 border-dashed border-gray-400 cursor-pointer overflow-hidden"
-                      onclick="document.getElementById('file-input').click()">
+                      class="relative size-20 mx-auto rounded-full bg-white flex items-center justify-center border-2 border-dashed border-purple-400 cursor-pointer overflow-hidden hover:bg-gray-50"
+                      onclick="document.getElementById('img-input').click()">
                       <!-- Plus Icon -->
                       <div id="icon-container" class="absolute flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
@@ -45,36 +46,36 @@
                       <!-- Image Preview -->
                       <img id="image-preview" class="hidden absolute inset-0 w-full h-full object-cover rounded-full"
                         alt="Selected Image" />
-                        <input id="file-input" name="image" type="file" accept="image/*" class="hidden" onchange="previewImage(event)" />
+                        <input id="img-input" name="image" type="file" accept="image/*" class="hidden" onchange="previewImage(event)" />
                     </div>
                     <div>
 
-                      <label class="block text-white text-lg font-bold mb-2 mt-2">Name</label>
+                      <label class="block text-gray-700 text-lg font-bold mb-2 mt-2">Name</label>
                       <input type="text" name="assistant_name"
                         hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}" hx-trigger="blur changed delay:1s"
                         hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "assistant_name"}' autocomplete="off"
                         hx-replace-url="false" value="{{ assistant.name|default:'' }}" placeholder="Name your ASSISTANT"
-                        class="input input-bordered text-lg w-full" />
+                        class="input input-bordered text-lg w-full bg-white border-gray-300 focus:border-purple-500 focus:ring-purple-500 placeholder-gray-900" />
 
                     </div>
                   </div>
                   <div class="mb-6">
-                    <label class="block text-white text-lg font-bold mb-2">Description</label>
+                    <label class="block text-gray-700 text-lg font-bold mb-2">Description</label>
                     <textarea name="description" hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
                       hx-trigger="blur changed delay:1s"
                       hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "description"}' autocomplete="off"
                       hx-replace-url="false" placeholder="Add a short description about what this ASSISTANT does"
-                      class="textarea textarea-bordered textarea-xs text-lg w-full"
+                      class="textarea textarea-bordered textarea-xs text-lg w-full bg-white border-gray-300 focus:border-purple-500 focus:ring-purple-500 placeholder-gray-900"
                       rows="3">{{ assistant.description|default:'' }}</textarea>
                   </div>
-                  <div class="mb-6 flex gap-4">
+                  <div class="mb-6 flex flex-col gap-4 sm:flex-row">
                     <div class="flex-1">
-                      <label class="block text-white text-lg font-bold mb-2">Subject</label>
+                      <label class="block text-gray-700 text-lg font-bold mb-2">Subject</label>
                       <select name="subject" id="subjectSelect" 
                         hx-post="{% url 'assistant' ass_id=assistant.id %}"
                         hx-trigger="blur changed delay:1s"
                         hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "subject"}' hx-replace-url="false"
-                        class="select select-bordered w-full">
+                        class="select select-bordered w-full bg-white border-gray-300 focus:border-purple-500 focus:ring-purple-500">
                         <option value="" disabled>Select a subject</option>
                         {% for subject in meta.subjects %}
                           <option value="{{ subject.name }}" data-id="{{ subject.id }}" {% if subject.name == assistant.subject %}selected{% endif %}>
@@ -84,17 +85,31 @@
                       </select>
                     </div>
                     <div class="flex-1">
-                      <label class="block text-white text-lg font-bold mb-2">Topic</label>
+                      <label class="block text-gray-700 text-lg font-bold mb-2">Topic</label>
                       <select name="topic" id="topicSelect" hx-trigger="blur changed delay:1s"
                         hx-post="{% url 'assistant' ass_id='{{ assistant.id }}' %}"
                         hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "topic"}' hx-replace-url="false"
-                        class="select select-bordered w-full">
+                        class="select select-bordered w-full bg-white border-gray-300 focus:border-purple-500 focus:ring-purple-500">
                         <option value="" disabled>Select a topic</option>
                       </select>
                     </div>
                   </div>
-                  <div class="mb-6 relative">
-                    <label class="block text-white text-lg font-bold mb-2">Instructions</label>
+                  <div class="mb-6 ">
+                  <div class="flex items-center mb-4 justify-between">
+                  <label class="block text-gray-700 text-lg font-bold">Instructions</label>
+                   <svg id="generate-instructions" 
+                        data-url="{% url 'generate_instructions' assistant_id=assistant.id %}"
+                        class="size-8 text-black drop-shadow-lg cursor-pointer hover:text-gray-600 transition-colors"
+                        viewBox="0 0 200 200">
+                        <!-- Main Sparkle -->
+                        <path d="M100 30 Q115 100 170 100 Q115 100 100 170 Q85 100 30 100 Q85 100 100 30 Z" class="fill-current"/>
+                        <!-- Small Sparkle Top Left -->
+                        <path d="M50 20 Q55 50 80 50 Q55 50 50 80 Q45 50 20 50 Q45 50 50 20 Z" class="fill-current"/>
+                        <!-- Small Sparkle Top Right -->
+                        <path d="M150 50 Q155 70 170 70 Q155 70 150 90 Q145 70 130 70 Q145 70 150 50 Z" class="fill-current"/>
+                    </svg>
+                  </div>
+                    
                     <textarea
                       id="teacher_instructions"
                       name="teacher_instructions"
@@ -104,25 +119,16 @@
                       autocomplete="off"
                       hx-replace-url="false"
                       placeholder="What does this ASSISTANT do? How does it behave? What should it avoid doing?"      
-                      class="textarea textarea-bordered textarea-xs text-xl w-full"
+                      class="textarea textarea-bordered textarea-xs text-lg w-full bg-white border-gray-300 focus:border-purple-500 focus:ring-purple-500 placeholder-gray-900"
                       rows="4">{{ assistant.teacher_instructions|default:'' }}</textarea>
-                      <svg id="generate-instructions" 
-                        data-url="{% url 'generate_instructions' assistant_id=assistant.id %}"
-                        class="w-4 h-4 fill-[#8e8e8e] absolute top-3 right-2 text-white cursor-pointer hover:fill-white transition-colors"
-                        viewBox="0 0 448 512">
-
-                        <!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
-                        <path d="M398.5 373.6c95.9-122.1 17.2-233.1 17.2-233.1 45.4 85.8-41.4 170.5-41.4 170.5 105-171.5-60.5-271.5-60.5-271.5 96.9 72.7-10.1 190.7-10.1 190.7 85.8 158.4-68.6 230.1-68.6 230.1s-.4-16.9-2.2-85.7c4.3 4.5 34.5 36.2 34.5 36.2l-24.2-47.4 62.6-9.1-62.6-9.1 20.2-55.5-31.4 45.9c-2.2-87.7-7.8-305.1-7.9-306.9v-2.4 1-1 2.4c0 1-5.6 219-7.9 306.9l-31.4-45.9 20.2 55.5-62.6 9.1 62.6 9.1-24.2 47.4 34.5-36.2c-1.8 68.8-2.2 85.7-2.2 85.7s-154.4-71.7-68.6-230.1c0 0-107-118.1-10.1-190.7 0 0-165.5 99.9-60.5 271.5 0 0-86.8-84.8-41.4-170.5 0 0-78.7 111 17.2 233.1 0 0-26.2-16.1-49.4-77.7 0 0 16.9 183.3 222 185.7h4.1c205-2.4 222-185.7 222-185.7-23.6 61.5-49.9 77.7-49.9 77.7z"></path>
-                      
-                      </svg>
                   </div>
                   <div class="mb-6">
-                    <label class="block text-white text-lg font-bold mb-2">URLs</label>
+                    <label class="block text-gray-700 text-lg font-bold mb-2">URLs</label>
                     <div id="url-container">
                       {% for url in urls %}
                       <div class="url-input-group mb-2 flex items-center gap-2">
                         <input type="url" name="url" value="{{ url.title }}" disabled
-                          class="input input-bordered w-full" />
+                          class="input input-bordered w-full bg-gray-50 text-gray-700" />
                         <button type="button" hx-post="{% url 'del_knowledgebase' document_id=url.id %}" hx-trigger="click" hx-on::after-request="removeUrl(this)" hx-replace-url="false" class="text-gray-400 hover:text-red-500">
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -133,12 +139,14 @@
                       </div>
                       {% endfor %}
                       <div class="url-input-group mb-2 flex items-center gap-2">
-                        <input type="url" name="url" hx-post="{% url 'assistant' ass_id=assistant.id %}"
-                          hx-trigger="blur" hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "url"}'
+                        <input type="url" name="url" 
+                          hx-post="{% url 'assistant' ass_id=assistant.id %}"
+                          hx-trigger="blur" 
+                          hx-vals='{"assistant_id": "{{ assistant.id }}", "field": "url"}'
                           placeholder="Enter a URL"
-                          class="input input-bordered w-full" />
+                          class="input input-bordered w-full bg-white border-gray-300 focus:border-purple-500 focus:ring-purple-500 placeholder-gray-900" />
                         <div class="loader hidden">
-                          <svg class="w-5 h-5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                          <svg class="w-5 h-5 animate-spin text-gray-800" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
                             </circle>
                             <path class="opacity-75" fill="currentColor"
@@ -149,26 +157,25 @@
                       </div>
                     </div>
                   </div>
-                  <div class="pb-6 flex flex-col gap-2">
+                  <div class="pb-10 flex flex-col gap-2">
                     <div class="flex gap-2 items-center">
-                      <label class="block text-white text-lg font-bold">Files</label>
+                      <label class="block text-gray-700 text-lg font-bold">Files</label>
                       <label for="fileInput"
-                        class="inline-block cursor-pointer bg-white/10 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-white/20">
+                        class="inline-block cursor-pointer bg-purple-100 text-purple-700 px-4 py-2 rounded-full text-sm font-semibold hover:bg-purple-200">
                         Upload Files
                       </label>
-                      <input type="file" name="knowledge_base" id="fileInput" multiple onchange="onFileChange(event)"
-                        class="sr-only" />
+                      <input type="file" name="knowledge_base" id="fileInput" multiple onchange="onFileChange(event)" class="hidden" />
                     </div>
                     <div class="flex flex-wrap gap-2 items-center mt-4" id="files-container">
                       {{ knowledge_base.all }}
                       {% for file in knowledge_base %}
-                      <div class="flex items-center p-2 bg-gray-800 rounded-lg">
+                      <div class="flex items-center p-2 bg-white rounded-lg border border-gray-200">
                         <svg class="w-5 h-5 mr-2 file-icon" fill="currentColor" viewBox="0 0 20 20">
                           <path
                             d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z">
                           </path>
                         </svg>
-                        <span class="text-sm text-white">{{ file.title }}</span>
+                        <span class="text-sm text-gray-800">{{ file.title }}</span>
                         <button type="button" hx-post="{% url 'del_knowledgebase' document_id=file.id %}" hx-trigger="click" hx-on::after-request="removeFile(this)" hx-replace-url="false" class="ml-2 text-gray-400 hover:text-red-500">
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -191,7 +198,7 @@
     </div>
 
     <!-- Chat section -->
-    <div id="assistantChat" class="w-full md:w-1/2 justify-center border-l border-gray-700 bg-gray-900 pt-4 md:flex">
+    <div id="assistantChat" class="w-full md:w-1/2 justify-center border-l border-gray-200 bg-white md:flex" hx-target="assistant-chat-left-sidebar">
       {% include 'assistant/assistant_chat.html' with assistant=assistant %}
     </div>
   </div>
@@ -676,6 +683,73 @@
     #assistantChat {
       display: flex !important;
     }
+  }
+
+  /* Custom placeholder styles */
+  ::placeholder {
+    color: #1a1a1a !important; /* Dark gray, almost black */
+    opacity: 0.7 !important;
+  }
+
+  /* For Microsoft Edge */
+  ::-ms-input-placeholder {
+    color: #1a1a1a !important;
+    opacity: 0.7 !important;
+  }
+
+  /* Enhanced input styles */
+  .input,
+  .textarea,
+  .select {
+    color: #1a1a1a !important;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .input:focus,
+  .textarea:focus,
+  .select:focus {
+    box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.1) !important;
+    border-color: #9333ea !important;
+    outline: none;
+  }
+
+  .input:hover,
+  .textarea:hover,
+  .select:hover {
+    border-color: #9333ea !important;
+  }
+
+  /* Disabled input styles */
+  .input:disabled,
+  .textarea:disabled,
+  .select:disabled {
+    background-color: #f3f4f6 !important;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  /* Custom select arrow */
+  .select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Textarea specific styles */
+  .textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  /* File upload button hover effect */
+  .file-upload-label:hover {
+    background-color: #f3f4f6;
+    border-color: #9333ea;
   }
 </style>
 {% endblock %}
