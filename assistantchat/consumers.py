@@ -8,9 +8,15 @@ from openai import OpenAI
 import requests
 import wave
 import numpy as np
+from dotenv import load_dotenv
 import audioop
+
+load_dotenv()
+
 def get_llm(model):
-    api_key = os.environ.get("OPENAI_API_KEY")
+    api_key = os.getenv("OPENAI_API_KEY")
+
+
     return ChatOpenAI(
         api_key=api_key,
         model=model,
@@ -18,7 +24,8 @@ def get_llm(model):
         max_retries=3
     )
 
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 
 
 # Fetch the audio file and convert it to a base64 encoded string
