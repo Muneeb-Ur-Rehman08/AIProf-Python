@@ -96,6 +96,29 @@ class Conversation(models.Model):
             logger.error(f"Failed to save conversation: {str(e)}")
 
 
+class AssistantNotes(models.Model):
+    id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4)
+    user_id = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        default=None,
+        null=True,
+        db_column="user_id",
+        to_field='id'
+        
+    )
+    
+    assistant_id = models.ForeignKey(
+        Assistant, 
+        on_delete=models.CASCADE,
+        db_column="assistant_id",
+        to_field='id'
+        
+        )
+    notes = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+
+
 
 class KnowledgeAssessment(models.Model):
     """

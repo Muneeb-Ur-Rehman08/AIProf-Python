@@ -237,7 +237,13 @@ def chat_query(request, ass_id=None):
                 # Save the current interaction in memory
                 try:
                     key = f"chat-{len(memory_store.search(namespace))}"
-                    memory_store.put(namespace, next_key, {"User": prompt, "AI": full_response, "summary": chat_summary, "knowledge_level": knowledge_level})
+                    memory_store.put(namespace, next_key, {
+                        "User": prompt, 
+                        "AI": full_response, 
+                        "summary": chat_summary, 
+                        "knowledge_level": knowledge_level
+                        }
+                    )
                    
 
                     # logger.info(f"Saved memory: namespace={namespace}, key={key}, data={{'user': '{prompt}', 'assistant': '{full_response}', 'summary': '{chat_summary}'}}")
@@ -247,8 +253,8 @@ def chat_query(request, ass_id=None):
                 logger.error(f"Error in chat query response: {e}")
                 yield "Failed to process chat query"
 
-        return StreamingHttpResponse(response_stream(), content_type='text/plain')
+        return StreamingHttpResponse(response_stream(), content_type='text/event-stream')
 
     except Exception as e:
         logger.error(f"Error in chat query endpoint: {e}")
-        return StreamingHttpResponse("Failed to process chat query", content_type='text/plain')
+        return StreamingHttpResponse("Failed to process chat query", content_type='text/event-stream')
