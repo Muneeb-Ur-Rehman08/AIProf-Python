@@ -8,7 +8,7 @@ def get_llm():
     api_key = os.environ.get("GROQ_API_KEY")
     return ChatGroq(
         api_key=api_key,
-        model="llama3-8b-8192",
+        model="llama-3.3-70b-versatile",
         temperature=0.5,
         max_retries=3
     )

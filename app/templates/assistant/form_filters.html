@@ -1,5 +1,5 @@
 <div
-  class="bg-white backdrop-blur-xl w-full lg:w-72 lg:h-[calc(100vh-3.5rem)] lg:fixed lg:left-0 lg:top-32 lg:overflow-y-auto lg:border-r"
+  class="bg-white backdrop-blur-xl w-full md:w-72 md:h-[calc(100vh-3.5rem)] md:fixed md:left-0 md:top-32 md:overflow-y-auto md:border-r"
   id="filter-form">
   <div class="p-4">
 
@@ -40,7 +40,7 @@
                 hx-target="#assistants-list"
                 name="subject"
                 hx-replace-url="true"
-                hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword']" />
+                hx-include="[name='subject']:checked,[name='topic']:checked,[name='filter_rating']:checked,[name='sort'],[name='created_by_me'],[name='keyword']" />
               <span class="label-text text-black">{{ subject.name }}</span>
             </label>
           </div>
@@ -87,7 +87,7 @@
                 hx-target="#assistants-list"
                 name="topic"
                 hx-replace-url="true"
-                hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']" />
+                hx-include="[name='subject']:checked,[name='topic']:checked,[name='filter_rating']:checked,[name='sort'],[name='created_by_me'],[name='keyword']" />
               <span class="label-text text-black">{{ topic.name }}</span>
             </label>
           </div>
@@ -113,7 +113,7 @@
           <label class="flex items-center space-x-2 hover:bg-gray-100 rounded-lg p-2 cursor-pointer">
             <input type="checkbox" id="rating-{{ i }}" name="filter_rating" value="{{ i }}" class="checkbox checkbox-sm"
               hx-get="{% url 'list_assistants' %}" hx-target="#assistants-list" hx-trigger="change" hx-push-url="true"
-              hx-include="[name='topic']:checked,[name='subject']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort']" />
+              hx-include="[name='subject']:checked,[name='topic']:checked,[name='filter_rating']:checked,[name='sort'],[name='created_by_me'],[name='keyword']" />
             <div class="flex items-center gap-1">
               {% for star in "12345"|make_list %}
               {% if star|add:"0" <= i|add:"0" %} <svg class="w-5 h-5 text-yellow-400" fill="currentColor"
@@ -155,12 +155,12 @@
                 name="sort" 
                 value="{{ label }}"
                 class="radio radio-sm"
-                {% if label == current_sort %}checked{% endif %}
+                
                 hx-get="{% url 'list_assistants' %}"
                 hx-push-url="true"
                 hx-target="#assistants-list"
                 hx-trigger="change"
-                hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort'],[name='created_by_me']"
+                hx-include="[name='subject']:checked,[name='topic']:checked,[name='filter_rating']:checked,[name='sort'],[name='created_by_me'],[name='keyword']"
               />
               <span class="label-text text-black">{{ label }}</span>
             </label>
