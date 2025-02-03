@@ -8,7 +8,7 @@ from openai import OpenAI
 import requests
 import wave
 import numpy as np
-
+import audioop
 def get_llm(model):
     api_key = os.environ.get("OPENAI_API_KEY")
     return ChatOpenAI(
@@ -18,7 +18,7 @@ def get_llm(model):
         max_retries=3
     )
 
-client = OpenAI()
+client = OpenAI(api_key="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")
 
 
 # Fetch the audio file and convert it to a base64 encoded string
@@ -30,7 +30,9 @@ encoded_string = base64.b64encode(wav_data).decode('utf-8')
 
 
 class VoiceAssistantConsumer(AsyncWebsocketConsumer):
-    MODEL_NAME = "gpt-4o-mini-audio-preview"
+    # MODEL_NAME = "gpt-4o-mini-audio-preview"
+    # MODEL_NAME = "gpt-4o-mini-audio-preview-2024-12-17"
+    MODEL_NAME = "gpt-4o-audio-preview"
     VOICE_ID = "alloy"
     AUDIO_FORMAT = "pcm16"
 
@@ -91,54 +93,34 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
             )
         )
 
-    def convert_wav_to_pcm16(self, wav_base64):
-        """
-        Converts a base64 WAV file to PCM16 format for OpenAI API.
-        """
-        try:
-            # Decode base64 to raw WAV bytes
-            wav_bytes = base64.b64decode(wav_base64)
-
-            # Read WAV file
-            with wave.open(io.BytesIO(wav_bytes), "rb") as wav_file:
-                sample_width = wav_file.getsampwidth()
-                frame_rate = wav_file.getframerate()
-                channels = wav_file.getnchannels()
-                pcm_data = wav_file.readframes(wav_file.getnframes())
-
-            if sample_width != 2:
-                raise ValueError("Audio must be 16-bit PCM")
-
-            if channels > 1:
-                # Convert stereo to mono (average channels)
-                pcm_array = np.frombuffer(pcm_data, dtype=np.int16)
-                pcm_array = pcm_array.reshape((-1, channels)).mean(axis=1).astype(np.int16)
-                pcm_data = pcm_array.tobytes()
-
-            return base64.b64encode(pcm_data).decode('utf-8')
-
-        except Exception as e:
-            print(f"Error converting WAV to PCM16: {e}")
-            return None
-        
-
     async def get_response_from_audio(self, audio_data_b64):
         try:
-
-            pcm16_audio = self.convert_wav_to_pcm16(audio_data_b64)
-            if not pcm16_audio:
-                raise ValueError("Failed to convert audio to PCM16 format")
-        
             completion = client.chat.completions.create(
                 model=self.MODEL_NAME,
                 modalities=["text", "audio"],
-                audio={"voice": self.VOICE_ID, "format": self.AUDIO_FORMAT},
+                audio={"voice": 'alloy', "format": self.AUDIO_FORMAT},
                 stream=True,
+                temperature=0.5,
+                stream_options={"include_usage": True},
+                max_tokens=1000,
                 messages=[
                     {
                         "role": "system",
                         "content": """
-                        you are a helpful assistant. who does short and concise answers. default audio response should be less 5 second unless user asks for more.
+                        You are a friendly and helpful voice assistant focused on clear communication. Your responses should be:
+                        - Concise and to the point (5-10 seconds of audio by default)
+                        - Natural and conversational in tone
+                        - Well-structured with clear transitions
+                        - Longer only when the user specifically requests more detail
+                        
+                        Guidelines:
+                        - Start responses with a direct answer
+                        - Use simple language and short sentences
+                        - Include brief acknowledgments when appropriate
+                        - Maintain a consistent, friendly voice
+                        - Ask clarifying questions if needed
+                        
+                        Remember: The goal is to provide helpful information efficiently while maintaining a natural conversation flow.
                         """
                     },
                     {
@@ -147,32 +129,55 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
                             {
                                 "type": "input_audio",
                                 "input_audio": {
-                                    "data": pcm16_audio,
-                                    "format": self.AUDIO_FORMAT
+                                    "data": audio_data_b64,
+                                    "format": "wav"
                                 }
-
                             }
                         ]
                     },
                 ]
             )
 
+            # Extracting text and audio chunks
             for chunk in completion:
-                print(chunk)
-
-            # transcript = completion.choices[0].message.audio.transcript
-            # audio_data = completion.choices[0].message.audio.data
-
-            # await self.send(
-            #     json.dumps(
-            #         {
-            #             "type": "assistant_response",
-            #             "message": transcript,
-            #             "audio_data": audio_data,
-            #         }
-            #     )
-            # )
-
+                print(f"chunk: {chunk}")
+                
+                # Safely check if chunk has choices
+                if not chunk.choices or len(chunk.choices) == 0:
+                    continue
+                    
+                print(f"chunk.choices[0].delta: {chunk.choices[0].delta}")
+                
+                # Safely access delta and audio attributes
+                delta = chunk.choices[0].delta
+                if not delta:
+                    continue
+                    
+                text_chunk = None
+                audio_chunk = None
+                
+                if hasattr(delta, 'audio') and delta.audio:
+                    print(f"delta.audio.transcript: {delta.audio.get('transcript')}")
+                    if delta.audio.get('transcript'):
+                        text_chunk = delta.audio.get('transcript')
+                    if delta.audio.get('data'):
+                        audio_chunk = base64.b64decode(delta.audio.get('data'))
+                        audio_chunk = base64.b64encode(audio_chunk).decode('utf-8')
+                        
+                        # Only write if we have audio data
+                        with open("audio.pcm", "ab") as f:
+                            f.write(base64.b64decode(delta.audio.get('data')))
+                # Only send if we have actual content
+                if text_chunk or audio_chunk:
+                    await self.send(
+                        json.dumps({
+                            "type": "assistant_response", 
+                            "message": text_chunk,
+                            # Only send audio_data if we have it
+                            "audio_data": audio_chunk if audio_chunk else None,
+                            "id": chunk.id
+                        })
+                    )
         except Exception as e:
             error_message = f"Error processing audio: {str(e)}"
             await self.send(
