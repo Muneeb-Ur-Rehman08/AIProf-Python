@@ -180,9 +180,9 @@ class ChatModule:
         # logger.info(f"history_messages: {history_messages}")
 
         return ChatPromptTemplate.from_messages([
-            SystemMessagePromptTemplate.from_template(system_message),
-            *history_messages,
-            HumanMessagePromptTemplate.from_template(human_message)
+        SystemMessage(content=system_message),
+        *history_messages,
+        HumanMessage(content=human_message)
             
         ])
 
@@ -457,7 +457,7 @@ class ChatModule:
             for chunk in response:
                 full_response += chunk
                 yield chunk
-
+            
         except Exception as e:
             logger.error(f"Error processing message: {e}")
             yield "I apologize, but I encountered an error processing your message. Please try again."
