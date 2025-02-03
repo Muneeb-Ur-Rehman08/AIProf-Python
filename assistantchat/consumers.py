@@ -18,7 +18,7 @@ def get_llm(model):
         max_retries=3
     )
 
-client = OpenAI(api_key="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")
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 
 # Fetch the audio file and convert it to a base64 encoded string
