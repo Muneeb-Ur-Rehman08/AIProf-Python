@@ -18,6 +18,7 @@ from langgraph.store.memory import InMemoryStore
 from PIL import Image
 import pytesseract
 from PyPDF2 import PdfReader
+from django.shortcuts import render
 
 logger = logging.getLogger(__name__)
 
@@ -120,6 +121,8 @@ def chat_query(request, ass_id=None):
         user = User.objects.get(id=request.user.id)
         user_id = str(user.id)
 
+        logger.info(f"User_id: {user_id}")
+
         if not assistant_id:
             return StreamingHttpResponse("Assistant ID is required", content_type='text/plain')
 
@@ -144,7 +147,7 @@ def chat_query(request, ass_id=None):
             prompt=prompt,
             assistant_id=str(assistant.id),
             user_id=str(user),
-            assistant_config=assistant_config(assistant=assistant, user=user),
+            assistant_config=assistant_config(assistant_is=assistant_id, user_id=user_id),
             chat_history=chat_history     
         )
 
@@ -170,6 +173,9 @@ def chat_query(request, ass_id=None):
         logger.error(f"Error in chat query endpoint: {e}")
         return StreamingHttpResponse("Failed to process chat query", content_type='text/event-stream')
     
+
+def voice_chat(request):
+    return render(request, 'voiceAssistant.html')
 
 
 def get_history(assistant_id, user_id):
@@ -248,9 +254,10 @@ def save_history(assistant_id, user_id, prompt, full_response):
         logger.error(f"Error saving chat memory: {e}")
 
 
-def assistant_config(
-        assistant, user
-):
+def assistant_config(assistant_id, user_id):
+    assistant = Assistant.objects.get(id=assistant_id)
+    user = User.objects.get(id=user_id)
+    
     mermaid_instructions = '''
             Help me with short and to the point diagrams wherever you see fit using 
             mermaid.js code, as example given below. Double make sure the code error-free 
