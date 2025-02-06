@@ -147,7 +147,7 @@ def chat_query(request, ass_id=None):
             prompt=prompt,
             assistant_id=str(assistant.id),
             user_id=str(user),
-            assistant_config=assistant_config(assistant_is=assistant_id, user_id=user_id),
+            assistant_config=assistant_config(assistant_id=assistant_id, user_id=user_id),
             chat_history=chat_history     
         )
 
@@ -219,11 +219,11 @@ def save_history(assistant_id, user_id, prompt, full_response):
     keys.append(next_key)
 
     # Dynamically apply sliding window logic if memory exceeds MAX_MEMORY_SIZE
-    if len(chat_history) >= 3:
+    if len(chat_history) >= 20:
 
-        oldest_keys = keys[:2]
+        oldest_keys = keys[:10]
         # Offload the oldest 10 messages to the database
-        offloaded_messages = chat_history[:2]
+        offloaded_messages = chat_history[:10]
 
         chat_module.save_chat_history(user_id, assistant_id, offloaded_messages)
 

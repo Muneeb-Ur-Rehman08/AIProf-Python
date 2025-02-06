@@ -51,7 +51,7 @@ encoded_string = base64.b64encode(wav_data).decode('utf-8')
 class VoiceAssistantConsumer(AsyncWebsocketConsumer):
     # MODEL_NAME = "gpt-4o-mini-audio-preview"
     # MODEL_NAME = "gpt-4o-mini-audio-preview-2024-12-17"
-    MODEL_NAME = "gpt-4o-audio-preview"
+    MODEL_NAME = "gpt-4o-mini-audio-preview"
     VOICE_ID = "alloy"
     AUDIO_FORMAT = "pcm16"
 
