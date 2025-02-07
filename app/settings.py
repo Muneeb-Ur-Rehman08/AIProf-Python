@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "slippers",
     "django_htmx",
     "channels",
+    "silero_vad"
 ]
 
 MIDDLEWARE = [
