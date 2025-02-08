@@ -194,10 +194,9 @@ SUPABASE_KEY = os.getenv('SUPABASE_KEY') or 'your-supabase-key'
 CORS_ALLOW_ALL_ORIGINS = True
 
 # For production, specify allowed origins
-# CORS_ALLOWED_ORIGINS = [
-#     "http://example.com",
-#     "https://example.com",
-# ]
+CORS_ALLOWED_ORIGINS = [
+    "https://aiprof-preprod.up.railway.app",
+]
 
 
 # Provider specific settings
@@ -245,7 +244,7 @@ SOCIALACCOUNT_AUTO_SIGNUP = True
 # AllAuth UI theme
 ALLAUTH_UI_THEME='cupcake'
 
-CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app', 'https://*.up.railway.app']
+CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app', 'https://*.up.railway.app', "https://aiprof-preprod.up.railway.app"]
 
 
 # Email settings

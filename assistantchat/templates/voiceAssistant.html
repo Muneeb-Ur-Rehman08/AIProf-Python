@@ -49,6 +49,12 @@
       // =======================
       let socket;
       
+      const testsocket = new WebSocket("wss://aiprof-preprod.up.railway.app/ws/assistant/");
+      testsocket.onopen = () => console.log("Connected");
+      testsocket.onerror = (error) => console.log("WebSocket Error:", error);
+
+
+
       // Recording-related variables
       let audioContext;       // For recording
       let analyser;
