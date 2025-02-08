@@ -102,15 +102,16 @@
           if (data.type === "assistant_response") {
             // Append any text received
             if (data.message) {
-              appendStreamingMessage(data.message);
+              addMessage(data.message);
             }
             // Queue audio data (if provided)
-            if (data.audio_data) {
-              audioQueue.push(data.audio_data);
-            }
+            // if (data.audio_data) {
+            //   audioQueue.push(data.audio_data);
+            // }
             // If not already playing audio, start playback
             if (!isPlaying) {
-              playNextAudioChunk();
+              // playNextAudioChunk();
+              playAudio(data.audio_data);
             }
           }
         };
@@ -184,13 +185,13 @@
         document.getElementById("stopBtn").disabled = false;
         addMessage("System", "Recording started...");
       }
-      
+
       function monitorAudio() {
         if (!isRecording || !analyser) return;
         
         const dataArray = new Uint8Array(analyser.fftSize);
         analyser.getByteTimeDomainData(dataArray);
-        
+
         let sumOfSquares = 0;
         for (let i = 0; i < dataArray.length; i++) {
           const sample = dataArray[i] - 128;
@@ -216,13 +217,21 @@
             }, SILENCE_DURATION);
           }
         }
-        
-        requestAnimationFrame(monitorAudio);
+
+        // Check if requestAnimationFrame is supported and working
+        if (window.requestAnimationFrame) {
+          requestAnimationFrame(monitorAudio);
+        } else {
+          // Fallback to setTimeout as a backup
+          setTimeout(monitorAudio, 16); // ~60fps
+        }
       }
       
       function stopRecording() {
         if (!isRecording) return;
         
+        console.log("Stopping recording...");
+
         // Disconnect audio nodes and stop tracks
         if (scriptProcessorNode) scriptProcessorNode.disconnect();
         if (sourceNode) sourceNode.disconnect();
@@ -308,17 +317,71 @@
           view.setUint8(offset + i, str.charCodeAt(i));
         }
       }
+
+      let playAudioContext;
+      let playSource;
+
+      async function playAudio(audioData) {
+        playAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        // Only try to stop if playSource exists and has been started
+        if (playSource && isPlaying) {
+          playSource.stop();
+        }
+
+        playSource = playAudioContext.createBufferSource();
+
+        // Convert audioData to ArrayBuffer if it's not already
+        const arrayBuffer = audioData instanceof ArrayBuffer ? audioData : base64ToArrayBuffer(audioData);
+
+        const decodedBuffer = await playAudioContext.decodeAudioData(arrayBuffer);
+        playSource.buffer = decodedBuffer;
+        playSource.connect(playAudioContext.destination);
+        isPlaying = true;
+        playSource.start(0);
+
+        startRecording()
+
+        playSource.onended = () => {
+          isPlaying = false;
+          playSource = null;
+          startRecording();
+        };
+      }
+
+      function stopAudio() {
+          if (playSource) {
+              playSource.stop();
+              playSource = null;
+              isPlaying = false;
+
+          }
+          if (playAudioContext) {
+              playAudioContext.close();
+              playAudioContext = null;
+          }
+
+      }
+
       
       // Convert the WAV Blob to a base64 string and send it to the server
+
       function sendAudioToServer(wavBlob) {
+        if (isPlaying) {
+          // stop the audio to be played
+          stopAudio();
+        }
         const reader = new FileReader();
         reader.onloadend = () => {
           const base64Audio = reader.result.split(",")[1];
           if (socket && socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({
               audio_data: base64Audio,
-              format: "wav"
+              format: "wav",
+              interrupt: true
             }));
+            // Start recording again after sending audio
+            startRecording();
           }
         };
         reader.readAsDataURL(wavBlob);

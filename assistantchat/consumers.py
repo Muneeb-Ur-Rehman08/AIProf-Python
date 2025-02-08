@@ -53,7 +53,8 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
     # MODEL_NAME = "gpt-4o-mini-audio-preview-2024-12-17"
     MODEL_NAME = "gpt-4o-mini-audio-preview"
     VOICE_ID = "alloy"
-    AUDIO_FORMAT = "pcm16"
+    AUDIO_FORMAT = "wav"
+
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -202,9 +203,9 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
                 model=self.MODEL_NAME,
                 modalities=["text", "audio"],
                 audio={"voice": 'alloy', "format": self.AUDIO_FORMAT},
-                stream=True,
+                # stream=True,
                 temperature=0.5,
-                stream_options={"include_usage": True},
+                # stream_options={"include_usage": True},
                 max_tokens=1000,
                 messages=[
                     {
@@ -226,46 +227,61 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
                 ]
             )
 
+
+
             # Extracting text and audio chunks
-            for chunk in completion:
-                print(f"chunk: {chunk}")
+            # for chunk in completion:
+            #     print(f"chunk: {chunk}")
                 
-                # Safely check if chunk has choices
-                if not chunk.choices or len(chunk.choices) == 0:
-                    continue
+            #     # Safely check if chunk has choices
+            #     if not chunk.choices or len(chunk.choices) == 0:
+            #         continue
                     
-                print(f"chunk.choices[0].delta: {chunk.choices[0].delta}")
+            #     print(f"chunk.choices[0].delta: {chunk.choices[0].delta}")
                 
-                # Safely access delta and audio attributes
-                delta = chunk.choices[0].delta
-                if not delta:
-                    continue
+            #     # Safely access delta and audio attributes
+            #     delta = chunk.choices[0].delta
+            #     if not delta:
+            #         continue
                     
-                text_chunk = None
-                audio_chunk = None
+            #     text_chunk = None
+            #     audio_chunk = None
                 
-                if hasattr(delta, 'audio') and delta.audio:
-                    print(f"delta.audio.transcript: {delta.audio.get('transcript')}")
-                    if delta.audio.get('transcript'):
-                        text_chunk = delta.audio.get('transcript')
-                    if delta.audio.get('data'):
-                        audio_chunk = base64.b64decode(delta.audio.get('data'))
-                        audio_chunk = base64.b64encode(audio_chunk).decode('utf-8')
+            #     if hasattr(delta, 'audio') and delta.audio:
+            #         print(f"delta.audio.transcript: {delta.audio.get('transcript')}")
+            #         if delta.audio.get('transcript'):
+            #             text_chunk = delta.audio.get('transcript')
+            #         if delta.audio.get('data'):
+            #             audio_chunk = base64.b64decode(delta.audio.get('data'))
+            #             audio_chunk = base64.b64encode(audio_chunk).decode('utf-8')
                         
-                        # Only write if we have audio data
-                        with open("audio.pcm", "ab") as f:
-                            f.write(base64.b64decode(delta.audio.get('data')))
-                # Only send if we have actual content
-                if text_chunk or audio_chunk:
-                    await self.send(
-                        json.dumps({
-                            "type": "assistant_response", 
-                            "message": text_chunk,
-                            # Only send audio_data if we have it
-                            "audio_data": audio_chunk if audio_chunk else None,
-                            "id": chunk.id
-                        })
-                    )
+            #             # Only write if we have audio data
+            #             with open("audio.pcm", "ab") as f:
+            #                 f.write(base64.b64decode(delta.audio.get('data')))
+            #     # Only send if we have actual content
+            #     if text_chunk or audio_chunk:
+            #         await self.send(
+            #             json.dumps({
+            #                 "type": "assistant_response", 
+            #                 "message": text_chunk,
+            #                 # Only send audio_data if we have it
+            #                 "audio_data": audio_chunk if audio_chunk else None,
+            #                 "id": chunk.id
+            #             })
+            #         )
+
+
+            transcript = completion.choices[0].message.audio.transcript
+            audio_data = completion.choices[0].message.audio.data
+            await self.send(
+                json.dumps(
+                    {
+                        "type": "assistant_response",
+                        "message": transcript,
+                        "audio_data": audio_data,
+                    }
+                )
+            )
         except Exception as e:
             error_message = f"Error processing audio: {str(e)}"
             await self.send(
