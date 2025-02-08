@@ -141,25 +141,5 @@
    **********************************************/
   
   /* Container for each message bubble */
-  .chat-message {
-    margin-bottom: 16px;
-    border-radius: 8px;
-    padding: 12px 16px;
-    width: fit-content;
-    max-width: 80%;
-  }
   
-  /* User message style */
-  .message-user {
-    background-color: rgb(37, 99, 235, 1);
-    margin-left: auto;         /* Align to the right */
-    color: #ffffff;
-  }
-  
-  /* Assistant (ChatGPT-like) message style */
-  .message-assistant {
-    margin-right: auto;         /* Align to the left */
-    background-color: rgb(255, 255, 255 / 0.1);  /* Light blue background */
-    color: #ffffff;
-  }
   

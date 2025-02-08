@@ -11,7 +11,7 @@
     function appendMessage(text, isUser = false) {
         if (isUser) {
             const messageDiv = document.createElement('div');
-            messageDiv.className = `chat-message message-user`;
+            messageDiv.className = `bg-purple-200 mb-4 rounded px-2.5 py-3 max-w-[60%] w-fit ml-auto text-black first-letter:uppercase first-letter:bold first-letter:text-xl`;
             messageDiv.innerHTML = `
                 <div class="markdown-content">
                     ${text}
@@ -22,7 +22,7 @@
             let assistantMessageDiv = document.querySelector('.assistant-message-pending');
             if (!assistantMessageDiv) {
                 assistantMessageDiv = document.createElement('div');
-                assistantMessageDiv.className = `chat-message message-assistant assistant-message-pending`;
+                assistantMessageDiv.className = `bg-[aliceblue] mb-4 rounded px-2.5 py-4 max-w-[90%] mr-auto text-black first-letter:uppercase first-letter:bold first-letter:text-md assistant-message-pending`;
                 assistantMessageDiv.innerHTML = `
                     <div class="markdown-content">
                         ${text}
@@ -62,7 +62,7 @@
             if (!divElement.parentElement.classList.contains('assistant-message-pending')) {
                 const speakButton = `
                     <button onclick="toggleSpeech(this.parentElement.getAttribute('data-raw') || this.parentElement.textContent, this)" 
-                            class="absolute top-2 right-2 p-1 rounded-full hover:bg-white/20 transition-colors">
+                            class=" transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 speak-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                                   d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
@@ -183,7 +183,7 @@
                                 const messageDiv = pendingMessage.querySelector('div');
                                 const speakButton = `
                                     <button onclick="toggleSpeech(this.parentElement.getAttribute('data-raw') || this.parentElement.textContent, this)" 
-                                            class="absolute top-2 right-2 p-1 rounded-full hover:bg-white/20 transition-colors">
+                                            class=" transition-colors">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 speak-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                                                   d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />

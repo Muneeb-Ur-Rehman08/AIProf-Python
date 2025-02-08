@@ -1,5 +1,4 @@
-<div
-  class="bg-white backdrop-blur-xl w-full md:w-72 md:h-[calc(100vh-3.5rem)] md:fixed md:left-0 md:top-32 md:overflow-y-auto md:border-r"
+<div class="bg-white backdrop-blur-xl w-full md:w-72 md:h-[calc(100vh-3.5rem)] md:fixed md:left-0 md:top-32 md:overflow-y-auto md:border-r"
   id="filter-form">
   <div class="p-4">
 
@@ -10,28 +9,31 @@
     <div class="dropdown w-full mb-4">
       <label tabindex="0"
         class="btn btn-block border-gray-300 border justify-between bg-white text-black hover:bg-gray-100 rounded-lg"
-        id="subject-dropdown-label">
-        Select a Subject
+        id="subject-dropdown-label" onclick="document.getElementById('subject-search').focus()">
+        <span class="label-text-content">Select a Subject</span>
+      <div class="flex items-center">
+        <svg id="cancel-subject" class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
         <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
+      
+      </div>
       </label>
-      <div tabindex="0" class="dropdown-content z-[1] w-full p-4 shadow-2xl bg-white rounded-lg mt-2">
+      <div tabindex="0" class="dropdown-content z-[1] w-full shadow border border-gray-300 bg-white rounded-lg mt-2">
         <!-- Search Input -->
-        <div class="relative mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-3 h-5 w-5 text-gray-400"
-            viewBox="0 0 16 16" fill="currentColor">
-            <path fill-rule="evenodd"
-              d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
-              clip-rule="evenodd" />
+        <div class="flex items-center border-b px-3" cmdk-input-wrapper="">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search mr-2 h-4 w-4 shrink-0 opacity-50">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.3-4.3"></path>
           </svg>
           <input type="text" placeholder="Search subjects..."
-            class="input input-bordered w-full bg-white text-black pl-10 focus:outline-none focus:ring-2 focus:ring-gray-200"
+            class="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
             id="subject-search" hx-trigger="keyup changed delay:300ms" onkeyup="filterSubjects()" />
         </div>
         <!-- Subject List -->
-        <div class="space-y-2 max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
-          id="subject-list">
+        <div class="max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-black" id="subject-list">
           {% for subject in subjects_data %}
           <div class="form-control subject-item">
             <label class="label cursor-pointer justify-start gap-x-2 hover:bg-gray-100 rounded-lg px-2">
@@ -54,36 +56,40 @@
 
     <!-- Topics Dropdown -->
     <div class="dropdown w-full mb-4">
-      <label tabindex="0"
-        class="btn btn-block border-gray-300 border justify-between bg-white text-black hover:bg-gray-100 rounded-lg"
-        id="topic-dropdown-label">
-        Select a Topic
+      <label tabindex="0" 
+        class="btn btn-block border-gray-300 border justify-between bg-white text-black hover:bg-gray-100 rounded-lg" 
+        id="topic-dropdown-label" onclick="document.getElementById('topic-search').focus();">
+        <span class="label-text-content">Select a Topic</span>
+       <div class="flex items-center">
+        <svg id="cancel-topic" class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
         <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
+       </div>
       </label>
-      <div tabindex="0" class="dropdown-content z-[1] w-full p-4 shadow-2xl bg-white rounded-lg mt-2">
+      <div tabindex="0" class="dropdown-content z-[1] w-full shadow border border-gray-300 bg-white rounded-lg mt-2">
         <!-- Search Input -->
-        <div class="relative mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-3 h-5 w-5 text-gray-400"
-            viewBox="0 0 16 16" fill="currentColor">
-            <path fill-rule="evenodd"
-              d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
-              clip-rule="evenodd" />
+        <div class="flex items-center border-b px-3" cmdk-input-wrapper="">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search mr-2 h-4 w-4 shrink-0 opacity-50">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.3-4.3"></path>
           </svg>
           <input type="text" placeholder="Search topics..."
-            class="input input-bordered w-full bg-white text-black pl-10 focus:outline-none focus:ring-2 focus:ring-gray-200"
+            class="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
             id="topic-search" hx-trigger="keyup changed delay:300ms" onkeyup="filterTopics()" />
         </div>
         <!-- Topic List -->
-        <div class="space-y-2 max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
-          id="topic-list">
+        <div class="max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-black" id="topic-list">
           {% for subject in subjects_data %}
           {% for topic in subject.topics.all %}
           <div class="topic-item" data-subject="{{ subject.name }}">
             <label class="label cursor-pointer justify-start gap-x-2 hover:bg-gray-100 rounded-lg px-2">
               <input type="checkbox" id="topic-{{ topic.id }}" class="checkbox checkbox-sm" name="topic"
-                value="{{ topic.name }}" hx-trigger="change" hx-get="{% url 'list_assistants' %}"
+                value="{{ topic.name }}" 
+                hx-trigger="change" 
+                hx-get="{% url 'list_assistants' %}"
                 hx-target="#assistants-list"
                 name="topic"
                 hx-replace-url="true"
@@ -107,7 +113,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
       </label>
-      <div tabindex="0" class="dropdown-content z-[1] w-full p-4 shadow-2xl bg-white rounded-lg mt-2">
+      <div tabindex="0" class="dropdown-content z-[1] w-full shadow border border-gray-300 bg-white rounded-lg mt-2">
         <div class="space-y-2">
           {% for i in "54321"|make_list %}
           <label class="flex items-center space-x-2 hover:bg-gray-100 rounded-lg p-2 cursor-pointer">
@@ -139,31 +145,33 @@
     <!-- Sort dropdown -->
     <div class="block sm:hidden">
       <h3 class="font-semibold text-lg mb-2">Sort</h3>
-      <div class="dropdown w-full" id="sort-dropdown">
-        <label tabindex="0" class="btn btn-block border-gray-300 border justify-between bg-white text-black hover:bg-gray-100 rounded-lg">
+      <div class="dropdown w-full mb-4" id="sort-dropdown">
+        <label tabindex="0" class="btn btn-block border-gray-300 border justify-between bg-white text-black rounded-lg">
           Sort By
           <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
           </svg>
         </label>
-        <div tabindex="0" class="dropdown-content z-[1] w-full p-4 shadow-2xl bg-white rounded-lg mt-2">
-          <div class="space-y-2">
+        <div tabindex="0" class="dropdown-content z-[1] w-full shadow border border-gray-300 bg-white rounded-lg mt-2">
+          <!-- Sort List -->
+          <div class="max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-black">
             {% for value, label in sorting_options.items %}
-            <label class="label cursor-pointer justify-start gap-x-2 hover:bg-gray-100 rounded-lg px-2">
-              <input
-                type="radio"
-                name="sort" 
-                value="{{ label }}"
-                class="radio radio-sm"
-                
-                hx-get="{% url 'list_assistants' %}"
-                hx-push-url="true"
-                hx-target="#assistants-list"
-                hx-trigger="change"
-                hx-include="[name='subject']:checked,[name='topic']:checked,[name='filter_rating']:checked,[name='sort'],[name='created_by_me'],[name='keyword']"
-              />
-              <span class="label-text text-black">{{ label }}</span>
-            </label>
+            <div class="form-control">
+              <label class="label cursor-pointer justify-start gap-x-2 hover:bg-gray-100 rounded-lg px-2">
+                <input
+                  type="radio"
+                  name="sort" 
+                  value="{{ label }}"
+                  class="radio radio-sm"
+                  hx-get="{% url 'list_assistants' %}"
+                  hx-push-url="true"
+                  hx-target="#assistants-list"
+                  hx-trigger="change"
+                  hx-include="[name='subject']:checked,[name='topic']:checked,[name='filter_rating']:checked,[name='sort'],[name='created_by_me'],[name='keyword']"
+                />
+                <span class="label-text text-black">{{ label }}</span>
+              </label>
+            </div>
             {% endfor %}
           </div>
         </div>
@@ -244,17 +252,24 @@
 
     let labelText = 'Select a ' + (checkboxName === 'subject' ? 'Subject' : 'Topic');
     if (selectedItems.length > 0) {
-      labelText = selectedItems.slice(0, 2).join(', ');
-      if (selectedItems.length > 2) {
-        labelText += ` & ${selectedItems.length - 2} more`;
+      labelText = selectedItems.slice(0, 1).join(' , ');
+      if (selectedItems.length > 1) {
+        labelText += ` & ${selectedItems.length - 1} more`;
       }
     }
 
     const elements = document.querySelectorAll(`[id="${labelId}"]`);
-    
     elements.forEach(element => {
-      console.log(element, 'element'); // Debugging output
-      element.textContent = labelText;
+      // Find or create the text span
+      let textSpan = element.querySelector('.label-text-content');
+      if (!textSpan) {
+        textSpan = document.createElement('span');
+        textSpan.className = 'label-text-content';
+        element.insertBefore(textSpan, element.firstChild);
+      }
+      
+      // Update just the text content
+      textSpan.textContent = labelText;
     });
   }
 
