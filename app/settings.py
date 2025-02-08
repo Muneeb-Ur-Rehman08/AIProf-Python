@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-95a2r*)4pi@50=l5zd+%w8zf5bqs3ais2ke_!ypton$9c%zq89
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['ajprof-pi.vercel.app', 'profai.netlify.app', 'localhost', '127.0.0.1', '.vercel.app', '.up.railway.app', 'aiprof.up.railway.app']
+ALLOWED_HOSTS = ['ajprof-pi.vercel.app', 'profai.netlify.app', 'localhost', '127.0.0.1', '.vercel.app', '.up.railway.app', 'aiprof.up.railway.app', "aiprof-preprod.up.railway.app", ]
 
 
 # Application definition
