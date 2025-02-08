@@ -119,3 +119,4 @@ bs4==0.0.2
 youtube-transcript-api==0.6.3
 langgraph==0.2.64
 pytesseract==0.3.13
+channels==3.0.5

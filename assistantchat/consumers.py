@@ -3,13 +3,9 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from langchain_openai import ChatOpenAI
 import os
 import base64
-import io
 from openai import OpenAI
 import requests
-import wave
-import numpy as np
 from dotenv import load_dotenv
-import audioop
 from .utils import ChatModule
 from .views import assistant_config, get_history
 from users.models import Assistant
