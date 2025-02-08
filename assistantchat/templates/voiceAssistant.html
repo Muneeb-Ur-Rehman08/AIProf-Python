@@ -79,55 +79,64 @@
       // WebSocket Functions
       // =======================
       function initializeWebSocket() {
-        // Close an existing socket if necessary
-        if (socket) {
-          socket.close();
-        }
-        
-        const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-        socket = new WebSocket(`${protocol}://${window.location.host}/ws/assistant/`);
-        
-        socket.onopen = () => {
-          console.log("WebSocket connected");
-          // Notify the backend to start the conversation
-          socket.send(JSON.stringify({ control: "start_conversation" }));
-          // Start recording immediately upon connection
-          startRecording();
-        };
-        
-        socket.onmessage = async (event) => {
-          const data = JSON.parse(event.data);
-          console.log("Received message:", data);
-          
-          if (data.type === "assistant_response") {
-            // Append any text received
-            if (data.message) {
-              addMessage(data.message);
-            }
-            // Queue audio data (if provided)
-            // if (data.audio_data) {
-            //   audioQueue.push(data.audio_data);
-            // }
-            // If not already playing audio, start playback
-            if (!isPlaying) {
-              // playNextAudioChunk();
-              playAudio(data.audio_data);
-            }
-          }
-        };
-        
-        socket.onclose = () => {
-          console.log("WebSocket disconnected");
-          document.getElementById("startBtn").disabled = false;
-          document.getElementById("stopBtn").disabled = true;
-          stopRecording();
-        };
-        
-        socket.onerror = (error) => {
-          console.error("WebSocket error:", error);
-          alert("Error connecting to server. Please try again.");
-        };
+  // Close an existing socket if necessary
+  if (socket) {
+    socket.close();
+  }
+
+  // Get the current hostname
+  const hostname = window.location.hostname;
+
+  // Determine if we're on Railway or localhost
+  const isRailway = hostname.includes('railway.app');
+
+  // Set up the WebSocket URL
+  let wsUrl;
+  if (isRailway) {
+    // For Railway: Use wss:// and the full hostname
+    wsUrl = `wss://${hostname}/ws/assistant/`;
+  } else {
+    // For localhost: Use the current protocol (ws/wss) and port
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const port = window.location.port ? `:${window.location.port}` : '';
+    wsUrl = `${protocol}://${hostname}${port}/ws/assistant/`;
+  }
+
+  console.log("Connecting to WebSocket:", wsUrl);
+  socket = new WebSocket(wsUrl);
+
+  socket.onopen = () => {
+    console.log("WebSocket connected");
+    socket.send(JSON.stringify({ control: "start_conversation" }));
+    startRecording();
+  };
+
+  socket.onmessage = async (event) => {
+    const data = JSON.parse(event.data);
+    console.log("Received message:", data);
+
+    if (data.type === "assistant_response") {
+      if (data.message) {
+        addMessage(data.message);
       }
+      if (!isPlaying && data.audio_data) {
+        playAudio(data.audio_data);
+      }
+    }
+  };
+
+  socket.onclose = () => {
+    console.log("WebSocket disconnected");
+    document.getElementById("startBtn").disabled = false;
+    document.getElementById("stopBtn").disabled = true;
+    stopRecording();
+  };
+
+  socket.onerror = (error) => {
+    console.error("WebSocket error:", error);
+    alert("Error connecting to server. Please try again.");
+  };
+}
 
       // =======================
       // Recording Functions
