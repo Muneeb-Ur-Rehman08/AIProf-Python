@@ -18,6 +18,7 @@ from langgraph.store.memory import InMemoryStore
 from PIL import Image
 import pytesseract
 from PyPDF2 import PdfReader
+from django.shortcuts import render
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,11 @@ os.getenv('LANGCHAIN_API_KEY')
 
 
 memory_store = InMemoryStore()  # Global in-memory store
+
+# Define sliding window parameters
+MAX_MEMORY_SIZE = 20  # Maximum allowed entries in memory
+
+chat_module = ChatModule()
 
 @login_required(login_url='accounts/login/')
 @csrf_exempt
@@ -47,7 +53,7 @@ def chat_query(request, ass_id=None):
         if not request.user.is_authenticated:
             return StreamingHttpResponse("User not authenticated", content_type='text/plain')
 
-        chat_module = ChatModule()
+        
 
 
         # Handle file uploads (images, PDFs)
@@ -115,12 +121,65 @@ def chat_query(request, ass_id=None):
         user = User.objects.get(id=request.user.id)
         user_id = str(user.id)
 
+        logger.info(f"User_id: {user_id}")
+
         if not assistant_id:
             return StreamingHttpResponse("Assistant ID is required", content_type='text/plain')
 
         assistant = Assistant.objects.get(id=assistant_id)
 
-        # Define the namespace
+
+        chat_history, keys = get_history(assistant_id=assistant_id, user_id=user_id)
+
+        
+
+        # Define assistant configuration
+        # assistant_config = {
+        #     "subject": assistant.subject,
+        #     "topic": assistant.topic,
+        #     "teacher_instructions": assistant.teacher_instructions,
+        #     "user_name": user.first_name,
+        #     "prompt_instructions": mermaid_instructions
+        # }
+
+        # Process the message with chat history
+        response = chat_module.process_message(
+            prompt=prompt,
+            assistant_id=str(assistant.id),
+            user_id=str(user),
+            assistant_config=assistant_config(assistant_id=assistant_id, user_id=user_id),
+            chat_history=chat_history     
+        )
+
+        # Streaming the response
+        def response_stream():
+            full_response = ""
+            try:
+                for chunk in response:
+                    if chunk:
+                        full_response += chunk
+                        yield chunk
+
+                save_history(assistant_id, user_id, prompt, full_response)
+
+                
+            except Exception as e:
+                logger.error(f"Error in chat query response: {e}")
+                yield "Failed to process chat query"
+
+        return StreamingHttpResponse(response_stream(), content_type='text/event-stream')
+
+    except Exception as e:
+        logger.error(f"Error in chat query endpoint: {e}")
+        return StreamingHttpResponse("Failed to process chat query", content_type='text/event-stream')
+    
+
+def voice_chat(request):
+    return render(request, 'voiceAssistant.html')
+
+
+def get_history(assistant_id, user_id):
+    # Define the namespace
         namespace = ("chat", user_id, assistant_id)
         
         count = 0
@@ -131,52 +190,75 @@ def chat_query(request, ass_id=None):
             chat_history = [item.value for item in items]  # Extract chat data
             keys = [item.key for item in items]  # Extract keys
             # logger.info(f"Retrieved keys in namespace: {keys}")
+            return chat_history, keys
         except Exception as e:
             logger.error(f"Error retrieving keys: {e}")
             chat_history, keys = [], []
 
-        # Define sliding window parameters
-        MAX_MEMORY_SIZE = 20  # Maximum allowed entries in memory
 
-        chat_summary = next(
+def save_history(assistant_id, user_id, prompt, full_response):
+
+    namespace = ("chat", user_id, assistant_id)
+
+    chat_history, keys = get_history(assistant_id, user_id)
+
+    chat_summary = next(
             (entry["summary"] for entry in chat_history if "summary" in entry),
             "No summary available. Use chat history only to generate chat summary."
         )
-        knowledge_level = next(
-            (entry["knowledge_level"] for entry in chat_history if "knowledge_level" in entry),
-            "No knowledge level available. Use chat history only to generate assessment."
-        )
+    knowledge_level = next(
+        (entry["knowledge_level"] for entry in chat_history if "knowledge_level" in entry),
+        "No knowledge level available. Use chat history only to generate assessment."
+    )
 
-        # Add the new user message to memory
-        next_key = f"chat-{len(keys)}"
-        new_entry = {"User": prompt, "AI": "", "summary": chat_summary}  # Placeholder for assistant response
-        memory_store.put(namespace, next_key, new_entry)
-        chat_history.append(new_entry)
-        keys.append(next_key)
+    # Add the new user message to memory
+    next_key = f"chat-{len(keys)}"
+    new_entry = {"User": prompt, "AI": "", "summary": chat_summary}  # Placeholder for assistant response
+    memory_store.put(namespace, next_key, new_entry)
+    chat_history.append(new_entry)
+    keys.append(next_key)
+
+    # Dynamically apply sliding window logic if memory exceeds MAX_MEMORY_SIZE
+    if len(chat_history) >= 20:
+
+        oldest_keys = keys[:10]
+        # Offload the oldest 10 messages to the database
+        offloaded_messages = chat_history[:10]
+
+        chat_module.save_chat_history(user_id, assistant_id, offloaded_messages)
+
+        logger.info(f"\n\nCurrent sumamry : {chat_summary}\n\n")
+
+        chat_summary = chat_module.analyze_chat_history(offloaded_messages, chat_summary)
+
+        knowledge_level = chat_module.assess_user_knowledge(offloaded_messages)
         
 
-        # Dynamically apply sliding window logic if memory exceeds MAX_MEMORY_SIZE
-        if len(chat_history) >= MAX_MEMORY_SIZE:
+        # **Delete old messages using BaseStore.delete()**
+        for key in oldest_keys:
+            memory_store.delete(namespace, key)
 
-            oldest_keys = keys[:10]
-            # Offload the oldest 10 messages to the database
-            offloaded_messages = chat_history[:10]
-
-            chat_module.save_chat_history(user_id, assistant_id, offloaded_messages)
-
-            logger.info(f"\n\nCurrent sumamry : {chat_summary}\n\n")
-
-            chat_summary = chat_module.analyze_chat_history(offloaded_messages, chat_summary)
-
-            knowledge_level = chat_module.assess_user_knowledge(offloaded_messages)
-            
-
-            # **Delete old messages using BaseStore.delete()**
-            for key in oldest_keys:
-                memory_store.delete(namespace, key)
+    # Save the current interaction in memory
+    try:
+        key = f"chat-{len(memory_store.search(namespace))}"
+        memory_store.put(namespace, next_key, {
+            "User": prompt, 
+            "AI": full_response, 
+            "summary": chat_summary, 
+            "knowledge_level": knowledge_level
+            }
+        )
+        
+        # logger.info(f"Saved memory: namespace={namespace}, key={key}, data={{'user': '{prompt}', 'assistant': '{full_response}', 'summary': '{chat_summary}'}}")
+    except Exception as e:
+        logger.error(f"Error saving chat memory: {e}")
 
 
-        mermaid_instructions = '''
+def assistant_config(assistant_id, user_id):
+    assistant = Assistant.objects.get(id=assistant_id)
+    user = User.objects.get(id=user_id)
+    
+    mermaid_instructions = '''
             Help me with short and to the point diagrams wherever you see fit using 
             mermaid.js code, as example given below. Double make sure the code error-free 
             and provide one graph per block:\n
@@ -206,55 +288,10 @@ def chat_query(request, ass_id=None):
             
             ```
         '''
-
-        # Define assistant configuration
-        assistant_config = {
+    return {
             "subject": assistant.subject,
             "topic": assistant.topic,
             "teacher_instructions": assistant.teacher_instructions,
             "user_name": user.first_name,
             "prompt_instructions": mermaid_instructions
         }
-
-        # Process the message with chat history
-        response = chat_module.process_message(
-            prompt=prompt,
-            assistant_id=str(assistant.id),
-            user_id=str(user),
-            assistant_config=assistant_config,
-            chat_history=chat_history     
-        )
-
-        # Streaming the response
-        def response_stream():
-            full_response = ""
-            try:
-                for chunk in response:
-                    if chunk:
-                        full_response += chunk
-                        yield chunk
-
-                # Save the current interaction in memory
-                try:
-                    key = f"chat-{len(memory_store.search(namespace))}"
-                    memory_store.put(namespace, next_key, {
-                        "User": prompt, 
-                        "AI": full_response, 
-                        "summary": chat_summary, 
-                        "knowledge_level": knowledge_level
-                        }
-                    )
-                   
-
-                    # logger.info(f"Saved memory: namespace={namespace}, key={key}, data={{'user': '{prompt}', 'assistant': '{full_response}', 'summary': '{chat_summary}'}}")
-                except Exception as e:
-                    logger.error(f"Error saving chat memory: {e}")
-            except Exception as e:
-                logger.error(f"Error in chat query response: {e}")
-                yield "Failed to process chat query"
-
-        return StreamingHttpResponse(response_stream(), content_type='text/event-stream')
-
-    except Exception as e:
-        logger.error(f"Error in chat query endpoint: {e}")
-        return StreamingHttpResponse("Failed to process chat query", content_type='text/event-stream')

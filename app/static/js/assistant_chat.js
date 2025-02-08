@@ -163,7 +163,7 @@
                 id: assistant_id
             };
 
-            fetch('/assistantchat/chat/', {
+            fetch('/chat/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

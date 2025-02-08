@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'allauth_ui',
     "slippers",
     "django_htmx",
+    "channels",
 ]
 
 MIDDLEWARE = [
@@ -94,6 +95,12 @@ TEMPLATES = [
 WSGI_APPLICATION = 'app.wsgi.application'
 ASGI_APPLICATION = 'app.asgi.application'
 
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
 
 # print("User:", os.getenv('SUPABASE_USER'))
 # print("Password:", os.getenv('SUPABASE_PASS'))
