@@ -2,14 +2,13 @@
 {% block content %}
 
 <!-- Tab buttons for mobile -->
-<div class="flex h-screen w-full flex-col items-center">
+<div class="flex w-full flex-col items-center h-screen bg-white">
   <!-- Update header container styling -->
   <div class="w-full">
-    {% include 'modal/header.html' %}
+    {% include 'modal/navbar.html' %}
   </div>
 
   <div id="assistant-form" class="relative flex w-full grow overflow-hidden" hx-replace-url="true">
-
     <!-- Tab buttons for mobile - Moved outside -->
     <div class="md:hidden fixed top-14 left-0 right-0 z-10 flex justify-center py-2 bg-white">
       <div class="flex w-11/12 overflow-hidden p-1.5 self-center outline-none bg-gray-100 rounded-lg mb-4">
@@ -29,7 +28,7 @@
       <div class="h-full grow">
           <div class="flex h-full flex-col px-2 pt-2">
             <div class="grow overflow-hidden">
-              <div class="flex h-full grow overflow-y-auto px-2 pt-6 md:pt-2 text-sm">
+              <div class="flex h-full grow overflow-y-auto px-5 pt-6 md:pt-2 text-sm" style="scrollbar-width: thin; scrollbar-color: #888 #f0f0f0;">
                 <div class="grow">
                   {% csrf_token %}
                   <div class="mb-6">
@@ -199,7 +198,7 @@
 
     <!-- Chat section -->
     <div id="assistantChat" class="w-full md:w-1/2 justify-center border-l border-gray-200 bg-white md:flex" hx-target="assistant-chat-left-sidebar">
-      {% include 'assistant/assistant_chat.html' with assistant=assistant %}
+      {% include 'chat/chat_window.html' with assistant=assistant %}
     </div>
   </div>
 </div>

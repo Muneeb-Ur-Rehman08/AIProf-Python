@@ -141,13 +141,6 @@
    **********************************************/
   
   /* Container for each message bubble */
-  .chat-message {
-    margin-bottom: 16px;
-    border-radius: 8px;
-    padding: 12px 16px;
-    width: fit-content;
-    max-width: 80%;
-  }
   
   /* User message style */
   .message-user {
