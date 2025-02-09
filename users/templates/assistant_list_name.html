@@ -1,0 +1,116 @@
+<div
+  class="translate-x-0 fixed inset-y-0 z-50 w-72 transform border-r bg-white transition-transform duration-200 ease-in-out lg:relative lg:translate-x-0 hidden lg:block"
+  id="assistant-chat-left-sidebar"
+>
+  <div class="flex h-16 items-center justify-between border-b px-4">
+    <div class="flex-1 relative">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="lucide lucide-search absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+      >
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="m21 21-4.3-4.3"></path>
+      </svg>
+      <input
+        class="flex h-10 border bg-white px-3 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-full pl-10 pr-4 py-2 rounded-full border-gray-300 focus:border-gray-500 focus:ring focus:ring-gray-200"
+        placeholder="Search assistants..."
+        type="search"
+        value=""
+        id="assistant-search"
+        onkeyup="assistantSearch()"
+      />
+    </div>
+    <button
+      class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10 lg:hidden transition-transform duration-200 ease-in-out"
+      _="on click toggle .hidden on #assistant-chat-left-sidebar"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="lucide lucide-x h-6 w-6"
+      >
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+  </div>
+  <div class="p-4">
+    <div
+      dir="ltr"
+      class="relative overflow-hidden h-[calc(100vh-6rem)]"
+      style="position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;"
+    >
+      <style>
+        [data-radix-scroll-area-viewport] {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          -webkit-overflow-scrolling: touch;
+        }
+        [data-radix-scroll-area-viewport]::-webkit-scrollbar {
+          display: none;
+        }
+      </style>
+      <div data-radix-scroll-area-viewport class="h-full w-full rounded-[inherit]" style="overflow: hidden scroll">
+        <div style="min-width: 100%; display: table">
+          <div class="space-y-2">
+            {% for assistant in assistants %}
+            <button class="assistant-item flex w-full items-center space-x-3 rounded-lg p-2 hover:bg-gray-100">
+              <div class="flex h-10 w-10 items-center justify-center rounded-full text-white bg-pink-500">
+                {{ assistant.name|slice:":2"|upper }}
+              </div>
+              <div class="text-left">
+                <div class="font-medium">{{ assistant.name }}</div>
+                <div class="text-sm text-gray-500">
+                  {{ assistant.description|truncatechars:30 }}
+                </div>
+              </div>
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function assistantSearch() {
+  // Retrieve the search query from the input with ID "assistant-search"
+  const searchInput = document.getElementById("assistant-search").value.toLowerCase().trim();
+  // Select only the assistant buttons (excluding non-assistant buttons like the toggle button)
+  const assistantButtons = document.querySelectorAll("#assistant-chat-left-sidebar .assistant-item");
+
+  // Loop through each assistant button to filter based on name or description
+  assistantButtons.forEach(button => {
+    // Get the element containing the assistant's name and the element containing the description
+    const nameElem = button.querySelector(".font-medium");
+    const descElem = button.querySelector(".text-sm.text-gray-500");
+
+    // Convert their text content to lower case (use an empty string if not present)
+    const assistantName = nameElem ? nameElem.textContent.toLowerCase() : "";
+    const assistantDesc = descElem ? descElem.textContent.toLowerCase() : "";
+
+    // Check if the search query appears in the assistant's name or description
+    if (assistantName.includes(searchInput) || assistantDesc.includes(searchInput)) {
+      button.style.display = "flex"; // Show matching assistant items
+    } else {
+      button.style.display = "none"; // Hide non-matching items
+    }
+  });
+}
+</script>

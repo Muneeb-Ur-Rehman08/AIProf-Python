@@ -79,7 +79,7 @@ class Assistant(models.Model):
     topic = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     average_rating = models.DecimalField(max_digits=3, decimal_places=1, default=Decimal('0.0'))
-    total_reviews = models.DecimalField(max_digits=3, decimal_places=1, default=Decimal('0.0')) 
+    total_reviews = models.IntegerField(default=0) 
     interactions = models.IntegerField(blank=True, null=True, default=0)
     is_published = models.BooleanField(default=False)
     image = models.BinaryField(null=True, blank=True)
@@ -134,6 +134,10 @@ class AssistantRating(models.Model):
         """
         # Use atomic transaction to ensure both rating and assistant update happen together
         with transaction.atomic():
+
+             # Check if this is a new rating (not an update)
+            is_new = self._state.adding
+            
             # Save the new rating entry
             super().save(*args, **kwargs)
             
@@ -144,12 +148,14 @@ class AssistantRating(models.Model):
             ratings = AssistantRating.objects.filter(assistant=self.assistant)
             average_rating = ratings.aggregate(average=Avg('rating'))['average'] or Decimal('0.0')
             
-            # Calculate total number of reviews
-            total_reviews = ratings.count()
             
             # Update the assistant with new average rating and total reviews
             assistant.average_rating = round(Decimal(average_rating), 1)  # Round to 1 decimal place
-            assistant.total_reviews = Decimal(total_reviews)
+
+            # If it's a new rating, increment the total_reviews count
+            if is_new:
+                assistant.total_reviews += 1
+            
             
             # Save the assistant with the updated average rating and total reviews
             assistant.save()

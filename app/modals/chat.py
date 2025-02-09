@@ -3,12 +3,13 @@ import os
 from langchain_groq import ChatGroq
 from app.modals.anon_conversation import fetch_conversation_history
 from app.utils.prompts import get_system_instruction
+from langchain_openai import ChatOpenAI
 
 def get_llm():
-    api_key = os.environ.get("GROQ_API_KEY")
-    return ChatGroq(
+    api_key = os.environ.get("OPENAI_API_KEY")
+    return ChatOpenAI(
         api_key=api_key,
-        model="llama-3.3-70b-versatile",
+        model="gpt-4o-mini",
         temperature=0.5,
         max_retries=3
     )

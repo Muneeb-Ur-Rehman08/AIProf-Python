@@ -8,8 +8,8 @@
   {% endblock %}
 
   <!-- Search Input -->
-  <div class="bg-white p-2 border-b z-30">
-    <div class="flex items-center gap-7 pl-3">
+  <div class="bg-white py-3 px-1 border-b z-30">
+    <div class="flex items-center justify-between md:justify-start gap-7 px-1">
       <div class="relative md:hidden">
         <input id="my-drawer" type="checkbox" class="drawer-toggle" />
         <div class="drawer-content">
@@ -22,7 +22,7 @@
         </div>
         <div class="drawer-side z-50">
           <label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
-          <div class="bg-white min-h-full w-80 p-4 relative">
+          <div class="bg-white min-h-full w-full xs:w-80 p-4 relative">
             <div class="flex justify-between items-center p-4 border-b">
               <h3 class="font-semibold text-lg">Filters</h3>
               <label for="my-drawer"
@@ -32,7 +32,7 @@
           </div>
         </div>
       </div>
-      <div class="w-full lg:w-64">
+      <div class="w-64">
         <label id="search-input" class="input input-bordered flex items-center gap-2 bg-transparent w-full">
           <input type="text" hx-push-url="true" class="grow" autocomplete="off" placeholder="Search"
             hx-get="{% url 'list_assistants' %}" hx-target="#assistants-list" hx-trigger="keyup changed delay:500ms"
@@ -54,7 +54,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
           </label>
-          <div tabindex="0" class="dropdown-content z-[1] w-full p-4 shadow-2xl bg-white rounded-lg mt-2">
+          <div tabindex="0" class="dropdown-content z-[1] w-full p-4 shadow border border-gray-300 bg-white rounded-lg mt-2">
             <div class="space-y-2">
               {% for value, label in sorting_options.items %}
               <label class="label cursor-pointer justify-start gap-x-2 hover:bg-gray-100 rounded-lg px-2">
@@ -98,7 +98,7 @@
 </div>
 
 <!-- Add padding to main content to prevent overlap -->
-<div class="pt-32">
+<div class="pt-36">
   <div class="bg-gradient-to-b from-purple-50 to-white text-black" hx-replace-url="{% url 'list_assistants' %}">
     <div>
       <div class="hidden md:flex">

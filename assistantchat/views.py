@@ -17,7 +17,7 @@ import os
 from langgraph.store.memory import InMemoryStore
 from PIL import Image
 import pytesseract
-import PyPDF2
+from PyPDF2 import PdfReader
 
 logger = logging.getLogger(__name__)
 
@@ -53,20 +53,61 @@ def chat_query(request, ass_id=None):
         # Handle file uploads (images, PDFs)
         if 'file' in request.FILES:
             uploaded_file = request.FILES['file']
+            # Validate file size (20MB limit)
+            MAX_FILE_SIZE = 20 * 1024 * 1024
+            if uploaded_file.size > MAX_FILE_SIZE:
+                error_message = "File size exceeds 20MB limit"
+                return JsonResponse({'status': 'error', 'message': error_message})
+            
+
             file_extension = uploaded_file.name.split('.')[-1].lower()
 
-            if file_extension in ['jpg', 'jpeg', 'png']:
-                # Process image (use OCR for text extraction)
-                image = Image.open(uploaded_file)
-                extracted_text = pytesseract.image_to_string(image)
-                prompt += f"\nExtracted from image: {extracted_text}"
-            elif file_extension == 'pdf':
-                # Process PDF (extract text from PDF)
-                pdf_reader = PyPDF2.PdfFileReader(uploaded_file)
-                extracted_text = ''
-                for page_num in range(pdf_reader.numPages):
-                    extracted_text += pdf_reader.getPage(page_num).extract_text()
-                prompt += f"\nExtracted from PDF: {extracted_text}"
+            try:
+                # Process image files
+                if file_extension in ['jpg', 'jpeg', 'png']:
+                    try:
+                        image = Image.open(uploaded_file)
+                        # Convert to RGB if necessary
+                        if image.mode not in ('L', 'RGB'):
+                            image = image.convert('RGB')
+                        
+                        extracted_text = pytesseract.image_to_string(image)
+                        if not extracted_text.strip():
+                            error_message = "No text could be extracted from the image"
+                            return JsonResponse({'status': 'error', 'message': error_message})
+                            
+                        prompt += f"\nExtracted from image: {extracted_text}"
+                        
+                    except Exception as e:
+                        error_message = f"Error processing image: {str(e)}"
+                        return JsonResponse({'status': 'error', 'message': error_message})
+                
+                
+                # Process PDF files
+                elif file_extension == 'pdf':
+                    try:
+                        pdf_reader = PdfReader(uploaded_file)
+                        extracted_text = ''
+                        
+                        # Extract text from all pages
+                        for page in pdf_reader.pages:
+                            page_text = page.extract_text()
+                            if page_text:
+                                extracted_text += page_text + "\n"
+                        
+                        if not extracted_text.strip():
+                            error_message = "No text could be extracted from the PDF"
+                            return JsonResponse({'status': 'error', 'message': error_message})
+                            
+                        prompt += f"\nExtracted from PDF: {extracted_text}"
+                        
+                    except Exception as e:
+                        error_message = f"Error processing PDF: {str(e)}"
+                        return JsonResponse({'status': 'error', 'message': error_message})
+
+            except Exception as e:
+                error_message = f"Unexpected error: {str(e)}"
+                return JsonResponse({'status': 'error', 'message': error_message})
 
 
 
@@ -196,7 +237,13 @@ def chat_query(request, ass_id=None):
                 # Save the current interaction in memory
                 try:
                     key = f"chat-{len(memory_store.search(namespace))}"
-                    memory_store.put(namespace, next_key, {"User": prompt, "AI": full_response, "summary": chat_summary, "knowledge_level": knowledge_level})
+                    memory_store.put(namespace, next_key, {
+                        "User": prompt, 
+                        "AI": full_response, 
+                        "summary": chat_summary, 
+                        "knowledge_level": knowledge_level
+                        }
+                    )
                    
 
                     # logger.info(f"Saved memory: namespace={namespace}, key={key}, data={{'user': '{prompt}', 'assistant': '{full_response}', 'summary': '{chat_summary}'}}")
@@ -206,8 +253,8 @@ def chat_query(request, ass_id=None):
                 logger.error(f"Error in chat query response: {e}")
                 yield "Failed to process chat query"
 
-        return StreamingHttpResponse(response_stream(), content_type='text/plain')
+        return StreamingHttpResponse(response_stream(), content_type='text/event-stream')
 
     except Exception as e:
         logger.error(f"Error in chat query endpoint: {e}")
-        return StreamingHttpResponse("Failed to process chat query", content_type='text/plain')
+        return StreamingHttpResponse("Failed to process chat query", content_type='text/event-stream')
