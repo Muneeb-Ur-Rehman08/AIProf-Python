@@ -244,7 +244,7 @@
           </svg>
         </button>
       </div>
-      <div
+      <!-- <div
         dir="ltr"
         class="relative overflow-hidden h-[calc(100vh-8rem)]"
         style="
@@ -309,8 +309,10 @@
             </div>
           </div>
         </div>
-      </div>
+      </div> -->
+      {% include 'voiceAssistantview.html' with assistant=assistant user_id=user_id %}
     </div>
+    
     {% endif %}
   </div>
 </div>

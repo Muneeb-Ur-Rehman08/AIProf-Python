@@ -1,0 +1,434 @@
+<div class="flex flex-col items-center justify-center min-h-screen hidden w-80 border-l bg-white lg:block py-20" id="voiceAssistantContainer">
+    <div class="flex flex-col items-center gap-6">
+        <div class="text-2xl font-semibold text-gray-800">Voice Assistant</div>
+
+        <div class="w-40 h-40 rounded-full flex items-center justify-center relative overflow-hidden">
+            <div class="spinner w-full h-full"></div>
+            <div class="spinner1 absolute inset-0 hidden"></div>
+        </div>
+        <div class="status-indicator text-sm text-gray-400 mt-4" id="status">Connect to Conversation</div>
+        <div class="flex items-center justify-around w-full p-4 bg-gray-100 rounded-lg">
+        <div class="flex gap-4">
+            <button id="connectButton" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-green-500 hover:bg-green-600 text-white h-16 w-16 active:bg-green-700">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-power h-8 w-8">
+                    <path d="M12 2v10"/>
+                    <path d="M18.4 6.6a9 9 0 1 1-12.77.04"/>
+                </svg>
+            </button>
+            <button id="disconnectButton" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-red-500 hover:bg-red-600 text-white h-16 w-16 hidden active:bg-red-700">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-power-off h-8 w-8">
+                    <path d="M18.36 6.64A9 9 0 0 1 20.77 15"/>
+                    <path d="M6.16 6.16a9 9 0 1 0 12.68 12.68"/>
+                    <path d="M12 2v4"/>
+                    <path d="m2 2 20 20"/>
+                </svg>
+            </button>
+        </div>
+        <div class="flex gap-4 hidden" id="micButtonContainer">
+            <button id="micButton" class="inline-flex hidden items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-16 w-16 hover:bg-gray-200 active:bg-gray-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic h-8 w-8">
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <line x1="12" x2="12" y1="19" y2="22"/>
+                </svg>
+            </button>
+            <button id="stopAudioButton" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-16 w-16 hidden hover:bg-gray-200 active:bg-gray-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square h-8 w-8">
+                    <rect width="18" height="18" x="3" y="3" rx="2"/>
+                </svg>
+            </button>
+        </div>
+        </div>
+    </div>
+    </div>
+
+    <script>
+        let socket;
+        let mediaRecorder;
+        let audioChunks = [];
+        let audioContext;
+        let source;
+        let isAudioPlaying = false;
+        let isConnected = false;
+        let audioQueue = [];
+        const spinner = document.querySelector('.spinner');
+        const spinner1 = document.querySelector('.spinner1');
+        const statusDiv = document.getElementById('status');
+
+        function updateConnectionUI() {
+            const connectBtn = document.getElementById('connectButton');
+            const disconnectBtn = document.getElementById('disconnectButton');
+            const micButton = document.getElementById('micButton');
+
+            // Show connect button only when not connected and vice versa.
+            connectBtn.style.display = isConnected ? 'none' : 'inline-flex';
+            disconnectBtn.style.display = isConnected ? 'inline-flex' : 'none';
+            micButton.style.display = isConnected ? 'inline-flex' : 'none';
+            micButtonContainer.style.display = isConnected ? 'flex' : 'none';
+        }
+
+
+        function initializeWebSocket() {
+            if(isConnected) return;
+
+            const hostname = window.location.hostname;
+            const isRailway = hostname.includes('railway.app');
+            let wsUrl;
+
+            if (isRailway) {
+                wsUrl = `wss://${hostname}/ws/assistant/`;
+            } else {
+                const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+                const port = window.location.port ? `:${window.location.port}` : '';
+                wsUrl = `${protocol}://${hostname}${port}/ws/assistant/`;
+            }
+
+            socket = new WebSocket(wsUrl);
+
+            socket.onopen = () => {
+                isConnected = true;
+                updateConnectionUI();
+                statusDiv.textContent = 'Click and hold the mic to speak';
+            };
+
+            socket.onclose = () => {
+                isConnected = false;
+                stopAudio();
+                updateConnectionUI();
+                statusDiv.textContent = 'Disconnected';
+            };
+
+            socket.onerror = (error) => {
+                isConnected = false;
+                updateConnectionUI();
+                console.error("WebSocket error:", error);
+            };
+
+            socket.onmessage = async (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === "assistant_response" && data.audio_data) {
+                    audioQueue.push(data.audio_data);
+                    console.log("Added to queue. Current queue:", audioQueue);
+                    
+                    if (!isAudioPlaying) {
+                        handleAudioQueue();
+                    }
+                }
+            };
+        }
+
+        async function playAudio(audioData) {
+            const micButton = document.getElementById('micButton');
+            const stopButton = document.getElementById('stopAudioButton');
+            statusDiv.textContent = "Playing audio..."
+
+            micButton.style.display = 'none';
+            stopButton.style.display = 'inline-flex';
+
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            try {
+                // Use the pre-processed WAV buffer directly
+                const audioBuffer = await audioContext.decodeAudioData(audioData);
+                
+                source = audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(audioContext.destination);
+                source.start(0);
+                
+                source.onended = () => {
+                    micButton.style.display = 'inline-flex';
+                    stopButton.style.display = 'none';
+                    isAudioPlaying = false;
+                    animationControl('paused');
+                    statusDiv.textContent = 'Click and hold the mic to speak';
+                    
+
+                    handleAudioQueue();
+                };
+
+                isAudioPlaying = true;
+                animationControl('running');
+            } catch (error) {
+                console.error('Audio decoding failed:', error);
+                handleAudioQueue(); // Skip to next in queue
+            }
+        }
+
+        function handleAudioQueue() {
+            if (isAudioPlaying || audioQueue.length === 0) return;
+            
+            isAudioPlaying = true;
+            const audioBase64 = audioQueue.shift();
+            const rawData = base64ToArrayBuffer(audioBase64);
+            
+            const wavBuffer = encodePCMToWAV(rawData, {
+                sampleRate: 24000,
+                numChannels: 1,
+                bitDepth: 16
+            });
+            
+            console.log('Processing audio queue:', audioQueue);
+            playAudio(wavBuffer);
+        }
+
+        function encodePCMToWAV(pcmData, options) {
+            const header = new ArrayBuffer(44);
+            const view = new DataView(header);
+            
+            writeString(view, 0, "RIFF");
+            view.setUint32(4, 36 + pcmData.byteLength, true);
+            writeString(view, 8, "WAVE");
+            writeString(view, 12, "fmt ");
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); // PCM format
+            view.setUint16(22, 1, true); // numChannels: 1 (mono)
+            view.setUint32(24, 24000, true); // sampleRate: 24000 Hz
+            view.setUint32(28, 24000 * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true); // bitDepth: 16 bits
+            writeString(view, 36, "data");
+            view.setUint32(40, pcmData.byteLength, true);
+            
+            // Combine header and PCM data
+            const wavBuffer = new ArrayBuffer(44 + pcmData.byteLength);
+            const wavView = new Uint8Array(wavBuffer);
+            wavView.set(new Uint8Array(header), 0);
+            wavView.set(new Uint8Array(pcmData), 44);
+            
+            return wavBuffer;
+        }
+
+        // Convert a base64 string to an ArrayBuffer
+        function base64ToArrayBuffer(base64) {
+            const binaryString = atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+
+        function stopAudio() {
+            const micButton = document.getElementById('micButton');
+            const stopButton = document.getElementById('stopAudioButton');
+            
+            if (source) {
+                source.stop();
+                micButton.style.display = 'inline-flex';
+                stopButton.style.display = 'none';
+                isAudioPlaying = false;
+                statusDiv.textContent = 'Click and hold the mic to speak';
+            }
+
+            animationControl('paused');
+        }
+
+        const animationControl = (val) => {
+            if (val == 'running') {
+                spinner1.classList.remove('hidden');
+            } else {
+                spinner1.classList.add('hidden');
+            }
+            spinner.style.animationPlayState = val;
+            spinner1.style.animationPlayState = val;
+        }
+
+        function base64ToArrayBuffer(base64) {
+            const binaryString = atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: {
+                    sampleRate: 16000,
+                    channelCount: 1,
+                    mimeType: 'audio/webm'  // Chrome requires webm format
+                }});
+                
+                mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: 'audio/webm;codecs=opus',
+                    audioBitsPerSecond: 16000
+                });
+
+                audioChunks = [];
+                mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+                
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const wavBlob = await convertWebmToWav(audioBlob);
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const base64Audio = reader.result.split(',')[1];
+                        socket.send(JSON.stringify({
+                            audio_data: base64Audio,
+                            format: "wav",
+                            interrupt: true,
+                            assistant_id: "{{ assistant.id }}",
+                            user_id: "{{ user_id }}"
+
+                        }));
+                    };
+                    reader.readAsDataURL(wavBlob);
+
+                };
+
+                mediaRecorder.start();
+            } catch (err) {
+                console.error('Error accessing microphone:', err);
+            }
+        }
+
+        async function convertWebmToWav(webmBlob) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const webmArrayBuffer = await webmBlob.arrayBuffer();
+            const audioBuffer = await audioContext.decodeAudioData(webmArrayBuffer);
+            
+            const wavBuffer = encodeWAV(audioBuffer.getChannelData(0), audioBuffer.sampleRate);
+            return new Blob([wavBuffer], { type: 'audio/wav' });
+        }
+
+        function encodeWAV(samples, sampleRate) {
+            const buffer = new ArrayBuffer(44 + samples.length * 2);
+            const view = new DataView(buffer);
+
+            /* RIFF identifier */
+            writeString(view, 0, 'RIFF');
+            /* file length */
+            view.setUint32(4, 36 + samples.length * 2, true);
+            /* RIFF type */
+            writeString(view, 8, 'WAVE');
+            /* format chunk identifier */
+            writeString(view, 12, 'fmt ');
+            /* format chunk length */
+            view.setUint32(16, 16, true);
+            /* sample format (raw) */
+            view.setUint16(20, 1, true);
+            /* channel count */
+            view.setUint16(22, 1, true);
+            /* sample rate */
+            view.setUint32(24, sampleRate, true);
+            /* byte rate (sample rate * block align) */
+            view.setUint32(28, sampleRate * 2, true);
+            /* block align (channel count * bytes per sample) */
+            view.setUint16(32, 2, true);
+            /* bits per sample */
+            view.setUint16(34, 16, true);
+            /* data chunk identifier */
+            writeString(view, 36, 'data');
+            /* data chunk length */
+            view.setUint32(40, samples.length * 2, true);
+
+            // Convert to 16-bit PCM
+            floatTo16BitPCM(view, 44, samples);
+
+            return buffer;
+        }
+
+        function floatTo16BitPCM(output, offset, input) {
+            for (let i = 0; i < input.length; i++, offset += 2) {
+                const s = Math.max(-1, Math.min(1, input[i]));
+                output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+            }
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        document.getElementById('connectButton').addEventListener('click', initializeWebSocket);
+        document.getElementById('disconnectButton').addEventListener('click', () => {
+            if (socket) {
+                socket.close();
+                stopAudio();
+                isConnected = false;
+                updateConnectionUI();
+            }
+        });
+
+        const micButton = document.getElementById('micButton');
+        
+        micButton.addEventListener('mousedown', async () => {
+            if(isAudioPlaying) return;  // Prevent recording while audio is playing
+            micButton.classList.add('active', 'recording');
+            statusDiv.textContent = 'Listening...';
+            await startRecording();
+        });
+
+        micButton.addEventListener('mouseup', () => {
+            micButton.classList.remove('active', 'recording');
+            statusDiv.textContent = 'Processing...';
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+            }
+        });
+
+        micButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            micButton.classList.add('active', 'recording');
+            statusDiv.textContent = 'Listening...';
+            startRecording();
+        });
+
+        micButton.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            micButton.classList.remove('active', 'recording');
+            statusDiv.textContent = 'Processing...';
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+            }
+        });
+
+        document.getElementById('stopAudioButton').addEventListener('click', stopAudio);
+    </script>
+
+    <style>
+        @keyframes spinning82341 {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes pulse {
+            to {
+                transform: scale(1);
+            }
+            from {
+                transform: scale(0.7);
+            }
+
+        }
+
+        .spinner {
+            background-image: linear-gradient(rgb(96 165 250) 35%, rgb(147 197 253));
+            width: 100%;
+            height: 100%;
+            animation: spinning82341 1.7s linear infinite paused;
+            border-radius: 50%;
+            filter: blur(1px);
+            box-shadow: 0px -5px 20px 0px rgb(33, 100, 181), 0px 5px 20px 0px rgb(158, 200, 247), 1px 2px 50px 0px rgb(231, 27, 27), 0px -5px 20px 0px rgb(230, 10, 156),;
+        }
+
+        .spinner1 {
+            /* bg should tranceparent */
+            background-color: rgba(65, 59, 59, 0.108);
+            width: 100%;
+            border: 1px solid #000;
+            height: 100%;
+            border-radius: 50%;
+            animation:  pulse 1.7s linear infinite paused;
+            transition: all 1s;
+            filter: blur(8px);
+        }
+    </style>
+</div>

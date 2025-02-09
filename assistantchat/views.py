@@ -175,7 +175,7 @@ def chat_query(request, ass_id=None):
     
 
 def voice_chat(request):
-    return render(request, 'voiceAssistant.html')
+    return render(request, 'voiceAssistantview.html')
 
 
 def get_history(assistant_id, user_id):
