@@ -32,14 +32,15 @@
     <form class="bg-white text-black pb-3 p-2" onsubmit="event.preventDefault();">
       <div class="mx-auto max-w-3xl rounded-[24px] border shadow-md p-4">
         <textarea
-          class="flex min-h-[80px] w-full rounded-md bg-transparent placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 resize-none border-0 p-0 text-md focus-visible:ring-0"
-          placeholder="Message Assistant..."
-          rows="1"
-          name="prompt"
-          id="prompt-input"
-          onkeydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendPayload('{{ assistant.id }}'); }"
-          oninput="document.getElementById('send-button').disabled = (this.value.trim() === '');"
-        ></textarea>
+        class="flex w-full rounded-md bg-transparent placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 resize-none border-0 p-0 text-md focus-visible:ring-0"
+        style="min-height: 20px; max-height: 100px; height: auto; overflow-y: auto;"
+        placeholder="Message Assistant..."
+        rows="1"
+        name="prompt"
+        id="prompt-input"
+        onkeydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendPayload('{{ assistant.id }}'); }"
+        oninput="this.style.height = '20px'; this.style.height = Math.min(this.scrollHeight, 100) + 'px'; document.getElementById('send-button').disabled = (this.value.trim() === '');"
+      ></textarea>
         <div class="flex items-center justify-between mt-3">
           <div class="flex gap-2">
             <button
