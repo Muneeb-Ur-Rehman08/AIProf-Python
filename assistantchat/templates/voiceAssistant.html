@@ -43,6 +43,7 @@
     <button id="stopBtn" disabled>Stop Listening</button>
     <div id="messages"></div>
 
+  
     <script>
       // =======================
       // Global Variables
@@ -118,6 +119,10 @@
             if (!isPlaying) {
               playNextAudioChunk();
             }
+          } else if(data?.type == "audio_control" && data?.message == 'stop_audio') {
+          if (isPlaying) {
+            await stopAudioPlayback();
+          }
           }
         };
         
@@ -134,6 +139,7 @@
         };
       }
 
+      
       // =======================
       // Recording Functions
       // =======================
@@ -514,6 +520,12 @@
       window.addEventListener("beforeunload", () => {
         if (socket) socket.close();
       });
+
+      function stopAudioPlayback() {
+        const audioElement = document.getElementById('myAudio');
+        audioElement.pause();
+        audioElement.currentTime = 0;
+      }
     </script>
   </body>
 </html>

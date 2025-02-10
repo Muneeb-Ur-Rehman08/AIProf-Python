@@ -76,6 +76,8 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
             "last_active": None,
             "sample_rate": 16000,  # Silero VAD required sample rate
         }
+        self.is_playing = False
+
         try:
             self.llm = get_llm(self.MODEL_NAME)
         except Exception as e:
@@ -230,6 +232,9 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
     async def _process_confirmed_question(
         self, audio_data_b64, assistant_id, user_id, query
     ):
+        
+        if self.is_playing:
+            await self.stop_audio_playback()    
         get_context = await get_context_async(query=query, assistant_id=assistant_id)
 
 
@@ -307,6 +312,11 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
         """
 
         try:
+
+            # Now that the old audio is stopped, process the new response
+            self.is_playing = True
+            
+            
             completion = client.chat.completions.create(
                 model=self.MODEL_NAME,
                 modalities=["text", "audio"],
@@ -374,6 +384,8 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
                             }
                         )
                     )
+
+
         except Exception as e:
             error_message = f"Error processing audio: {str(e)}"
             await self.send(
@@ -385,3 +397,18 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
                     }
                 )
             )
+        # After processing, set flag back to False
+        self.is_playing = False
+
+
+    async def stop_audio_playback(self):
+        """
+        Notify the client to stop the current audio playback.
+        """
+        await self.send(
+            json.dumps({
+                "type": "audio_control",
+                "message": "stop_audio",  # Message to stop audio
+                "status": "stop",
+            })
+        )
