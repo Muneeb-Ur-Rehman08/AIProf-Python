@@ -5,5 +5,7 @@ from . import views
 urlpatterns = [
     path('chat/', views.chat_query, name='chat'),
     path('voice/', views.voice_chat, name='voice_chat'),
+    path("submit-review/<str:assistant_id>/", views.submit_review, name="submit_review"),
+    path("notes/<str:assistant_id>/", views.create_notes, name="notes")
     
 ]

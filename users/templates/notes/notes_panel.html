@@ -37,17 +37,19 @@
         display: none;
       }
     </style>
-    <div data-radix-scroll-area-viewport class="h-full w-full rounded-[inherit]" style="overflow: hidden scroll">
+    <div data-radix-scroll-area-viewport class="h-full w-full rounded-[inherit]"  style="overflow: hidden scroll">
       <div style="min-width: 100%; display: table">
-        <div class="p-4">
+        <div class="p-4" id="notes_panel">
+          {%for notes in notes%}
           <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
             <h3 class="font-medium">React Hooks</h3>
             <p class="mt-1 text-sm text-gray-500">
-              Understanding useEffect and its dependencies...
+              {{notes.notes}}
             </p>
             <p class="mt-2 text-xs text-gray-400">2 mins ago</p>
           </div>
-          <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
+          {%endfor%}
+          <!-- <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
             <h3 class="font-medium">Next.js 13 Features</h3>
             <p class="mt-1 text-sm text-gray-500">
               App router and server components overview...
@@ -68,13 +70,13 @@
             </p>
             <p class="mt-2 text-xs text-gray-400">15 mins ago</p>
           </div>
-          <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
-            <h3 class="font-medium">State Management</h3>
+          <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50"> -->
+            <!-- <h3 class="font-medium">State Management</h3>
             <p class="mt-1 text-sm text-gray-500">
               Comparing Redux, Zustand, and Jotai...
             </p>
             <p class="mt-2 text-xs text-gray-400">20 mins ago</p>
-          </div>
+          </div> -->
         </div>
       </div>
     </div>
