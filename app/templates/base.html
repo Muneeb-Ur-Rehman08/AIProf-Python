@@ -2,203 +2,118 @@
 
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>
-        AI Prof
-    </title>
-
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Prof</title>
 
     <!-- HTMX -->
-    <script src="https://unpkg.com/htmx.org@1.9.10"
-        integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
-        crossorigin="anonymous"></script>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script
+      src="https://unpkg.com/htmx.org@1.9.10"
+      integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
+      crossorigin="anonymous"
+    ></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-   
+
     <!-- Hyperscript -->
     <script src="https://unpkg.com/hyperscript.org@0.9.6"></script>
     <!-- particles.js -->
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <!-- particles-init.js -->
     <!-- Favicon -->
-    <link rel="icon" href="{% static 'assets/images/fav-icon/logo.svg' %}">
+    <link rel="icon" href="{% static 'assets/images/fav-icon/logo.svg' %}" />
 
     <!-- Bootstrap CSS -->
     <!-- <link rel="stylesheet" href="{% static 'css/vendors/bootstrap.min.css' %}">
             <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"> -->
 
     <!-- Animate.css -->
-    <link rel="stylesheet" href="{% static 'css/vendors/animate.css' %}">
+    <link rel="stylesheet" href="{% static 'css/vendors/animate.css' %}" />
 
     <!-- Swiper -->
-    <link rel="stylesheet" href="{% static 'css/vendors/swiper-bundle.min.css' %}">
+    <link
+      rel="stylesheet"
+      href="{% static 'css/vendors/swiper-bundle.min.css' %}"
+    />
 
     <!-- Flaticon -->
-    <link rel="stylesheet" href="{% static 'css/vendors/flaticon/flaticon.css' %}">
+    <link
+      rel="stylesheet"
+      href="{% static 'css/vendors/flaticon/flaticon.css' %}"
+    />
 
     <!-- FontAwesome -->
-    <link rel="stylesheet" href="{% static 'css/vendors/all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/vendors/all.min.css' %}" />
 
     <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="{% static 'css/vendors/bootstrap-icons-1.9.1/bootstrap-icons.css' %}">
+    <link
+      rel="stylesheet"
+      href="{% static 'css/vendors/bootstrap-icons-1.9.1/bootstrap-icons.css' %}"
+    />
 
     <!-- Fancybox -->
-    <link rel="stylesheet" href="{% static 'css/vendors/jquery.fancybox.min.css' %}">
+    <link
+      rel="stylesheet"
+      href="{% static 'css/vendors/jquery.fancybox.min.css' %}"
+    />
 
     <!-- Google Fonts Preconnect -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
     <!-- Font Family -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800&display=swap">
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800&display=swap"
+    />
 
     <!-- Main LTR CSS -->
-    <link rel="stylesheet" href="{% static 'css/main-LTR.css' %}">
+    <link rel="stylesheet" href="{% static 'css/main-LTR.css' %}" />
 
     <!-- Additional Home Stylesheet -->
-    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}" />
 
     <!-- Custom files -->
     <!-- <link href="{% static 'css/styles.css' %}" rel="stylesheet" /> -->
 
-    <style>
-        .toast {
-            visibility: hidden;
-            position: fixed;
-            z-index: 50;
-            left: 50%;
-            transform: translateX(-50%);
-            top: 30px;
-            transition: visibility 0s, opacity 0.5s linear;
-        }
-
-        .toast.show {
-            visibility: visible;
-            opacity: 1;
-        }
-        
-
-        /* From Uiverse.io by G4b413l */ 
-.newtons-cradle {
-  --uib-size: 17px;
-  --uib-speed: 1.2s;
-  --uib-color: #4ecddb;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(5px);
-}
-
-.newtons-cradle__dot {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--uib-size);
-  height: var(--uib-size);
-  border-radius: 50%;
-  background-color: var(--uib-color);
-  transform-origin: center top;
-}
-
-.newtons-cradle__dot::after {
- content: '';
- display: block;
- width: 100%;
- height: 25%;
- border-radius: 50%;
- background-color: var(--uib-color);
-}
-
-.newtons-cradle__dot:first-child {
- animation: swing var(--uib-speed) linear infinite;
-}
-
-.newtons-cradle__dot:last-child {
- animation: swing2 var(--uib-speed) linear infinite;
-}
-
-@keyframes swing {
- 0% {
-  transform: rotate(0deg);
-  animation-timing-function: ease-out;
- }
-
- 25% {
-  transform: rotate(70deg);
-  animation-timing-function: ease-in;
- }
-
- 50% {
-  transform: rotate(0deg);
-  animation-timing-function: linear;
- }
-}
-
-@keyframes swing2 {
- 0% {
-  transform: rotate(0deg);
-  animation-timing-function: linear;
- }
-
- 50% {
-  transform: rotate(0deg);
-  animation-timing-function: ease-out;
- }
-
- 75% {
-  transform: rotate(-70deg);
-  animation-timing-function: ease-in;
- }
-}
-
-
-    </style>
-
     <!-- For TTS -->
     <script src="{% static 'js/tts.js' %}"></script>
+  </head>
 
-</head>
-
-<body class="dark-theme landing-page-demo" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-    
-
-    {% block content %}
-    {% endblock %}
+  <body
+    class="dark-theme landing-page-demo"
+    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+  >
+    {% block content %} {% endblock %}
 
     <!-- Tailwind CSS Config -->
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    screens: {
-                        xs: '380px',
-                        sm: '576px',
-                        md: '768px',
-                        lg: '992px',
-                        xl: '1200px',
-                    },
-                    maxWidth: {
-                        'container-sm': '540px',
-                        'container-md': '720px',
-                        'container-lg': '960px',
-                        'container-xl': '1140px',
-                    },
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            screens: {
+              xs: "380px",
+              sm: "576px",
+              md: "768px",
+              lg: "992px",
+              xl: "1200px",
+            },
+            maxWidth: {
+              "container-sm": "540px",
+              "container-md": "720px",
+              "container-lg": "960px",
+              "container-xl": "1140px",
+            },
+          },
+        },
+      };
     </script>
 
     <!--     JQuery     -->
@@ -232,34 +147,19 @@
     <script src="{% static 'js/Teacher.js' %}"></script>
     <script src="{% static 'js/GenImage.js' %}"></script>
     <script src="{% static 'js/sendText.js' %}"></script>
-    
+
     <!-- For Markdown -->
-     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
     <!-- For mermaid -->
     <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
     <script>
-        window.mermaid = mermaid;
-        mermaid.initialize({ startOnLoad: false });
+      window.mermaid = mermaid;
+      mermaid.initialize({ startOnLoad: false });
     </script>
     <!-- For assistant chat -->
     <script src="{% static 'js/assistant_chat.js' %}"></script>
     <!-- For nuance -->
     <script src="{% static 'js/nuance.js' %}"></script>
-
-    <script>
-        function showLoading() {
-                console.log('showLoading');
-                loading_html = `<div class="newtons-cradle">
-                    <div class="newtons-cradle__dot"></div>
-                    <div class="newtons-cradle__dot"></div>
-                    <div class="newtons-cradle__dot"></div>
-                    <div class="newtons-cradle__dot"></div>
-                        </div>`;
-                document.body.insertAdjacentHTML('beforeend', loading_html);
-            }
-    </script>
-
-</body>
-
+  </body>
 </html>
