@@ -1,147 +1,158 @@
-
 {% load static %}
 
 <header class="header-basic" id="page-header">
-    <div class="max-w-container-sm md:max-w-container-md lg:max-w-container-lg xl:max-w-container-xl mx-auto px-4">
-        <!--Start navbar-->
-        <nav class="menu-navbar" id="main-nav">
-            <div class="header-logo">
-                <a class="logo-link" href="#page-hero">
-                    <img class="logo-img light-logo" loading="lazy" src="{% static 'assets/images/logo/logo.svg' %}" alt="logo" />
-                </a>
+  <div
+    class="max-w-container-sm md:max-w-container-md lg:max-w-container-lg xl:max-w-container-xl mx-auto px-4"
+  >
+    <!--Start navbar-->
+    <nav class="menu-navbar" id="main-nav">
+      <div class="header-logo">
+        <a class="logo-link" href="#page-hero">
+          <img
+            class="logo-img light-logo"
+            loading="lazy"
+            src="{% static 'assets/images/logo/logo.svg' %}"
+            alt="logo"
+          />
+        </a>
+      </div>
+      <nav class="links menu-wrapper">
+        <ul class="list-js links-list">
+          <li class="nav-item menu-item has-sub-menu">
+            <a class="nav-link menu-link active" href="#page-hero">Home</a>
+          </li>
+          <li class="nav-item menu-item">
+            <a class="nav-link menu-link" href="#services">Services</a>
+          </li>
+          <li class="nav-item menu-item">
+            <a class="nav-link menu-link" href="#about">About</a>
+          </li>
+          <li class="nav-item menu-item">
+            <a class="nav-link menu-link" href="#pricing">Pricing</a>
+          </li>
+          <li class="nav-item menu-item">
+            <a
+              class="nav-link menu-link"
+              href="https://meetyourai.github.io/AIProf/blog/BlogIndex"
+              >Blog</a
+            >
+          </li>
+          <li class="nav-item menu-item">
+            <a class="nav-link menu-link" href="#faq">FAQ</a>
+          </li>
+          <li class="nav-item menu-item">
+            <a class="nav-link menu-link" href="#contact-us">Contact Us</a>
+          </li>
+          {% if not request.user.is_authenticated %}
+          <li class="nav-item menu-item space-y-4 block xl:hidden">
+            <div class="nav-item menu-item" title="Sign In">
+              <a
+                href="{% url 'account_login' %}"
+                class="bg-white text-[#333333] border border-[#4ecddb] px-4 py-2 rounded hover:bg-[#e6f7f5]"
+                >Sign In</a
+              >
             </div>
-            <nav class="links menu-wrapper">
-                <ul class="list-js links-list">
-                    <li class="nav-item menu-item has-sub-menu">
-                        <a class="nav-link menu-link active" href="#page-hero">Home</a>
-                    </li>
-                    <li class="nav-item menu-item">
-                        <a class="nav-link menu-link" href="#services">Services</a>
-                    </li>
-                    <li class="nav-item menu-item">
-                        <a class="nav-link menu-link" href="#about">About</a>
-                    </li>
-                    <li class="nav-item menu-item">
-                        <a class="nav-link menu-link" href="#pricing">Pricing</a>
-                    </li>
-                    <li class="nav-item menu-item">
-                        <a class="nav-link menu-link" href="https://meetyourai.github.io/AIProf/blog/BlogIndex">Blog</a>
-                    </li>
-                    <li class="nav-item menu-item">
-                        <a class="nav-link menu-link" href="#faq">FAQ</a>
-                    </li>
-                    <li class="nav-item menu-item">
-                        <a class="nav-link menu-link" href="#contact-us">Contact Us</a>
-                    </li>
-                    {% if not request.user.is_authenticated %}
-                    <li class="nav-item menu-item space-y-4 block xl:hidden">
-                        <div class="nav-item menu-item" title="Sign In">
-                            <a href="{% url 'account_login' %}" class="bg-white text-[#333333] border border-[#4ecddb] px-4 py-2 rounded hover:bg-[#e6f7f5]" onclick="showLoading()">Sign In</a>
-                        </div>
-                    </li>
-                    {% endif %}
-                    {% if request.user.is_authenticated %}
-                    
-                        <li class="nav-item menu-item block lg:hidden">
-                            <a class="nav-link menu-link " 
-                            hx-post="{% url 'create_assistant' %}"
-                            onclick="showLoading()"
-                               _="on click remove .hidden from #modal 
+          </li>
+          {% endif %} {% if request.user.is_authenticated %}
+
+          <li class="nav-item menu-item block lg:hidden">
+            <a
+              class="nav-link menu-link"
+              hx-post="{% url 'create_assistant' %}"
+              _="on click remove .hidden from #modal 
                                then remove .close-menu from .menu-toggler 
-                               then remove .show from .menu-wrapper">
-                                Create Assistant
-                            </a>
-                        </li>
-                        <li class="nav-item menu-item block lg:hidden">
-                            {% csrf_token %}
-                            <a class="nav-link menu-linkz" 
-                               hx-post="{% url 'account_logout' %}" 
-                               hx-trigger="click" 
-                               hx-target="body" 
-                               hx-swap="outerHTML" 
-                               hx-redirect="{% url 'index' %}"
-                               hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                               onclick="showLoading()"
-                               _="on click remove .close-menu from .menu-toggler 
-                               then remove .show from .menu-wrapper">
-                                Logout
-                            </a>
-                        </li>
-                   
-                   
-                    {% endif %}
-                </ul>
-            </nav>
+                               then remove .show from .menu-wrapper"
+            >
+              Create Assistant
+            </a>
+          </li>
+          <li class="nav-item menu-item block lg:hidden">
+            {% csrf_token %}
+            <a
+              class="nav-link menu-linkz"
+              hx-post="{% url 'account_logout' %}"
+              hx-trigger="click"
+              hx-target="body"
+              hx-swap="outerHTML"
+              hx-redirect="{% url 'index' %}"
+              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+              _="on click remove .close-menu from .menu-toggler 
+                               then remove .show from .menu-wrapper"
+            >
+              Logout
+            </a>
+          </li>
 
-            <div>
-                {% if request.user.is_authenticated %}
-                <div class="dropdown dropdown-end hidden space-y-2 p-1.5 xl:block">
-                    <div tabindex="0" role="button" class="avatar placeholder" _="on click toggle .hidden on #dropdownMenu">
-                        <div class="bg-neutral text-neutral-content w-12 rounded-full ring-primary ring-offset-base-100 ring-offset-1  ring">
-                            <span class="text-2xl select-none">D</span>
-                        </div>
-                    </div>
-                    <ul id="dropdownMenu" tabindex="0" class="dropdown-content menu p-2 space-y-1 shadow bg-base-100 rounded-box w-52 shadow hidden" style="background-color: var(--clr-dark-blue);color: white;">
-                        <li>
-                            <a class=""
-                            hx-post="{% url 'create_assistant' %}"
-                            onclick="showLoading()"
-                            _="on click remove .close-menu from .menu-toggler 
-                            then remove .show from .menu-wrapper">
-                                Create Assistant
-                            </a>
-                        </li>
-                        <li>
-                            {% csrf_token %}
-                            <a class="" 
-                       hx-post="{% url 'account_logout' %}" 
-                       hx-trigger="click" 
-                       hx-target="body" 
-                       hx-swap="outerHTML" 
-                       hx-redirect="{% url 'index' %}"
-                       hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                       onclick="showLoading()"
-                       _="on click remove .close-menu from .menu-toggler 
-                       then remove .show from .menu-wrapper">
-                                Logout
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+          {% endif %}
+        </ul>
+      </nav>
 
-                {% endif %}
-
-                {% if not request.user.is_authenticated %}
-                <div class="hidden xl:block">
-                    <a href="{% url 'account_login' %}" class="hover:bg-[var(--clr-main)] underline underline-offset-4 decoration-2 decoration-sky-600 text-white font-medium tracking-wider py-2 px-4 rounded-lg" onclick="showLoading()">Sign In</a>
-                </div>
-                {% endif %}
+      <div>
+        {% if request.user.is_authenticated %}
+        <div class="dropdown dropdown-end hidden p-1.5 xl:block">
+          <div
+            tabindex="0"
+            role="button"
+            class="avatar placeholder"
+            _="on click toggle .hidden on #dropdownMenu"
+          >
+            <div
+              class="flex size-12 items-center justify-center rounded-full btn-outline cta-link cta-link-primary p-0"
+            >
+              {{ request.user.username|slice:":2"|upper }}
             </div>
-            <!-- for mobile navbar menu -->
-            <div class="controls-box">
-                <!--Menu Toggler button-->
-                <div class="control  menu-toggler"><span></span><span></span><span></span></div>
-            </div>
-        </nav>
-    </div>
-    <script>
-        function showLoading() {
-            // Display a loading indicator
-            const loadingDiv = document.createElement('div');
-            loadingDiv.id = 'loading';
-            loadingDiv.style.position = 'fixed';
-            loadingDiv.style.top = '0';
-            loadingDiv.style.left = '0';
-            loadingDiv.style.width = '100%';
-            loadingDiv.style.height = '100%';
-            loadingDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-            loadingDiv.style.display = 'flex';
-            loadingDiv.style.justifyContent = 'center';
-            loadingDiv.style.alignItems = 'center';
-            loadingDiv.style.zIndex = '1000';
-            loadingDiv.innerHTML = '<div class="text-white font-bold">Loading...</div>';
-            document.body.appendChild(loadingDiv);
-        }
-    </script>
-    <!--End navbar-->
+          </div>
+          <ul
+            id="dropdownMenu"
+            tabindex="0"
+            class="dropdown-content menu mt-6 space-y-1 shadow rounded-box w-52 shadow hidden border-2 border-[#4ecddb]"
+          >
+            <li>
+              <a
+                class="btn btn-outline cta-link cta-link-primary border-0 p-0"
+                hx-post="{% url 'create_assistant' %}"
+                _="on click remove .close-menu from .menu-toggler 
+                            then remove .show from .menu-wrapper"
+              >
+                Create Assistant
+              </a>
+            </li>
+            <li>
+              {% csrf_token %}
+              <a
+                class="btn btn-outline cta-link cta-link-primary border-0 p-0"
+                hx-post="{% url 'account_logout' %}"
+                hx-trigger="click"
+                hx-target="body"
+                hx-swap="outerHTML"
+                hx-redirect="{% url 'index' %}"
+                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                _="on click remove .close-menu from .menu-toggler 
+                       then remove .show from .menu-wrapper"
+              >
+                Logout
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        {% endif %} {% if not request.user.is_authenticated %}
+        <div class="hidden xl:block">
+          <a
+            href="{% url 'account_login' %}"
+            class="hover:bg-[var(--clr-main)] text-white font-medium tracking-wider py-2 px-4 rounded-lg"
+            >Sign In</a
+          >
+        </div>
+        {% endif %}
+      </div>
+      <!-- for mobile navbar menu -->
+      <div class="controls-box">
+        <!--Menu Toggler button-->
+        <div class="control menu-toggler">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </nav>
+  </div>
 </header>
