@@ -1,6 +1,7 @@
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.http import JsonResponse, StreamingHttpResponse, HttpResponse
+from django.http import JsonResponse, StreamingHttpResponse, HttpResponse, HttpResponseBadRequest
+from django.core.exceptions import ObjectDoesNotExist
 from django.template.loader import render_to_string
 from typing import Optional, Any, Dict
 import json
@@ -19,6 +20,7 @@ from PyPDF2 import PdfReader
 from django.shortcuts import render, get_object_or_404
 from app.modals.chat import get_llm
 from langchain_core.messages import HumanMessage
+from urllib.parse import unquote
 
 logger = logging.getLogger(__name__)
 
@@ -199,38 +201,84 @@ def chat_query(request, ass_id=None):
 def voice_chat(request):
     return render(request, 'voiceAssistant.html')
 
+
+
+@login_required(login_url='accounts/login/')
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
 def create_notes(request, assistant_id):
-    assistant = Assistant.objects.get(id=assistant_id)
-    user = User.objects.get(id=request.user.id)
+    try:
 
-    if request.method == 'POST':
-        prompt = request.POST.get('notes')
-        response = request.POST.get('question')
+        logger.info(f"Request we get: {request}")
+        # Validate user is authenticated
+        if not request.user.is_authenticated:
+            return HttpResponseBadRequest("User not authenticated")
 
-        notes = generate_notes(prompt, response)
+        # Get assistant and user
+        try:
+            assistant = Assistant.objects.get(id=assistant_id)
+            user = request.user
+        except ObjectDoesNotExist:
+            return HttpResponseBadRequest("Assistant not found")
 
-        # Log notes for debugging
-        print(f"Generated Notes: {notes}")
-
-        assistant_notes = AssistantNotes.objects.create(
-            user=user,
-            assistant=assistant,
-            question=prompt,
-            notes=notes
-        )
-        # Render the updated notes into the notes_panel.html template
-        html = render_to_string('notes_panel.html', {
+        # Get and decode parameters
+        try:
+            notes = request.GET.get('notes', '')
+            question = request.GET.get('question', '')
             
-            'notes': assistant_notes  # Pass the generated notes or full notes list if required
-        })
+            # Validate inputs
+            if not notes or not question:
+                return HttpResponseBadRequest("Missing required parameters")
 
-        # Log rendered HTML for debugging
-        print(f"Rendered HTML: {html}")
-        
-        # Return the rendered HTML response for HTMX
-        return HttpResponse(html)
+            logger.info(f"Processing notes request - User: {user.id}, Assistant: {assistant_id}")
+            logger.debug(f"Question: {question[:100]}...")  # Log first 100 chars for debugging
+        except Exception as e:
+            logger.error(f"Error decoding parameters: {str(e)}")
+            return HttpResponseBadRequest("Invalid parameters")
 
-    return HttpResponse(status=400)
+        # Generate and save notes
+        try:
+            generated_notes = generate_notes(question, notes)
+            AssistantNotes.objects.create(
+                user=user,
+                assistant=assistant,
+                question=question,
+                notes=generated_notes
+            )
+        except Exception as e:
+            logger.error(f"Error generating/saving notes: {str(e)}")
+            return HttpResponseBadRequest("Error creating notes")
+
+        # Get all notes for rendering
+        all_notes = AssistantNotes.objects.filter(
+            user=user,
+            assistant=assistant
+        ).order_by('-created_at')
+
+        # Render template
+        try:
+            html = render_to_string('notes_panel.html', {
+                'notes': all_notes,
+                'success': True
+            })
+            
+            # Add HX-Trigger for success notification
+            response = HttpResponse(html)
+            response['HX-Trigger'] = json.dumps({
+                'showNotification': {
+                    'message': 'Notes created successfully',
+                    'type': 'success'
+                }
+            })
+            return response
+
+        except Exception as e:
+            logger.error(f"Error rendering template: {str(e)}")
+            return HttpResponseBadRequest("Error rendering notes")
+
+    except Exception as e:
+        logger.error(f"Unexpected error in create_notes: {str(e)}")
+        return HttpResponseBadRequest("An unexpected error occurred")
 
 
 @login_required

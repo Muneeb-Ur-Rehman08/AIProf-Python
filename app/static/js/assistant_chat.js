@@ -8,14 +8,12 @@ window.addEventListener('resize', () => {
     }
 });
 
-function appendMessage(text, isUser = false) {
+function appendMessage(text, assistant_id, isUser = false) {
     if (isUser) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `bg-purple-200 mb-4 rounded px-2.5 py-3 max-w-[60%] w-fit ml-auto text-black first-letter:uppercase first-letter:bold first-letter:text-xl`;
         messageDiv.innerHTML = `
-            <div class="markdown-content">
-                ${text}
-            </div>
+            <div class="markdown-content" id="prompt-content">${text}</div>
         `;
         document.getElementById('chat-container').appendChild(messageDiv);
     } else {
@@ -24,8 +22,26 @@ function appendMessage(text, isUser = false) {
             assistantMessageDiv = document.createElement('div');
             assistantMessageDiv.className = `bg-[aliceblue] mb-4 rounded px-2.5 py-4 max-w-[90%] mr-auto text-black first-letter:uppercase first-letter:bold first-letter:text-md assistant-message-pending`;
             assistantMessageDiv.innerHTML = `
-                <div class="markdown-content">
+                <div class="markdown-content" id="prompt-response">
                     ${text}
+                </div>
+                <div class="button-group" style="display: inline-flex; align-items: center; gap: 5px;">
+                    <button id='speak-button' onclick="toggleSpeech(this.parentElement.getAttribute('data-raw') || this.parentElement.textContent, this)" 
+                            class=" transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 speak-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 stop-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                    <!-- Plus button -->
+                    <button type="submit" class="transition-colors plus-button" hx-get="/notes/${assistant_id}/" hx-trigger="click" hx-target="#notes-panel" hx-swap="innerHTML">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 plus-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                    </button>
                 </div>
             `;
             document.getElementById('chat-container').appendChild(assistantMessageDiv);
@@ -33,11 +49,47 @@ function appendMessage(text, isUser = false) {
             const element = assistantMessageDiv.querySelector('.markdown-content');
             processMarkdownWithMermaid(element, text);
         }
+        // Set the plus button's onclick to dynamically set htmx values
+        document.querySelectorAll('.plus-button').forEach(function(button) {
+            button.addEventListener('click', function() {
+              // Find the parent container of the clicked plus button (message div)
+              const messageContainer = button.closest('div.mb-4');
+          
+              // Get the specific prompt and response within the message container
+              const prompt = document.querySelector('#prompt-content')?.textContent || 'No prompt found';
+              const responseMessage = messageContainer.querySelector('#prompt-response p')?.textContent || 'No response found';
+          
+              console.log("Prompt:", prompt);
+              console.log('Response Message:', responseMessage);  // Debugging log
+          
+              if (!responseMessage) {
+                console.error('No response message found in this container.');
+                return;
+              }
+            assistant_id = assistant_id
+             
+              // Set attributes or send data as needed
+              button.setAttribute('hx-vals', JSON.stringify({
+                'prompt': prompt,
+                'response': responseMessage
+              }));
+            });
+          });
+          
+
+        // Add the speech toggle logic for the speak button
+        const speakButton = assistantMessageDiv.querySelector('#speak-button');
+        speakButton.onclick = function() {
+            toggleSpeech(this.parentElement.parentElement.getAttribute('data-raw') || 
+                      this.parentElement.parentElement.textContent, 
+                      this);
+        };
     }
 
     const chatContainer = document.getElementById('chat-container');
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
+
 
 function processMarkdownWithMermaid(divElement, textChunk) {
     const existingMarkdown = divElement.getAttribute('data-raw') || '';
@@ -59,21 +111,6 @@ function processMarkdownWithMermaid(divElement, textChunk) {
         divElement.innerHTML = parsedHTML;
         
         // Add speak button if this is the final chunk (no pending class)
-        if (!divElement.parentElement.classList.contains('assistant-message-pending')) {
-            const speakButton = `
-                <button onclick="toggleSpeech(this.parentElement.getAttribute('data-raw') || this.parentElement.textContent, this)" 
-                        class=" transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 speak-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                              d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                    </svg>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 stop-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            `;
-            divElement.insertAdjacentHTML('beforeend', speakButton);
-        }
         
         setTimeout(() => {
             try {
@@ -137,10 +174,10 @@ function stripMarkdown(markdownText) {
 
     function createLoadingAnimation() {
         return `
-        <div class="flex space-x-2">
-            <div class="w-1 h-2 rounded-full animate-bounce" style="animation-delay: -0.3s; background: var(--clr-main); transform: translateY(-50px);"></div>
-            <div class="w-1 h-2 rounded-full animate-bounce" style="animation-delay: -0.15s; background: var(--clr-main); transform: translateY(-50px);"></div>
-            <div class="w-1 h-2 rounded-full animate-bounce" style="background: var(--clr-main); transform: translateY(-50px);"></div>
+        <div class="loading-dots flex space-x-2">
+            <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: -0.3s;"></div>
+            <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: -0.15s;"></div>
+            <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
         </div>
     `;
     }
@@ -152,9 +189,9 @@ function stripMarkdown(markdownText) {
         if (!promptValue) return;
 
         // Append the user's message
-        appendMessage(promptValue, true);
+        appendMessage(promptValue, assistant_id, true);
         // Append the loader message (assistant-message-pending)
-        appendMessage(createLoadingAnimation(), false);
+        appendMessage(createLoadingAnimation(), assistant_id, false);
 
         promptInput.value = '';
 
@@ -186,66 +223,7 @@ function stripMarkdown(markdownText) {
                             const messageDiv = pendingMessage.querySelector('div');
                             // Add both speakButton and plusButton
                             // Create speak button
-                    const speakButton = document.createElement('button');
-                    speakButton.className = 'transition-colors';
-                    speakButton.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 speak-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                        </svg>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 stop-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    `;
-                    speakButton.onclick = function() {
-                        toggleSpeech(this.parentElement.parentElement.getAttribute('data-raw') || 
-                                  this.parentElement.parentElement.textContent, 
-                                  this);
-                    };
-
-                    // Create plus button
-                    const plusButton = document.createElement('button');
-                    plusButton.className = 'transition-colors';
-                    plusButton.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 plus-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                    `;
-
-                    // Add HTMX attributes
-                    plusButton.setAttribute('hx-post', `{%url 'notes' ${assistant_id}%}`);  // Send to your notes creation endpoint
-                    plusButton.setAttribute('hx-trigger', 'click');
-                    plusButton.setAttribute('hx-target', '#notes-panel');  // Update the notes panel (target div)
-                    plusButton.setAttribute('hx-swap', 'outerHTML');
-
-                    // Add HTMX values dynamically for message and prompt
-                    plusButton.onclick = function() {
-                        const messageContainer = this.closest('.message-container'); // Assuming each message has a container with this class
-                        const prompt = document.querySelector('#prompt-input').value; // Assuming your prompt input has this ID
-                        const responseMessage = messageContainer.querySelector('.response-text').innerText; // Get the response message
-
-                        // Set the hx-vals dynamically for the request
-                        plusButton.setAttribute('hx-vals', JSON.stringify({
-                            'message_id': messageContainer.dataset.messageId,  // Assuming each message container has a data attribute with the message ID
-                            'prompt': prompt,
-                            'response': responseMessage
-                        }));
-                    };
-
-                    // Create button group container
-                    const buttonGroup = document.createElement('div');
-                    buttonGroup.className = 'button-group';
-                    buttonGroup.style.display = 'inline-flex';
-                    buttonGroup.style.alignItems = 'center';
-                    buttonGroup.style.gap = '5px';
-
-                    // Add buttons to group
-                    buttonGroup.appendChild(speakButton);
-                    buttonGroup.appendChild(plusButton);
-
-                    // Add button group to message
-                    messageDiv.appendChild(buttonGroup);
+                    
                         }
                         return;
                     }
@@ -265,7 +243,7 @@ function stripMarkdown(markdownText) {
                     parts.forEach((chunk, index) => {
                         try {
                             const parsedChunk = JSON.parse(chunk); // Parse the JSON response
-                            appendMessage(parsedChunk.text, false); // Append the parsed
+                            appendMessage(parsedChunk.text, assistant_id, false); // Append the parsed
                             if (parsedChunk.showReview === true && parsedChunk.isLastChunk === true) {
                                 openReviewModal();
                             }
@@ -291,7 +269,7 @@ function stripMarkdown(markdownText) {
                 if (pendingMessage) {
                     pendingMessage.remove();
                 }
-                appendMessage('Error: Failed to get response', false);
+                appendMessage('Error: Failed to get response', assistant_id, false);
             });
     }
 
