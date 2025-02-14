@@ -207,78 +207,64 @@ def voice_chat(request):
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
 def create_notes(request, assistant_id):
-    try:
 
-        logger.info(f"Request we get: {request}")
-        # Validate user is authenticated
-        if not request.user.is_authenticated:
-            return HttpResponseBadRequest("User not authenticated")
+    user_id = request.user.id  # Current authenticated user
+    user = User.objects.get(id=user_id)
 
-        # Get assistant and user
+    assistant = Assistant.objects.get(id=assistant_id)
+
+    if request.method == 'GET':
+        # Handle GET request to retrieve notes
+        prompt = request.GET.get('prompt', '')
+        response = request.GET.get('response', '')
+
+        if not prompt or not response:
+            return HttpResponseBadRequest("Missing 'prompt' or 'response' parameters.")
+
+        # Try to retrieve notes (you can add more filtering logic as needed)
+        notes = AssistantNotes.objects.filter(assistant_id=assistant, user_id=user, question=prompt, notes=response)
+        if notes.exists():
+            html = render_to_string('notes_item.html', {'note': notes})
+            return HttpResponse(html)
+        else:
+            return HttpResponseBadRequest("No notes found for this assistant and prompt/response.")
+
+    elif request.method == 'POST':
         try:
-            assistant = Assistant.objects.get(id=assistant_id)
-            user = request.user
-        except ObjectDoesNotExist:
-            return HttpResponseBadRequest("Assistant not found")
-
-        # Get and decode parameters
-        try:
-            notes = request.GET.get('notes', '')
-            question = request.GET.get('question', '')
+            # Handle POST request to create new notes
             
-            # Validate inputs
-            if not notes or not question:
-                return HttpResponseBadRequest("Missing required parameters")
+            prompt = request.POST.get('prompt', '')
+            response = request.POST.get('response', '')
+            
+            if not prompt or not response:
+                return HttpResponseBadRequest("Missing 'prompt' or 'response' fields.")
+            
+            notes_content = generate_notes(prompt=prompt, response=response)
 
-            logger.info(f"Processing notes request - User: {user.id}, Assistant: {assistant_id}")
-            logger.debug(f"Question: {question[:100]}...")  # Log first 100 chars for debugging
-        except Exception as e:
-            logger.error(f"Error decoding parameters: {str(e)}")
-            return HttpResponseBadRequest("Invalid parameters")
+            logger.info(f"Generate notes are: {notes_content}")
 
-        # Generate and save notes
-        try:
-            generated_notes = generate_notes(question, notes)
-            AssistantNotes.objects.create(
-                user=user,
-                assistant=assistant,
-                question=question,
-                notes=generated_notes
+            # Create a new AssistantNotes entry
+            assistant_note = AssistantNotes.objects.create(
+                user_id=user,
+                assistant_id=assistant,
+                question=prompt,
+                notes=notes_content
             )
+            # assistant_note.save()
+            html = render_to_string('notes_item.html', {
+                'prompt': prompt,
+                'note': notes_content
+                })
+            # Return success response
+            return HttpResponse(html)
+
         except Exception as e:
             logger.error(f"Error generating/saving notes: {str(e)}")
-            return HttpResponseBadRequest("Error creating notes")
+            return HttpResponseBadRequest(f"Error generating/saving notes: {str(e)}")
 
-        # Get all notes for rendering
-        all_notes = AssistantNotes.objects.filter(
-            user=user,
-            assistant=assistant
-        ).order_by('-created_at')
+    else:
+        return HttpResponseBadRequest("Invalid request method.")
 
-        # Render template
-        try:
-            html = render_to_string('notes_panel.html', {
-                'notes': all_notes,
-                'success': True
-            })
-            
-            # Add HX-Trigger for success notification
-            response = HttpResponse(html)
-            response['HX-Trigger'] = json.dumps({
-                'showNotification': {
-                    'message': 'Notes created successfully',
-                    'type': 'success'
-                }
-            })
-            return response
-
-        except Exception as e:
-            logger.error(f"Error rendering template: {str(e)}")
-            return HttpResponseBadRequest("Error rendering notes")
-
-    except Exception as e:
-        logger.error(f"Unexpected error in create_notes: {str(e)}")
-        return HttpResponseBadRequest("An unexpected error occurred")
 
 
 @login_required

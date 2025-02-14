@@ -1,0 +1,5 @@
+<div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
+    <h4 class="font-medium">Question: {{ prompt|truncatechars:50 }}</h4>
+    <p class="mt-1 text-sm text-gray-500">{{ note|truncatechars:200 }}</p>
+    <!-- <p class="mt-2 text-xs text-gray-400">{{ note.created_at|timesince }} ago</p> -->
+  </div>

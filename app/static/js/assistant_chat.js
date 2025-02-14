@@ -37,7 +37,7 @@ function appendMessage(text, assistant_id, isUser = false) {
                         </svg>
                     </button>
                     <!-- Plus button -->
-                    <button type="submit" class="transition-colors plus-button" hx-get="/notes/${assistant_id}/" hx-trigger="click" hx-target="#notes-panel" hx-swap="innerHTML">
+                    <button type="submit" class="transition-colors plus-button" hx-POST="/notes/${assistant_id}/" hx-trigger="click" hx-target="#notes-panel" hx-swap="afterbegin">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 plus-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                         </svg>
@@ -52,29 +52,29 @@ function appendMessage(text, assistant_id, isUser = false) {
         // Set the plus button's onclick to dynamically set htmx values
         document.querySelectorAll('.plus-button').forEach(function(button) {
             button.addEventListener('click', function() {
-              // Find the parent container of the clicked plus button (message div)
-              const messageContainer = button.closest('div.mb-4');
-          
-              // Get the specific prompt and response within the message container
-              const prompt = document.querySelector('#prompt-content')?.textContent || 'No prompt found';
-              const responseMessage = messageContainer.querySelector('#prompt-response p')?.textContent || 'No response found';
-          
-              console.log("Prompt:", prompt);
-              console.log('Response Message:', responseMessage);  // Debugging log
-          
-              if (!responseMessage) {
-                console.error('No response message found in this container.');
-                return;
-              }
-            assistant_id = assistant_id
-             
-              // Set attributes or send data as needed
-              button.setAttribute('hx-vals', JSON.stringify({
-                'prompt': prompt,
-                'response': responseMessage
-              }));
+                const messageContainer = button.closest('div.mb-4');
+                const prompt = document.querySelector('#prompt-content')?.textContent || 'No prompt found';
+                const responseMessage = messageContainer.querySelector('#prompt-response p')?.textContent || 'No response found';
+        
+                console.log("Prompt:", prompt);
+                console.log('Response Message:', responseMessage);
+        
+                if (!responseMessage) {
+                    console.error('No response message found in this container.');
+                    return;
+                }
+        
+                // Set HTMX attributes
+                button.setAttribute('hx-vals', JSON.stringify({
+                    'prompt': prompt,
+                    'response': responseMessage
+                }));
+        
+                // Ensure HTMX processes the button and triggers the click
+                htmx.process(button);
+                
             });
-          });
+        });
           
 
         // Add the speech toggle logic for the speak button
