@@ -13,7 +13,7 @@ function appendMessage(text, assistant_id, isUser = false) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `bg-purple-200 mb-4 rounded px-2.5 py-3 max-w-[60%] w-fit ml-auto text-black first-letter:uppercase first-letter:bold first-letter:text-xl`;
         messageDiv.innerHTML = `
-            <div class="markdown-content" id="prompt-content">${text}</div>
+            <div class="markdown-content prompt-content" id="prompt-content">${text}</div>
         `;
         document.getElementById('chat-container').appendChild(messageDiv);
     } else {
@@ -51,12 +51,25 @@ function appendMessage(text, assistant_id, isUser = false) {
         }
         // Set the plus button's onclick to dynamically set htmx values
         document.querySelectorAll('.plus-button').forEach(function(button) {
-            button.addEventListener('click', function() {
+            
                 const messageContainer = button.closest('div.mb-4');
-                const prompt = document.querySelector('#prompt-content')?.textContent || 'No prompt found';
+
+
+                // Find the previous user message (prompt)
+                let currentElement = messageContainer;
+                let promptContent = 'No prompt found';
+                while (currentElement.previousElementSibling) {
+                    currentElement = currentElement.previousElementSibling;
+                    if (currentElement.querySelector('.prompt-content')) {
+                        promptContent = currentElement.querySelector('.prompt-content').textContent;
+                        break;
+                    }
+                }
+
+                
                 const responseMessage = messageContainer.querySelector('#prompt-response p')?.textContent || 'No response found';
         
-                console.log("Prompt:", prompt);
+                console.log("Prompt:", promptContent);
                 console.log('Response Message:', responseMessage);
         
                 if (!responseMessage) {
@@ -66,14 +79,14 @@ function appendMessage(text, assistant_id, isUser = false) {
         
                 // Set HTMX attributes
                 button.setAttribute('hx-vals', JSON.stringify({
-                    'prompt': prompt,
+                    'prompt': promptContent,
                     'response': responseMessage
                 }));
         
                 // Ensure HTMX processes the button and triggers the click
                 htmx.process(button);
                 
-            });
+            
         });
           
 

@@ -40,15 +40,7 @@
     <div data-radix-scroll-area-viewport class="h-full w-full rounded-[inherit]"  style="overflow: hidden scroll">
       <div style="min-width: 100%; display: table">
         <div class="p-4" id="notes-panel">
-          {%for notes in notes%}
-          <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
-            <h3 class="font-medium">{{ note.question|truncatechars:50 }}</h3>
-            <p class="mt-1 text-sm text-gray-500">
-              {{ note.notes|truncatechars:200 }}
-            </p>
-            <p class="mt-2 text-xs text-gray-400">{{ note.created_at|timesince }} ago</p>
-          </div>
-          {%endfor%}
+          
           <!-- <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
             <h3 class="font-medium">Next.js 13 Features</h3>
             <p class="mt-1 text-sm text-gray-500">
@@ -81,4 +73,8 @@
       </div>
     </div>
   </div>
-</div> 
+</div>
+
+<div id="load-notes" hx-get="{%url 'notes' assistant.id%}" hx-trigger="load" hx-target="#notes-panel" hx-swap="afterbegin">
+
+</div>

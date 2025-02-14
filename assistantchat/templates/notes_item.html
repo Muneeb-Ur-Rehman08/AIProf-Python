@@ -1,5 +1,15 @@
-<div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
-    <h4 class="font-medium">Question: {{ prompt|truncatechars:50 }}</h4>
-    <p class="mt-1 text-sm text-gray-500">{{ note|truncatechars:200 }}</p>
-    <!-- <p class="mt-2 text-xs text-gray-400">{{ note.created_at|timesince }} ago</p> -->
+{% if all_notes %}
+  {% for notes in note %}
+    <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
+      <h4 class="font-medium">Question: {{ notes.question|truncatechars:50 }}</h4>
+      <p class="mt-1 text-sm text-gray-500">{{ notes.notes|truncatechars:200 }}</p>
+      <p class="mt-2 text-xs text-gray-400">{{ notes.created_at|timesince }} ago</p>
+    </div>
+  {% endfor %}
+{% else %}
+  <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
+    <h4 class="font-medium">Question: {{ note.question|truncatechars:50 }}</h4>
+    <p class="mt-1 text-sm text-gray-500">{{ note.notes|truncatechars:200 }}</p>
+    <p class="mt-2 text-xs text-gray-400">{{ note.created_at|timesince }} ago</p>
   </div>
+{% endif %}

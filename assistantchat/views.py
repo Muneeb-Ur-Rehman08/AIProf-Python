@@ -134,7 +134,7 @@ def chat_query(request, ass_id=None):
         chat_history, keys = get_history(assistant_id=assistant_id, user_id=user_id)
 
         has_reviewed = AssistantRating.objects.filter(user=request.user, assistant=assistant).exists()
-        show_review = len(chat_history) >= 2 and not has_reviewed
+        show_review = len(chat_history) >= 9 and not has_reviewed
 
         # Define assistant configuration
         # assistant_config = {
@@ -214,17 +214,15 @@ def create_notes(request, assistant_id):
     assistant = Assistant.objects.get(id=assistant_id)
 
     if request.method == 'GET':
-        # Handle GET request to retrieve notes
-        prompt = request.GET.get('prompt', '')
-        response = request.GET.get('response', '')
-
-        if not prompt or not response:
-            return HttpResponseBadRequest("Missing 'prompt' or 'response' parameters.")
+        
 
         # Try to retrieve notes (you can add more filtering logic as needed)
-        notes = AssistantNotes.objects.filter(assistant_id=assistant, user_id=user, question=prompt, notes=response)
+        notes = AssistantNotes.objects.filter(assistant_id=assistant, user_id=user)
         if notes.exists():
-            html = render_to_string('notes_item.html', {'note': notes})
+            html = render_to_string('notes_item.html', {
+                'note': notes,
+                'all_notes': True
+                })
             return HttpResponse(html)
         else:
             return HttpResponseBadRequest("No notes found for this assistant and prompt/response.")
@@ -250,10 +248,10 @@ def create_notes(request, assistant_id):
                 question=prompt,
                 notes=notes_content
             )
+            
             # assistant_note.save()
             html = render_to_string('notes_item.html', {
-                'prompt': prompt,
-                'note': notes_content
+                'note': assistant_note
                 })
             # Return success response
             return HttpResponse(html)
@@ -417,10 +415,12 @@ def generate_notes(
 
     full_prompt = f"""
     Create comprehensive notes based on the given question and response.
-    - Give a topic name to the notes according to the question.
+    - Give a topic name to the notes according to the question as a notes heading.
     - The notes should be informative and helpful.
     - The notes should be concise yet informative.
     - Summarizing the key points discussed and highlighting important aspects related to the topic.
+
+    Response should be in Bullet Points and donot use markdown.
 
     Context:
     - Question: {prompt}
