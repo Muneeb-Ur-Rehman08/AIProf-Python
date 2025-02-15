@@ -12,8 +12,7 @@
     {% endif %}
     {% include 'chat/chat_window.html' %}
     {% if chat_mode %}
-      <!-- {% include 'notes/notes_panel.html' %} -->
-      {% include 'voiceAssistantview.html' with assistant=assistant user_id=user_id %}
+      {% include 'notes/notes_panel.html' %}
     {% endif %}
   </div>
 </div>
