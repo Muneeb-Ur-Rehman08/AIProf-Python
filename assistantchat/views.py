@@ -218,14 +218,13 @@ def create_notes(request, assistant_id):
 
         # Try to retrieve notes (you can add more filtering logic as needed)
         notes = AssistantNotes.objects.filter(assistant_id=assistant, user_id=user)
-        if notes.exists():
-            html = render_to_string('notes_item.html', {
-                'note': notes,
-                'all_notes': True
-                })
-            return HttpResponse(html)
-        else:
-            return HttpResponseBadRequest("No notes found for this assistant and prompt/response.")
+        
+        html = render_to_string('notes_item.html', {
+            'note': notes,
+            'all_notes': True
+            })
+        return HttpResponse(html)
+        
 
     elif request.method == 'POST':
         try:
@@ -417,7 +416,8 @@ def generate_notes(
     Create comprehensive notes based on the given question and response.
     - Give a topic name to the notes according to the question as a notes heading.
     - The notes should be informative and helpful.
-    - The notes should be concise yet informative.
+    - The notes should be concise short yet informative.
+    - The notes should be 3 to 4 bullet points to cover whole resposne.
     - Summarizing the key points discussed and highlighting important aspects related to the topic.
 
     Response should be in Bullet Points and donot use markdown.

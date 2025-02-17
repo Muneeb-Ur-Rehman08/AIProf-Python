@@ -1,15 +1,23 @@
-{% if all_notes %}
-  {% for notes in note %}
+
+  {%if note%}
+    {%if all_notes%}
+    {% for notes in note %}
+      <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
+        <h4 class="font-medium">Question: {{ notes.question|truncatechars:50 }}</h4>
+        <p class="mt-1 text-sm text-gray-500">{{ notes.notes|truncatechars:200 }}</p>
+        <p class="mt-2 text-xs text-gray-400">{{ notes.created_at|timesince }} ago</p>
+      </div>
+    {% endfor %}
+    {%else%}
     <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
-      <h4 class="font-medium">Question: {{ notes.question|truncatechars:50 }}</h4>
-      <p class="mt-1 text-sm text-gray-500">{{ notes.notes|truncatechars:200 }}</p>
-      <p class="mt-2 text-xs text-gray-400">{{ notes.created_at|timesince }} ago</p>
+      <h4 class="font-medium">Question: {{ note.question|truncatechars:50 }}</h4>
+      <p class="mt-1 text-sm text-gray-500">{{ note.notes|truncatechars:200 }}</p>
+      <p class="mt-2 text-xs text-gray-400">{{ note.created_at|timesince }} ago</p>
     </div>
-  {% endfor %}
-{% else %}
+    {%endif%}
+  {%else%}
   <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
-    <h4 class="font-medium">Question: {{ note.question|truncatechars:50 }}</h4>
-    <p class="mt-1 text-sm text-gray-500">{{ note.notes|truncatechars:200 }}</p>
-    <p class="mt-2 text-xs text-gray-400">{{ note.created_at|timesince }} ago</p>
+    <p class="mt-1 text-sm text-gray-500">You donot create any note.</p>
   </div>
-{% endif %}
+  {%endif%}
+  

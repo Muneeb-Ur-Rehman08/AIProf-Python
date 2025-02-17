@@ -25,7 +25,7 @@ function appendMessage(text, assistant_id, isUser = false) {
                 <div class="markdown-content" id="prompt-response">
                     ${text}
                 </div>
-                <div class="button-group" style="display: inline-flex; align-items: center; gap: 5px;">
+                <div class="button-group" style="display: none; align-items: center; gap: 5px;">
                     <button id='speak-button' onclick="toggleSpeech(this.parentElement.getAttribute('data-raw') || this.parentElement.textContent, this)" 
                             class=" transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 speak-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -37,7 +37,7 @@ function appendMessage(text, assistant_id, isUser = false) {
                         </svg>
                     </button>
                     <!-- Plus button -->
-                    <button type="submit" class="transition-colors plus-button" hx-POST="/notes/${assistant_id}/" hx-trigger="click" hx-target="#notes-panel" hx-swap="afterbegin">
+                    <button type="submit" class="transition-colors plus-button" hx-POST="/notes/c/${assistant_id}/" hx-trigger="click" hx-target="#notes-panel" hx-swap="afterbegin">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 plus-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                         </svg>
@@ -69,8 +69,6 @@ function appendMessage(text, assistant_id, isUser = false) {
                 
                 const responseMessage = messageContainer.querySelector('#prompt-response p')?.textContent || 'No response found';
         
-                console.log("Prompt:", promptContent);
-                console.log('Response Message:', responseMessage);
         
                 if (!responseMessage) {
                     console.error('No response message found in this container.');
@@ -244,6 +242,8 @@ function stripMarkdown(markdownText) {
                     // Decode the chunk
                     buffer += decoder.decode(value, { stream: true });
 
+                    console.log("Buffer value", buffer)
+
                     // Split the buffer into JSON objects
                     const parts = buffer.split('}{').map((part, index, array) => {
                         // Reconstruct valid JSON strings (handle split boundaries)
@@ -251,12 +251,31 @@ function stripMarkdown(markdownText) {
                         if (index === array.length - 1) return '{' + part;
                         return '{' + part + '}';
                     });
-
+                    
+                    console.log("Parts value", parts)
                     // Parse and process each valid JSON object
                     parts.forEach((chunk, index) => {
                         try {
                             const parsedChunk = JSON.parse(chunk); // Parse the JSON response
+
+                            console.log("parsedChunk value", parsedChunk)
                             appendMessage(parsedChunk.text, assistant_id, false); // Append the parsed
+
+                            // Check if it's the last chunk, then display the plusButton and speakButton
+                            if (parsedChunk.isLastChunk === true) {
+                                let assistantMessageDiv = document.querySelector('.assistant-message-pending');
+                                
+                                // Ensure the assistantMessageDiv exists
+                                if (assistantMessageDiv) {
+                                    const buttonGroup = assistantMessageDiv.querySelector('.button-group');
+                                    if (buttonGroup) {
+                                        buttonGroup.style.display = 'inline-flex'; // Show the buttons
+                                    } else {
+                                        console.error('No button group found in assistant message div.');
+                                    }
+                                }
+                            }
+
                             if (parsedChunk.showReview === true && parsedChunk.isLastChunk === true) {
                                 openReviewModal();
                             }
@@ -346,19 +365,4 @@ function stripMarkdown(markdownText) {
         }
     });
 
-    // Listen for the HTMX after request event
-    document.addEventListener("htmx:afterRequest", function(event) {
-        const response = event.detail.xhr.responseText;
-        try {
-        const data = JSON.parse(response); // Parse the response
-        if (data.status === "success") {
-            showToast(data.message, true);  // Success toast
-            closeReviewModal();             // Optionally close the review modal
-        } else {
-            showToast(data.message, false);  // Error toast
-        }
-        } catch (e) {
-        console.error("Failed to parse JSON response.");
-        showToast("An error occurred. Please try again.", false);
-        }
-    });
+    
