@@ -80,6 +80,8 @@ function appendMessage(text, assistant_id, isUser = false) {
                     'prompt': promptContent,
                     'response': responseMessage
                 }));
+
+                button.setAttribute('hx-indicator', '.header-progress')
         
                 // Ensure HTMX processes the button and triggers the click
                 htmx.process(button);

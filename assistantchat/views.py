@@ -1,6 +1,6 @@
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.http import JsonResponse, StreamingHttpResponse, HttpResponse, HttpResponseBadRequest
+from django.http import JsonResponse, StreamingHttpResponse, HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.core.exceptions import ObjectDoesNotExist
 from django.template.loader import render_to_string
 from typing import Optional, Any, Dict
@@ -250,7 +250,8 @@ def create_notes(request, assistant_id):
             
             # assistant_note.save()
             html = render_to_string('notes_item.html', {
-                'note': assistant_note
+                'note': assistant_note,
+                'all_notes': False
                 })
             # Return success response
             return HttpResponse(html)
@@ -262,6 +263,20 @@ def create_notes(request, assistant_id):
     else:
         return HttpResponseBadRequest("Invalid request method.")
 
+
+def delete_note(request, note_id):
+    if request.method == 'DELETE':
+        try:
+            user_id = request.user.id
+            note = AssistantNotes.objects.get(id=note_id, user_id=user_id)
+            note.delete()
+            # Return a response with HX-Trigger to remove the element
+            response = HttpResponse()
+            response['HX-Trigger'] = 'noteDeleted'
+            return response
+        except AssistantNotes.DoesNotExist:
+            return HttpResponseNotFound("Note not found or unauthorized")
+    return HttpResponseBadRequest("Invalid request method")
 
 
 @login_required
@@ -413,18 +428,17 @@ def generate_notes(
     llm = get_llm()
 
     full_prompt = f"""
-    Create comprehensive notes based on the given question and response.
-    - Give a topic name to the notes according to the question as a notes heading.
-    - The notes should be informative and helpful.
-    - The notes should be concise short yet informative.
-    - The notes should be 3 to 4 bullet points to cover whole resposne.
-    - Summarizing the key points discussed and highlighting important aspects related to the topic.
+        Create clear and concise notes based on the provided question and response.
+        - Assign a relevant topic name as a heading for the notes, reflecting the question.
+        - Ensure the notes are informative yet brief, summarizing key points.
+        - The notes should consist of 3 to 4 bullet points that cover the entire response.
+        - Highlight essential aspects and key takeaways related to the topic.
 
-    Response should be in Bullet Points and donot use markdown.
+        Format the response in bullet points without using markdown.
 
-    Context:
-    - Question: {prompt}
-    - Response: {response}
+        Context:
+        - Question: {prompt}
+        - Response: {response}
     """
     # Construct detailed prompt
 
