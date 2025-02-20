@@ -48,6 +48,7 @@ def assistant_chat_view(request, assistant_id):
         'assistant': assistant, 
         'is_creator': is_creator, 
         'chat_mode': chat_mode,
-        'assistants': assistants
+        'assistants': assistants,
+        'user_id': request.user.id
     })
 

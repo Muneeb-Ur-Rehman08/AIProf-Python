@@ -199,7 +199,7 @@ def chat_query(request, ass_id=None):
     
 
 def voice_chat(request):
-    return render(request, 'voiceAssistant.html')
+    return render(request, 'voiceAssistantview.html')
 
 
 
