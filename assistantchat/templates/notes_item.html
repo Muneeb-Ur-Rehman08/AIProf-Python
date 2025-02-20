@@ -1,0 +1,51 @@
+{% if note %}
+    {% if all_notes %}
+    {% for notes in note %}
+      <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50" 
+           id="note-{{ notes.id }}">
+        <h4 class="font-medium">Question: {{ notes.question|truncatechars:50 }}</h4>
+        <p class="mt-1 text-sm text-gray-500">{{ notes.notes|truncatechars:200 }}</p>
+        <div class="mt-2 flex items-center justify-between">
+          <p class="text-xs text-gray-400">{{ notes.created_at|timesince }} ago</p>
+          <button hx-delete="/notes/del/{{ notes.id }}/"
+                  hx-target="#note-{{ notes.id }}"
+                  hx-indicator=".header-progress"
+                  hx-swap="outerHTML"
+                  class="p-1 text-gray-400 hover:text-red-500">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" 
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18"></path>
+              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    {% endfor %}
+    {% else %}
+    <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50" 
+         id="note-{{ note.id }}">
+      <h4 class="font-medium">Question: {{ note.question|truncatechars:50 }}</h4>
+      <p class="mt-1 text-sm text-gray-500">{{ note.notes|truncatechars:200 }}</p>
+      <div class="mt-2 flex items-center justify-between">
+        <p class="text-xs text-gray-400">{{ note.created_at|timesince }} ago</p>
+        <button hx-delete="/notes/del/{{ note.id }}/"
+                hx-target="#note-{{ note.id }}"
+                hx-indicator=".header-progress"
+                hx-swap="outerHTML"
+                class="p-1 text-gray-400 hover:text-red-500">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" 
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18"></path>
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+    {% endif %}
+{% else %}
+    <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50">
+      <p class="mt-1 text-sm text-gray-500">You do not have any notes.</p>
+    </div>
+{% endif %}
