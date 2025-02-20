@@ -12,6 +12,7 @@ from users.models import Assistant
 from django.contrib.auth.models import User
 from typing import Optional
 from asgiref.sync import sync_to_async
+from .views import save_history
 
 
 load_dotenv()
@@ -35,21 +36,15 @@ chat_module = ChatModule()
 get_context_async = sync_to_async(chat_module.get_relevant_context, thread_sensitive=False)
 get_assistant_config_async = sync_to_async(assistant_config, thread_sensitive=False)
 get_history_async = sync_to_async(get_history, thread_sensitive=False)
-
-# Fetch the audio file and convert it to a base64 encoded string
-url = "https://openaiassets.blob.core.windows.net/$web/API/docs/audio/alloy.wav"
-response = requests.get(url)
-response.raise_for_status()
-wav_data = response.content
-encoded_string = base64.b64encode(wav_data).decode('utf-8')
-
+save_history_async = sync_to_async(save_history, thread_sensitive=False)
 
 class VoiceAssistantConsumer(AsyncWebsocketConsumer):
-    # MODEL_NAME = "gpt-4o-mini-audio-preview"
-    # MODEL_NAME = "gpt-4o-mini-audio-preview-2024-12-17"
     MODEL_NAME = "gpt-4o-mini-audio-preview"
+    # MODEL_NAME = "gpt-4o-mini-audio-preview-2024-12-17"
+    # MODEL_NAME = "gpt-4o-audio-preview"
     VOICE_ID = "alloy"
-    AUDIO_FORMAT = "wav"
+    AUDIO_FORMAT = "pcm16"
+
 
 
     def __init__(self, *args, **kwargs):
@@ -83,8 +78,8 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
         if text_data:
             data = json.loads(text_data)
             query = ""
-            assistant_id = "e74ea4ce-da6e-4c2e-befa-99132fc76876"
-            user_id = "21"
+            # assistant_id = "e74ea4ce-da6e-4c2e-befa-99132fc76876"
+            # user_id = "21"
             # "control" signals the beginning of conversation
             if data.get("control") == "start_conversation":
                 await self.send_greeting()
@@ -94,9 +89,10 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
                 await self.get_response_from_audio(
                     audio_data_b64=data["audio_data"],
                     query=query,
-                    assistant_id=assistant_id,
-                    user_id=user_id
+                    assistant_id=data["assistant_id"],
+                    user_id=data["user_id"]
                 )
+
 
             # "transcript" => user typed or recognized text
             elif "transcript" in data:
@@ -120,20 +116,17 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
     async def get_response_from_audio(self, audio_data_b64, query: Optional[str], assistant_id: Optional[str], user_id: Optional[str]):
 
         get_context = await get_context_async(query=query, assistant_id=assistant_id)
-
         assistant_config_data = await get_assistant_config_async(assistant_id, user_id)
 
         print(f"\n\n Assistant Config Data: {assistant_config_data}\n\n")
 
         chat_history = await get_history_async(assistant_id=assistant_id, user_id=user_id)
-
-
         print(f"Chat history in Consumers: {chat_history}")
 
         chat_summary = next(
-                (entry["summary"] for entry in chat_history if "summary" in entry),
-                "No summary available. Use chat history only to generate chat summary."
-            )
+            (entry["summary"] for entry in chat_history if "summary" in entry),
+            "No summary available. Use chat history only to generate chat summary."
+        )
 
         system_message = f"""
         You are an adaptive AI educator specializing in {assistant_config_data.get('topic')} in {assistant_config_data.get('subject')}. Your role is to:
@@ -143,9 +136,9 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
         4. Apply the following **teacher instructions**: {assistant_config_data.get('teacher_instructions')}.
         5. Generate exercises based on the following criteria:
         - After each explanation, explicitly ask "Do you understand this explanation?" or "Would you like me to clarify anything?"
-        - If the user confirms understanding (e.g., "yes", "I understand", "that's clear"), automatically proceed to provide relevant exercises
-        - If the user asks for clarification, provide additional explanation before moving to exercises
-        - If the user modifies the query, adjust the explanation and exercises accordingly
+        - If the user confirms understanding (e.g., "yes", "I understand", "that's clear"), automatically proceed to provide relevant exercises.
+        - If the user asks for clarification, provide additional explanation before moving to exercises.
+        - If the user modifies the query, adjust the explanation and exercises accordingly.
         6. Allow the user to submit questions or exercise solutions via text, image, or file upload.
         7. **Do not use notes in the responses**.
 
@@ -156,15 +149,15 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
 
         ## Exercise Generation Protocol:
         1. After confirmation of understanding:
-        - For beginners: Provide 1-2 foundational exercises focusing on basic concepts
-        - For intermediate users: Offer 2-3 scenario-based exercises with increasing complexity
-        - For advanced users: Present 1-2 complex real-world problems or case studies
+        - For beginners: Provide 1-2 foundational exercises focusing on basic concepts.
+        - For intermediate users: Offer 2-3 scenario-based exercises with increasing complexity.
+        - For advanced users: Present 1-2 complex real-world problems or case studies.
         2. Structure each exercise with:
-        - Clear problem statement
-        - Expected learning outcome
-        - Hints (optional, based on difficulty level)
-        - Solution submission instructions
-        3. Always include a clear transition phrase like "Now that you understand, let's practice with these exercises:"
+        - Clear problem statement.
+        - Expected learning outcome.
+        - Hints (optional, based on difficulty level).
+        - Solution submission instructions.
+        3. Always include a clear transition phrase like "Now that you understand, let's practice with these exercises:".
 
         ## Diagram Usage (Mermaid):
         - If applicable, use **Mermaid diagrams** for visualizing non-textual concepts like processes or structures.
@@ -173,17 +166,16 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
 
         ## Interaction Flow:
         1. **Analyze and Explain**:
-            - Process the user's query (including image/file content if provided)
-            - Provide thorough explanation using context (without directly including it)
-            - Explicitly check for understanding
+            - Process the user's query (including image/file content if provided).
+            - Provide thorough explanation using context (without directly including it).
+            - Explicitly check for understanding.
         2. **Exercise Delivery**:
-            - After user confirms understanding or change the topic or query, automatically transition to exercises
-            - Include clear submission instructions
-            - Accept solutions via text, image, or file
+            - After user confirms understanding or changes the topic/query, automatically transition to exercises.
+            - Include clear submission instructions.
         3. **Solution Review**:
-            - Analyze submitted solutions
-            - Provide detailed feedback
-            - Offer follow-up exercises if needed
+            - Analyze submitted solutions.
+            - Provide detailed feedback.
+            - Offer follow-up exercises if needed.
 
         ## Contextual Inputs:
         - **Provided Context**: {get_context} (strictly use this context to generate responses. If the query is unrelated to the context, please respond with a polite message stating that you lack knowledge about the query and **do not use context in the final response**).
@@ -193,15 +185,13 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
         Focus on maintaining a clear flow: explanation → understanding check → exercise generation → solution review. Always proceed to exercises after confirmed understanding.
         """
 
-
         try:
             completion = client.chat.completions.create(
                 model=self.MODEL_NAME,
                 modalities=["text", "audio"],
                 audio={"voice": 'alloy', "format": self.AUDIO_FORMAT},
-                # stream=True,
+                stream=True,
                 temperature=0.5,
-                # stream_options={"include_usage": True},
                 max_tokens=1000,
                 messages=[
                     {
@@ -223,71 +213,73 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
                 ]
             )
 
+            import re
+            # Initialize buffers for text and audio accumulation.
+            buffer_text = ""
+            buffer_audio = b""
 
+            for chunk in completion:
 
-            # Extracting text and audio chunks
-            # for chunk in completion:
-            #     print(f"chunk: {chunk}")
-                
-            #     # Safely check if chunk has choices
-            #     if not chunk.choices or len(chunk.choices) == 0:
-            #         continue
-                    
-            #     print(f"chunk.choices[0].delta: {chunk.choices[0].delta}")
-                
-            #     # Safely access delta and audio attributes
-            #     delta = chunk.choices[0].delta
-            #     if not delta:
-            #         continue
-                    
-            #     text_chunk = None
-            #     audio_chunk = None
-                
-            #     if hasattr(delta, 'audio') and delta.audio:
-            #         print(f"delta.audio.transcript: {delta.audio.get('transcript')}")
-            #         if delta.audio.get('transcript'):
-            #             text_chunk = delta.audio.get('transcript')
-            #         if delta.audio.get('data'):
-            #             audio_chunk = base64.b64decode(delta.audio.get('data'))
-            #             audio_chunk = base64.b64encode(audio_chunk).decode('utf-8')
-                        
-            #             # Only write if we have audio data
-            #             with open("audio.pcm", "ab") as f:
-            #                 f.write(base64.b64decode(delta.audio.get('data')))
-            #     # Only send if we have actual content
-            #     if text_chunk or audio_chunk:
-            #         await self.send(
-            #             json.dumps({
-            #                 "type": "assistant_response", 
-            #                 "message": text_chunk,
-            #                 # Only send audio_data if we have it
-            #                 "audio_data": audio_chunk if audio_chunk else None,
-            #                 "id": chunk.id
-            #             })
-            #         )
+                # Safely check for choices and the delta attribute.
+                if not chunk.choices or len(chunk.choices) == 0:
+                    continue
 
+                delta = chunk.choices[0].delta
+                if not delta:
+                    continue
 
-            transcript = completion.choices[0].message.audio.transcript
-            audio_data = completion.choices[0].message.audio.data
-            await self.send(
-                json.dumps(
-                    {
-                        "type": "assistant_response",
-                        "message": transcript,
-                        "audio_data": audio_data,
-                    }
-                )
-            )
+                text_chunk = ""
+                # Process audio: check if a transcript is provided and audio data is available.
+                if hasattr(delta, 'audio') and delta.audio:
+                    transcript_piece = delta.audio.get('transcript')
+                    if transcript_piece:
+                        text_chunk = transcript_piece
+                    audio_piece = delta.audio.get('data')
+                    if audio_piece:
+                        # Decode and accumulate audio binary data.
+                        audio_binary = base64.b64decode(audio_piece)
+                        buffer_audio += audio_binary
+
+                # Accumulate text if available.
+                if text_chunk:
+                    buffer_text += text_chunk
+
+                    # Check for sentence boundaries using regex.
+                    # This splits the buffered text into sentences based on ending punctuation (.?!).
+                    sentences = re.split(r'(?<=[.!?])\s+', buffer_text)
+                    # If there is at least one full sentence (i.e. more than one segment) or
+                    # the entire buffer ends with a sentence-ending punctuation, send the completed sentences.
+                    if len(sentences) > 1 or buffer_text.endswith(('.', '?', '!')):
+                        # If the buffer does not end with punctuation then the last segment is incomplete.
+                        complete_sentences = sentences[:-1] if not buffer_text.endswith(('.', '?', '!')) else sentences
+                        for sent in complete_sentences:
+                            # Aggregate audio (if available) into a base64-encoded string.
+                            audio_base64 = base64.b64encode(buffer_audio).decode("utf-8") if buffer_audio else None
+                            await self.send(json.dumps({
+                                "type": "assistant_response",
+                                "message": sent,
+                                "audio_data": audio_base64,
+                                "id": chunk.id
+                            }))
+                        # Retain any incomplete sentence in the buffer and reset the audio buffer.
+                        buffer_text = sentences[-1] if len(sentences) > 1 else ""
+                        buffer_audio = b""
+
+            # Flush any remaining text or audio after the stream completes.
+            if buffer_text or buffer_audio:
+                audio_base64 = base64.b64encode(buffer_audio).decode("utf-8") if buffer_audio else None
+                await self.send(json.dumps({
+                    "type": "assistant_response",
+                    "message": buffer_text,
+                    "audio_data": audio_base64,
+                    "id": chunk.id  # using the last chunk's id or a new unique identifier
+                }))
+
         except Exception as e:
             error_message = f"Error processing audio: {str(e)}"
-            await self.send(
-                json.dumps(
-                    {
-                        "type": "error",
-                        "message": error_message,
-                        "audio_data": None,
-                    }
-                )
-            )
-
+            await self.send(json.dumps({
+                "type": "error",
+                "message": error_message,
+                "audio_data": None,
+            }))
 

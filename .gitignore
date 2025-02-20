@@ -28,6 +28,6 @@ app/.env
 myenv
 venv
 .venv
-
+myvenv
 
 .vscode

@@ -277,7 +277,7 @@ def list_assistants(request):
             'value': '-created_at'
         },
         'highest_interactions': {
-            'label': 'Most Popular',
+            'label': 'Most Interacted',
             'value': F('interactions').desc(nulls_last=True)
         },
         'most_reviews': {

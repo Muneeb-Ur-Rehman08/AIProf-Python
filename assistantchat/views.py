@@ -1,24 +1,26 @@
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.http import JsonResponse, StreamingHttpResponse
+from django.http import JsonResponse, StreamingHttpResponse, HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
+from django.core.exceptions import ObjectDoesNotExist
+from django.template.loader import render_to_string
 from typing import Optional, Any, Dict
 import json
 import logging
 import uuid
 from users.models import Assistant, SupabaseUser, AssistantRating
-from .models import Conversation
+from .models import AssistantNotes
 from .utils import ChatModule
-from app.utils.assistant_manager import AssistantManager
 from django.contrib.auth.models import User
-from decimal import Decimal
-from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 import os
 from langgraph.store.memory import InMemoryStore
 from PIL import Image
 import pytesseract
 from PyPDF2 import PdfReader
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
+from app.modals.chat import get_llm
+from langchain_core.messages import HumanMessage
+from urllib.parse import unquote
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +133,8 @@ def chat_query(request, ass_id=None):
 
         chat_history, keys = get_history(assistant_id=assistant_id, user_id=user_id)
 
-        
+        has_reviewed = AssistantRating.objects.filter(user=request.user, assistant=assistant).exists()
+        show_review = len(chat_history) >= 9 and not has_reviewed
 
         # Define assistant configuration
         # assistant_config = {
@@ -148,7 +151,7 @@ def chat_query(request, ass_id=None):
             assistant_id=str(assistant.id),
             user_id=str(user),
             assistant_config=assistant_config(assistant_id=assistant_id, user_id=user_id),
-            chat_history=chat_history     
+            chat_history=chat_history
         )
 
         # Streaming the response
@@ -158,30 +161,152 @@ def chat_query(request, ass_id=None):
                 for chunk in response:
                     if chunk:
                         full_response += chunk
-                        yield chunk
+                        # Send the chunk along with review status
+                        yield json.dumps({
+                            'text': chunk,
+                            'showReview': show_review,
+                            'isLastChunk': False
+                        })
 
                 save_history(assistant_id, user_id, prompt, full_response)
 
+                # Send final chunk with review status
+                yield json.dumps({
+                    'text': '',
+                    'showReview': show_review,
+                    'isLastChunk': True
+                })
                 
             except Exception as e:
                 logger.error(f"Error in chat query response: {e}")
-                yield "Failed to process chat query"
+                # Send final chunk with review status
+                yield json.dumps({
+                    'text': '',
+                    'showReview': show_review,
+                    'isLastChunk': True
+                })
 
         return StreamingHttpResponse(response_stream(), content_type='text/event-stream')
 
     except Exception as e:
         logger.error(f"Error in chat query endpoint: {e}")
-        return StreamingHttpResponse("Failed to process chat query", content_type='text/event-stream')
+        return StreamingHttpResponse(json.dumps({
+                'text': "Failed to process chat query",
+                'showReview': False,
+                'isLastChunk': True
+            }),
+            content_type='text/event-stream')
     
 
 def voice_chat(request):
-    return render(request, 'voiceAssistant.html')
+    return render(request, 'voiceAssistantview.html')
 
+
+
+@login_required(login_url='accounts/login/')
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def create_notes(request, assistant_id):
+
+    user_id = request.user.id  # Current authenticated user
+    user = User.objects.get(id=user_id)
+
+    assistant = Assistant.objects.get(id=assistant_id)
+
+    if request.method == 'GET':
+        
+
+        # Try to retrieve notes (you can add more filtering logic as needed)
+        notes = AssistantNotes.objects.filter(assistant_id=assistant, user_id=user)
+        
+        html = render_to_string('notes_item.html', {
+            'note': notes,
+            'all_notes': True
+            })
+        return HttpResponse(html)
+        
+
+    elif request.method == 'POST':
+        try:
+            # Handle POST request to create new notes
+            
+            prompt = request.POST.get('prompt', '')
+            response = request.POST.get('response', '')
+            
+            if not prompt or not response:
+                return HttpResponseBadRequest("Missing 'prompt' or 'response' fields.")
+            
+            notes_content = generate_notes(prompt=prompt, response=response)
+
+            logger.info(f"Generate notes are: {notes_content}")
+
+            # Create a new AssistantNotes entry
+            assistant_note = AssistantNotes.objects.create(
+                user_id=user,
+                assistant_id=assistant,
+                question=prompt,
+                notes=notes_content
+            )
+            
+            # assistant_note.save()
+            html = render_to_string('notes_item.html', {
+                'note': assistant_note,
+                'all_notes': False
+                })
+            # Return success response
+            return HttpResponse(html)
+
+        except Exception as e:
+            logger.error(f"Error generating/saving notes: {str(e)}")
+            return HttpResponseBadRequest(f"Error generating/saving notes: {str(e)}")
+
+    else:
+        return HttpResponseBadRequest("Invalid request method.")
+
+
+def delete_note(request, note_id):
+    if request.method == 'DELETE':
+        try:
+            user_id = request.user.id
+            note = AssistantNotes.objects.get(id=note_id, user_id=user_id)
+            note.delete()
+            # Return a response with HX-Trigger to remove the element
+            response = HttpResponse()
+            response['HX-Trigger'] = 'noteDeleted'
+            return response
+        except AssistantNotes.DoesNotExist:
+            return HttpResponseNotFound("Note not found or unauthorized")
+    return HttpResponseBadRequest("Invalid request method")
+
+
+@login_required
+@require_http_methods(["POST", "GET"])
+def submit_review(request, assistant_id):
+    assistant = get_object_or_404(Assistant, id=assistant_id)
+
+    # Prevent duplicate reviews
+    if AssistantRating.objects.filter(user=request.user, assistant=assistant).exists():
+        return JsonResponse({"status": "error", "message": "You have already submitted a review."})
+
+    if request.method == "POST":
+        rating = request.POST.get("rating")
+        review = request.POST.get("review")
+
+        AssistantRating.objects.create(
+            user=request.user,
+            assistant=assistant,
+            rating=rating,
+            review=review
+        )
+
+        return JsonResponse({"status": "success", "message": "Thank you for your feedback!"})
+
+    return JsonResponse({"status": "error", "message": "Invalid submission."}, status=400)
 
 def get_history(assistant_id, user_id):
     # Define the namespace
         namespace = ("chat", user_id, assistant_id)
-        
+
         count = 0
         # Retrieve all keys and values in the namespace
         try:
@@ -232,7 +357,7 @@ def save_history(assistant_id, user_id, prompt, full_response):
         chat_summary = chat_module.analyze_chat_history(offloaded_messages, chat_summary)
 
         knowledge_level = chat_module.assess_user_knowledge(offloaded_messages)
-        
+
 
         # **Delete old messages using BaseStore.delete()**
         for key in oldest_keys:
@@ -242,13 +367,13 @@ def save_history(assistant_id, user_id, prompt, full_response):
     try:
         key = f"chat-{len(memory_store.search(namespace))}"
         memory_store.put(namespace, next_key, {
-            "User": prompt, 
-            "AI": full_response, 
-            "summary": chat_summary, 
+            "User": prompt,
+            "AI": full_response,
+            "summary": chat_summary,
             "knowledge_level": knowledge_level
             }
         )
-        
+
         # logger.info(f"Saved memory: namespace={namespace}, key={key}, data={{'user': '{prompt}', 'assistant': '{full_response}', 'summary': '{chat_summary}'}}")
     except Exception as e:
         logger.error(f"Error saving chat memory: {e}")
@@ -257,7 +382,7 @@ def save_history(assistant_id, user_id, prompt, full_response):
 def assistant_config(assistant_id, user_id):
     assistant = Assistant.objects.get(id=assistant_id)
     user = User.objects.get(id=user_id)
-    
+
     mermaid_instructions = '''
             Help me with short and to the point diagrams wherever you see fit using 
             mermaid.js code, as example given below. Double make sure the code error-free 
@@ -295,3 +420,32 @@ def assistant_config(assistant_id, user_id):
             "user_name": user.first_name,
             "prompt_instructions": mermaid_instructions
         }
+
+def generate_notes(
+    prompt, response
+) :
+    # Langchain Setup
+    llm = get_llm()
+
+    full_prompt = f"""
+        Create clear and concise notes based on the provided question and response.
+        - Assign a relevant topic name as a heading for the notes, reflecting the question.
+        - Ensure the notes are informative yet brief, summarizing key points.
+        - The notes should consist of 3 to 4 bullet points that cover the entire response.
+        - Highlight essential aspects and key takeaways related to the topic.
+
+        Format the response in bullet points without using markdown.
+
+        Context:
+        - Question: {prompt}
+        - Response: {response}
+    """
+    # Construct detailed prompt
+
+    # Initialize message
+    messages = [HumanMessage(content=full_prompt)]
+
+    # Generate response
+    response = llm.invoke(messages)
+
+    return response.content
