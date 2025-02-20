@@ -12,27 +12,28 @@ from users.models import Assistant
 from django.contrib.auth.models import User
 from typing import Optional
 from asgiref.sync import sync_to_async
+import torch
+from pydub import AudioSegment
+import asyncio
 
 
 load_dotenv()
 
+
 def get_llm(model):
     api_key = os.getenv("OPENAI_API_KEY")
 
+    return ChatOpenAI(api_key=api_key, model=model, temperature=0.5, max_retries=3)
 
-    return ChatOpenAI(
-        api_key=api_key,
-        model=model,
-        temperature=0.5,
-        max_retries=3
-    )
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 chat_module = ChatModule()
 
 # Wrap the synchronous function
-get_context_async = sync_to_async(chat_module.get_relevant_context, thread_sensitive=False)
+get_context_async = sync_to_async(
+    chat_module.get_relevant_context, thread_sensitive=False
+)
 get_assistant_config_async = sync_to_async(assistant_config, thread_sensitive=False)
 get_history_async = sync_to_async(get_history, thread_sensitive=False)
 
@@ -41,7 +42,18 @@ url = "https://openaiassets.blob.core.windows.net/$web/API/docs/audio/alloy.wav"
 response = requests.get(url)
 response.raise_for_status()
 wav_data = response.content
-encoded_string = base64.b64encode(wav_data).decode('utf-8')
+encoded_string = base64.b64encode(wav_data).decode("utf-8")
+
+# Load Silero VAD model at startup (updated syntax)
+model, _ = torch.hub.load(
+    repo_or_dir="snakers4/silero-vad",
+    model="silero_vad",
+    force_reload=True,
+    trust_repo=True,
+)
+
+# Get the correct utils functions directly
+get_speech_timestamps = utils_vad.get_speech_timestamps
 
 
 class VoiceAssistantConsumer(AsyncWebsocketConsumer):
@@ -54,7 +66,14 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.audio_data = None
+        self.audio_buffer = bytes()
+        self.vad_state = {
+            "speech_detected": False,
+            "last_active": None,
+            "sample_rate": 16000,  # Silero VAD required sample rate
+        }
+        self.is_playing = False
+
         try:
             self.llm = get_llm(self.MODEL_NAME)
         except Exception as e:
@@ -95,7 +114,7 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
                     audio_data_b64=data["audio_data"],
                     query=query,
                     assistant_id=assistant_id,
-                    user_id=user_id
+                    user_id=user_id,
                 )
 
             # "transcript" => user typed or recognized text
@@ -117,23 +136,118 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
             )
         )
 
-    async def get_response_from_audio(self, audio_data_b64, query: Optional[str], assistant_id: Optional[str], user_id: Optional[str]):
+    async def get_response_from_audio(
+        self,
+        audio_data_b64,
+        query: Optional[str],
+        assistant_id: Optional[str],
+        user_id: Optional[str],
+    ):
+        # Decode and process audio
+        audio_data = base64.b64decode(audio_data_b64)
+        self.audio_buffer += audio_data
 
+        # Convert to VAD-compatible format
+        audio_np = self._convert_audio_to_vad_format()
+
+        # Retry speech detection up to 3 times for better accuracy
+        for _ in range(3):  
+            speech_confirmed = await self._detect_speech(audio_np)
+            if speech_confirmed:
+                break
+            await asyncio.sleep(0.1)  # Small delay before retrying
+        
+        print(f"Final speech confirmation: {speech_confirmed}")
+
+        if speech_confirmed:
+            # Process full question with existing OpenAI flow
+            await self._process_confirmed_question(
+                audio_data_b64, assistant_id, user_id, query
+            )
+        else:
+            await self.send(
+                json.dumps(
+                    {
+                        "type": "vad_status",
+                        "message": "Listening...",
+                        "status": "waiting_for_speech",
+                    }
+                )
+            )
+
+
+    def _convert_audio_to_vad_format(self):
+        # Convert webm/wav to raw PCM
+        try:
+            audio = AudioSegment.from_file(
+                io.BytesIO(self.audio_buffer), 
+                format="wav"  # Explicitly specify WAV format
+            )
+            print(f"Original audio info - Channels: {audio.channels}, Frame rate: {audio.frame_rate}, Duration: {len(audio)}ms")
+            
+            audio = audio.set_frame_rate(self.vad_state["sample_rate"]).set_channels(1)
+            print(f"Converted audio info - Channels: {audio.channels}, Frame rate: {audio.frame_rate}, Duration: {len(audio)}ms")
+            
+            samples = np.array(audio.get_array_of_samples())
+            print(f"Audio samples - dtype: {samples.dtype}, shape: {samples.shape}, min: {np.min(samples)}, max: {np.max(samples)}")
+            return samples
+        except Exception as e:
+            print(f"Error converting audio: {str(e)}")
+            return np.array([])
+
+
+    async def _detect_speech(self, audio_np):
+        if len(audio_np) == 0:
+            print("Audio array is empty. Skipping VAD detection.")
+            return False
+
+        try:
+            print(f"VAD Input - dtype: {audio_np.dtype}, shape: {audio_np.shape}, min: {np.min(audio_np)}, max: {np.max(audio_np)}")
+            
+            # Convert numpy array to Torch tensor
+            audio_tensor = torch.from_numpy(audio_np).float()
+            
+            # Run speech detection using optimized parameters
+            timestamps = get_speech_timestamps(
+                audio_tensor,
+                model,
+                threshold=0.4,
+                min_speech_duration_ms=150,
+                min_silence_duration_ms=300,
+                window_size_samples=30,
+            )
+
+            print(f"Raw VAD output: {timestamps}")
+            print(f"Detected speech timestamps: {timestamps}")
+            return len(timestamps) > 0
+        except Exception as e:
+            print(f"Error in VAD detection: {str(e)}")
+            return False
+
+
+    async def _process_confirmed_question(
+        self, audio_data_b64, assistant_id, user_id, query
+    ):
+        
+        if self.is_playing:
+            await self.stop_audio_playback()    
         get_context = await get_context_async(query=query, assistant_id=assistant_id)
+
 
         assistant_config_data = await get_assistant_config_async(assistant_id, user_id)
 
         print(f"\n\n Assistant Config Data: {assistant_config_data}\n\n")
 
-        chat_history = await get_history_async(assistant_id=assistant_id, user_id=user_id)
-
+        chat_history = await get_history_async(
+            assistant_id=assistant_id, user_id=user_id
+        )
 
         print(f"Chat history in Consumers: {chat_history}")
 
         chat_summary = next(
-                (entry["summary"] for entry in chat_history if "summary" in entry),
-                "No summary available. Use chat history only to generate chat summary."
-            )
+            (entry["summary"] for entry in chat_history if "summary" in entry),
+            "No summary available. Use chat history only to generate chat summary.",
+        )
 
         system_message = f"""
         You are an adaptive AI educator specializing in {assistant_config_data.get('topic')} in {assistant_config_data.get('subject')}. Your role is to:
@@ -193,8 +307,12 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
         Focus on maintaining a clear flow: explanation → understanding check → exercise generation → solution review. Always proceed to exercises after confirmed understanding.
         """
 
-
         try:
+
+            # Now that the old audio is stopped, process the new response
+            self.is_playing = True
+            
+            
             completion = client.chat.completions.create(
                 model=self.MODEL_NAME,
                 modalities=["text", "audio"],
@@ -204,10 +322,7 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
                 # stream_options={"include_usage": True},
                 max_tokens=1000,
                 messages=[
-                    {
-                        "role": "system",
-                        "content": system_message
-                    },
+                    {"role": "system", "content": system_message},
                     {
                         "role": "user",
                         "content": [
@@ -215,12 +330,12 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
                                 "type": "input_audio",
                                 "input_audio": {
                                     "data": audio_data_b64,
-                                    "format": "wav"
-                                }
+                                    "format": "wav",
+                                },
                             }
-                        ]
+                        ],
                     },
-                ]
+                ],
             )
 
 
@@ -289,5 +404,18 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
                     }
                 )
             )
+        # After processing, set flag back to False
+        self.is_playing = False
 
 
+    async def stop_audio_playback(self):
+        """
+        Notify the client to stop the current audio playback.
+        """
+        await self.send(
+            json.dumps({
+                "type": "audio_control",
+                "message": "stop_audio",  # Message to stop audio
+                "status": "stop",
+            })
+        )

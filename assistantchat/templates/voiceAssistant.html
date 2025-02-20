@@ -43,6 +43,7 @@
     <button id="stopBtn" disabled>Stop Listening</button>
     <div id="messages"></div>
 
+  
     <script>
       // =======================
       // Global Variables
@@ -80,6 +81,10 @@
       // Configuration constants
       const SILENCE_DURATION = 3000;   // 3 seconds
       const AMPLITUDE_THRESHOLD = 10;    // Adjust based on your noise floor
+
+      // Modified recording logic
+      let chunkInterval;
+      const CHUNK_DURATION = 5000; // 5 seconds
 
       // =======================
       // WebSocket Functions
@@ -144,6 +149,7 @@
   };
 }
 
+      
       // =======================
       // Recording Functions
       // =======================
@@ -199,6 +205,18 @@
         document.getElementById("startBtn").disabled = true;
         document.getElementById("stopBtn").disabled = false;
         addMessage("System", "Recording started...");
+
+        // Send audio chunks every 5 seconds
+        chunkInterval = setInterval(() => {
+          if (leftChannelData.length > 0) {
+            const merged = mergeBuffers(leftChannelData, recordingLength);
+            const wavBlob = encodeWAV(merged, sampleRate);
+            sendAudioToServer(wavBlob);
+            // Reset buffers
+            leftChannelData = [];
+            recordingLength = 0;
+          }
+        }, CHUNK_DURATION);
       }
 
       function monitorAudio() {
@@ -271,12 +289,13 @@
         if (recordingLength > 0) {
           const mergedBuffer = mergeBuffers(leftChannelData, recordingLength);
           const wavBlob = encodeWAV(mergedBuffer, sampleRate);
-          sendAudioToServer(wavBlob);
+          // sendAudioToServer(wavBlob);
         }
         
         // Reset recording buffers
         leftChannelData = [];
         recordingLength = 0;
+        clearInterval(chunkInterval);
       }
       
       // Merge an array of Float32Arrays into one
@@ -549,6 +568,13 @@
         }
       }
       
+      function updateVadStatus(data) {
+        const statusElement = document.createElement('div');
+        statusElement.className = `vad-status ${data.status}`;
+        statusElement.textContent = data.message;
+        document.getElementById('messages').appendChild(statusElement);
+      }
+      
       // =======================
       // Event Listeners
       // =======================
@@ -566,6 +592,12 @@
       window.addEventListener("beforeunload", () => {
         if (socket) socket.close();
       });
+
+      function stopAudioPlayback() {
+        const audioElement = document.getElementById('myAudio');
+        audioElement.pause();
+        audioElement.currentTime = 0;
+      }
     </script>
   </body>
 </html>
