@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-95a2r*)4pi@50=l5zd+%w8zf5bqs3ais2ke_!ypton$9c%zq89
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['ajprof-pi.vercel.app', 'profai.netlify.app', 'localhost', '127.0.0.1', '.vercel.app', '.up.railway.app', 'aiprof.up.railway.app']
+ALLOWED_HOSTS = ['ajprof-pi.vercel.app', 'profai.netlify.app', 'localhost', '127.0.0.1', '.vercel.app', '.up.railway.app', 'aiprof.up.railway.app', "aiprof-preprod.up.railway.app", ]
 
 
 # Application definition
@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'allauth_ui',
     "slippers",
     "django_htmx",
+    "channels",
 ]
 
 MIDDLEWARE = [
@@ -94,6 +95,18 @@ TEMPLATES = [
 WSGI_APPLICATION = 'app.wsgi.application'
 ASGI_APPLICATION = 'app.asgi.application'
 
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        # "BACKEND": "channels_redis.core.RedisChannelLayer",
+        # "CONFIG": {
+        #     "hosts": [os.getenv("REDIS_URL")],
+        # },
+
+
+    }
+}
 
 # print("User:", os.getenv('SUPABASE_USER'))
 # print("Password:", os.getenv('SUPABASE_PASS'))
@@ -183,10 +196,9 @@ SUPABASE_KEY = os.getenv('SUPABASE_KEY') or 'your-supabase-key'
 CORS_ALLOW_ALL_ORIGINS = True
 
 # For production, specify allowed origins
-# CORS_ALLOWED_ORIGINS = [
-#     "http://example.com",
-#     "https://example.com",
-# ]
+CORS_ALLOWED_ORIGINS = [
+    "https://aiprof-preprod.up.railway.app",
+]
 
 
 # Provider specific settings
@@ -234,7 +246,7 @@ SOCIALACCOUNT_AUTO_SIGNUP = True
 # AllAuth UI theme
 ALLAUTH_UI_THEME='cupcake'
 
-CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app', 'https://*.up.railway.app']
+CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app', 'https://*.up.railway.app', "https://aiprof-preprod.up.railway.app"]
 
 
 # Email settings

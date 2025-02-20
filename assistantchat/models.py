@@ -115,6 +115,7 @@ class AssistantNotes(models.Model):
         to_field='id'
         
         )
+    question = models.TextField(blank=True, null=True)
     notes = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True, null=True)
 
