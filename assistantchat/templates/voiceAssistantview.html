@@ -179,6 +179,14 @@
 
     socket.onmessage = async (event) => {
       const data = JSON.parse(event.data);
+      if (data.type === "transcript") {
+        appendMessage(data.message, data.assistant_id, true);
+      }
+
+      if (data.type === "assistant_response" && data.message) {
+        appendMessage(data.message, data.assistant_id, false);
+      }
+      
       if (data.type === "assistant_response" && data.audio_data) {
         audioQueue.push(data.audio_data);
         console.log("Added to queue. Current queue:", audioQueue);

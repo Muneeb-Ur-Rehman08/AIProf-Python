@@ -86,6 +86,17 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
 
             # "audio_data" => user has sent base64 WAV for STT
             elif "audio_data" in data:
+                # Get transcript first
+                transcript = await self.get_transcript_from_audio(data["audio_data"], data["assistant_id"])
+                
+                # Send transcript to client immediately
+                await self.send(json.dumps({
+                    "type": "transcript",
+                    "message": transcript,
+                    "assistant_id": data["assistant_id"]
+                }))
+                
+                # Process response with the obtained transcript
                 await self.get_response_from_audio(
                     audio_data_b64=data["audio_data"],
                     query=query,
@@ -97,6 +108,31 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
             # "transcript" => user typed or recognized text
             elif "transcript" in data:
                 await self.get_chat_response(data["transcript"])
+
+    async def get_transcript_from_audio(self, audio_data_b64, assistant_id):
+        """
+        Get transcript from audio data using Whisper model.
+        """
+        try:
+            # Decode base64 audio data
+            audio_bytes = base64.b64decode(audio_data_b64)
+            
+            # Get transcription using Whisper
+            transcript = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=("audio.wav", audio_bytes, "audio/wav")
+            )
+            return transcript.text
+            
+        except Exception as e:
+            error_message = f"Transcription error: {str(e)}"
+            await self.send(json.dumps({
+                "type": "error",
+                "message": error_message,
+                "audio_data": None,
+                "assistant_id": assistant_id,
+            }))
+            return ""
 
     async def send_greeting(self):
         """
@@ -259,6 +295,7 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
                                 "type": "assistant_response",
                                 "message": sent,
                                 "audio_data": audio_base64,
+                                "assistant_id": assistant_id,
                                 "id": chunk.id
                             }))
                         # Retain any incomplete sentence in the buffer and reset the audio buffer.
@@ -272,6 +309,7 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
                     "type": "assistant_response",
                     "message": buffer_text,
                     "audio_data": audio_base64,
+                    "assistant_id": assistant_id,
                     "id": chunk.id  # using the last chunk's id or a new unique identifier
                 }))
 
@@ -281,5 +319,6 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
                 "type": "error",
                 "message": error_message,
                 "audio_data": None,
+                "assistant_id": assistant_id,
             }))
 
