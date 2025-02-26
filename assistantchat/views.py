@@ -23,6 +23,7 @@ from app.modals.chat import get_llm
 from langchain_core.messages import HumanMessage
 import time
 import sys
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -276,7 +277,7 @@ def create_notes(request, assistant_id):
         return HttpResponseBadRequest("Invalid request method.")
 
 
-def create_note(request, assistant_id):
+def study_brief_note(request, assistant_id):
     user_id = request.user.id
     user = User.objects.get(id=user_id)
     assistant = Assistant.objects.get(id=assistant_id)
@@ -300,14 +301,14 @@ def create_note(request, assistant_id):
                 return HttpResponseBadRequest("No chat history found")
             
             # Get the last message pair (user prompt and AI response)
-            last_messages = chat_history[-2:]  # Get last two messages
+            # last_messages = chat_history[-2:]  # Get last two messages
             
-            if len(last_messages) < 2:
-                return HttpResponseBadRequest("Insufficient chat history")
+            # if len(last_messages) < 2:
+            #     return HttpResponseBadRequest("Insufficient chat history")
                 
             chat_history_str = "\n".join([
-                f"Human: {chat['User']}\nAssistant: {chat['AI']}"
-                for chat in last_messages
+                f"{chat['AI']}"
+                for chat in chat_history
             ])
             
             # Get the ID of the button that triggered the request
@@ -413,11 +414,13 @@ def quiz_view(request, assistant_id):
         )
         
         # Generate questions using LLM
-        questions_data = generate_quiz_questions(context)
+        question_data = generate_quiz_questions(context)
+
+        questions_data = extract_list_of_dicts(question_data)
 
         logger.info(f"Questions: {questions_data}")
         # Store questions in database
-        for q_data in eval(questions_data):
+        for q_data in questions_data:
             Question.objects.create(
                 quiz=quiz,
                 question_text=q_data['question_text'],
@@ -612,7 +615,7 @@ def generate_notes(
         - The notes should consist of 3 to 4 bullet points that cover the entire response.
         - Highlight essential aspects and key takeaways related to the topic.
 
-        Format the response in bullet points without using markdown.
+        
 
         Context:
         - Question: {prompt}
@@ -639,7 +642,7 @@ def generate_quiz_questions(
     Generate 5 multiple choice questions based on this context:
     {context}
     
-    Format: Without adding any extra text or character in response return pure list of dict. Return a list of dictionaries with keys:
+    Format: Without adding any extra text or character in response return pure list of dict with keys:
     - question_text
     - option_a
     - option_b
@@ -777,3 +780,21 @@ def assistant_config(assistant_id, user_id):
             "user_name": user.first_name,
             "prompt_instructions": mermaid_instructions
         }
+
+
+def extract_list_of_dicts(text):
+    # Try to find a pattern that looks like a JSON list
+    pattern = r'\[\s*\{.*\}\s*\]'
+    match = re.search(pattern, text, re.DOTALL)
+    
+    if match:
+        json_str = match.group(0)
+        try:
+            # Parse the JSON string into a Python object
+            result = json.loads(json_str)
+            if isinstance(result, list) and all(isinstance(item, dict) for item in result):
+                return result
+        except json.JSONDecodeError:
+            pass
+    
+    return None
