@@ -1,10 +1,12 @@
+{% load markdown_extras %}
+
 {% if note %}
     {% if all_notes %}
     {% for notes in note %}
       <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50" 
            id="note-{{ notes.id }}">
-        <h4 class="font-medium">Question: {{ notes.question|truncatechars:50 }}</h4>
-        <p class="mt-1 text-sm text-gray-500">{{ notes.notes|truncatechars:200 }}</p>
+        
+        <div class="mt-1 text-sm text-gray-500">{{ notes.notes | truncatechars:200 | markdown | safe }}</div>
         <div class="mt-2 flex items-center justify-between">
           <p class="text-xs text-gray-400">{{ notes.created_at|timesince }} ago</p>
           <button hx-delete="/notes/del/{{ notes.id }}/"
@@ -25,8 +27,8 @@
     {% else %}
     <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50" 
          id="note-{{ note.id }}">
-      <h4 class="font-medium">Question: {{ note.question|truncatechars:50 }}</h4>
-      <p class="mt-1 text-sm text-gray-500">{{ note.notes|truncatechars:200 }}</p>
+      
+      <div class="mt-1 text-sm text-gray-500">{{ note.notes| truncatechars:200 | markdown | safe }}</div>
       <div class="mt-2 flex items-center justify-between">
         <p class="text-xs text-gray-400">{{ note.created_at|timesince }} ago</p>
         <button hx-delete="/notes/del/{{ note.id }}/"
