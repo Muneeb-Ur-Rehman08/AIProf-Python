@@ -1,31 +1,31 @@
-<div>
-    <h2>{{ question.question_text }}</h2>
+<form hx-post="{% url 'quiz_generate' assistant.id %}"
+      hx-target="#quiz-content"
+      hx-swap="innerHTML">
+    {% csrf_token %}
+    
+    <input type="hidden" name="quiz_id" value="{{ quiz.id }}">
 
-    <form hx-post="{% url 'quiz_generate' assistant.id %}" 
-          hx-target="#quiz-content" 
-          hx-swap="innerHTML"
-          hx-indicator=".header-progress">
-        {% csrf_token %}
-        <input type="hidden" name="question_id" value="{{ question.id }}">
-        
-        <input type="radio" name="answer" value="A" id="option_a">
-        <label for="option_a">{{ question.option_a }}</label><br>
+    {% for question in questions %}
+        <div class="mb-6">
+            <h3 class="text-lg font-bold mb-2">Q: {{ question.question_text }}</h3>
+            
+            <div class="mb-4">
+                <input type="radio" name="answer_{{ question.id }}" value="A" id="option_a_{{ question.id }}">
+                <label for="option_a_{{ question.id }}">{{ question.option_a }}</label><br>
 
-        <input type="radio" name="answer" value="B" id="option_b">
-        <label for="option_b">{{ question.option_b }}</label><br>
+                <input type="radio" name="answer_{{ question.id }}" value="B" id="option_b_{{ question.id }}">
+                <label for="option_b_{{ question.id }}">{{ question.option_b }}</label><br>
 
-        <input type="radio" name="answer" value="C" id="option_c">
-        <label for="option_c">{{ question.option_c }}</label><br>
+                <input type="radio" name="answer_{{ question.id }}" value="C" id="option_c_{{ question.id }}">
+                <label for="option_c_{{ question.id }}">{{ question.option_c }}</label><br>
 
-        <input type="radio" name="answer" value="D" id="option_d">
-        <label for="option_d">{{ question.option_d }}</label><br>
-
-        <button type="submit" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded">Submit Answer</button>
-    </form>
-
-    {% if previous_result %}
-        <div class="mt-4">
-            <p>Previous Question was: {% if previous_result.is_correct %}Correct!{% else %}Incorrect! The correct answer was {{ previous_result.correct_answer }}.{% endif %}</p>
+                <input type="radio" name="answer_{{ question.id }}" value="D" id="option_d_{{ question.id }}">
+                <label for="option_d_{{ question.id }}">{{ question.option_d }}</label><br>
+            </div>
         </div>
-    {% endif %}
-</div>
+    {% endfor %}
+    
+    <button type="submit" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded">
+        Submit Quiz
+    </button>
+</form>

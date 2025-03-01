@@ -384,43 +384,44 @@ def submit_review(request, assistant_id):
 
     return JsonResponse({"status": "error", "message": "Invalid submission."}, status=400)
 
-
 @login_required
 @require_http_methods(["GET", "POST"])
 def quiz_view(request, assistant_id):
-
     user = User.objects.get(id=request.user.id)
     assistant = Assistant.objects.get(id=assistant_id)
 
     if request.method == "GET":
-        
+        # Add logging to debug
+        logger.info(f"Fetching chat history for assistant: {assistant_id}, user: {user.id}")
 
         # Get chat history from memory store
         chat_history, keys = get_history(assistant_id, str(user.id))
         
         if not chat_history:
+            logger.warning(f"No chat history found for assistant: {assistant_id}, user: {user.id}")
             return HttpResponseBadRequest("No chat history found")
 
         context = "\n".join([
             f"{chat['AI']}"
             for chat in chat_history
         ])
-        
+
+        logger.info(f"Generated context for quiz: {context}")
+
         # Generate or retrieve existing quiz
         quiz = Quiz.objects.create(
             assistant_id=assistant,
             user_id=user,
             context=context
         )
-        
+
         # Generate questions using LLM
-        question_data = generate_quiz_questions(context)
+        questions_data = generate_quiz_questions(context)
+        questions_dict = extract_list_of_dicts(questions_data)
+        logger.info(f"Questions generated: {questions_dict}")
 
-        questions_data = extract_list_of_dicts(question_data)
-
-        logger.info(f"Questions: {questions_data}")
         # Store questions in database
-        for q_data in questions_data:
+        for q_data in questions_dict:
             Question.objects.create(
                 quiz=quiz,
                 question_text=q_data['question_text'],
@@ -430,7 +431,7 @@ def quiz_view(request, assistant_id):
                 option_d=q_data['option_d'],
                 correct_answer=q_data['correct_answer']
             )
-        
+
         # Create quiz attempt
         quiz_attempt = QuizAttempt.objects.create(
             user_id=user,
@@ -438,72 +439,46 @@ def quiz_view(request, assistant_id):
             quiz=quiz
         )
         
-        # Return first question template
         return render(request, 'quiz_question.html', {
             'quiz': quiz,
-            'question': quiz.questions.first(),
+            'questions': quiz.questions.all(),
             'attempt': quiz_attempt,
             'assistant': assistant
         })
-
     elif request.method == "POST":
-        question_id = request.POST.get('question_id')
-        selected_option = request.POST.get('answer')
-
-
-        logger.info(f"Question id: {question_id} selected option: {selected_option}")
-
-        # Fetch the question
-        question = Question.objects.get(id=question_id)
+        quiz_id = request.POST.get('quiz_id')
+        quiz = Quiz.objects.get(id=quiz_id)
+        
         quiz_attempt = QuizAttempt.objects.get(
-            user_id=user,
-            assistant_id=assistant,
-            quiz=question.quiz,
+            user_id=request.user.id,
+            assistant_id=assistant_id,
+            quiz=quiz,
             completed=False
         )
+        
+        # Iterate over all submitted answers
+        for question in quiz.questions.all():
+            selected_option = request.POST.get(f'answer_{question.id}')  # Get answer for each question
+            
+            is_correct = selected_option == question.correct_answer
+            QuestionAttempt.objects.create(
+                quiz_attempt=quiz_attempt,
+                question=question,
+                selected_option=selected_option,
+                is_correct=is_correct
+            )
+        
+        # Complete the quiz
+        quiz_attempt.completed = True
+        quiz_attempt.completed_at = timezone.now()
+        quiz_attempt.total_correct = quiz_attempt.questionattempt_set.filter(is_correct=True).count()
+        quiz_attempt.save()
 
-        # Record the user's answer and determine if it is correct
-        is_correct = selected_option == question.correct_answer
-        QuestionAttempt.objects.create(
-            quiz_attempt=quiz_attempt,
-            question=question,
-            selected_option=selected_option,
-            is_correct=is_correct
-        )
-
-        # Get the next question or finish the quiz
-        next_question = question.quiz.questions.filter(id__gt=question.id).first()
-
-        if next_question:
-            return render(request, 'quiz_question.html', {
-                'quiz': question.quiz,
-                'question': next_question,
-                'attempt': quiz_attempt,
-                'previous_result': {
-                    'is_correct': is_correct,
-                    'correct_answer': question.correct_answer
-                },
-                'assistant': assistant
-            })
-        else:
-            # Complete the quiz
-            quiz_attempt.completed = True
-            quiz_attempt.completed_at = timezone.now()
-            quiz_attempt.total_correct = quiz_attempt.questionattempt_set.filter(is_correct=True).count()
-            quiz_attempt.save()
-
-            # Calculate the percentage of correct answers
-            total_questions = quiz_attempt.questionattempt_set.count()
-            correct_percentage = (quiz_attempt.total_correct / total_questions) * 100 if total_questions > 0 else 0
-
-
-            return render(request, 'quiz_result.html', {
-                'attempt': quiz_attempt,
-                'assistant': assistant,
-                'correct_percentage': correct_percentage
-            })
-
-    return HttpResponseBadRequest("Invalid request method")
+        # Redirect to the quiz result page
+        return render(request, 'quiz_result.html', {
+            'attempt': quiz_attempt,
+            'assistant': assistant
+        })
 
 
 @login_required
