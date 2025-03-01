@@ -402,7 +402,7 @@ def quiz_view(request, assistant_id):
             return HttpResponseBadRequest("No chat history found")
 
         context = "\n".join([
-            f"Human: {chat['User']}\nAssistant: {chat['AI']}"
+            f"{chat['AI']}"
             for chat in chat_history
         ])
 
@@ -417,10 +417,11 @@ def quiz_view(request, assistant_id):
 
         # Generate questions using LLM
         questions_data = generate_quiz_questions(context)
-        logger.info(f"Questions generated: {questions_data}")
+        questions_dict = extract_list_of_dicts(questions_data)
+        logger.info(f"Questions generated: {questions_dict}")
 
         # Store questions in database
-        for q_data in eval(questions_data):
+        for q_data in questions_dict:
             Question.objects.create(
                 quiz=quiz,
                 question_text=q_data['question_text'],
