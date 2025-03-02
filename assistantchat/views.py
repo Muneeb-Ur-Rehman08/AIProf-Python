@@ -474,10 +474,15 @@ def quiz_view(request, assistant_id):
         quiz_attempt.total_correct = quiz_attempt.questionattempt_set.filter(is_correct=True).count()
         quiz_attempt.save()
 
+        # Calculate the percentage of correct answers
+        total_questions = quiz_attempt.questionattempt_set.count()
+        correct_percentage = (quiz_attempt.total_correct / total_questions) * 100 if total_questions > 0 else 0
+
         # Redirect to the quiz result page
         return render(request, 'quiz_result.html', {
             'attempt': quiz_attempt,
-            'assistant': assistant
+            'assistant': assistant,
+            'correct_percentage': correct_percentage
         })
 
 
