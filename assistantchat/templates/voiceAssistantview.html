@@ -4,7 +4,7 @@
   id="voiceAssistantContainer"
 >
   <div
-    class="mx-auto max-w-3xl rounded-[24px] border shadow-md p-4 flex flex-reverse items-center justify-around"
+    class="mx-auto max-w-3xl rounded-[24px] border shadow-md p-4 flex flex-reverse items-center justify-between gap-x-5"
   >
     <div class="flex items-center justify-between mt-3">
       <div class="flex gap-x-1.5">
@@ -75,9 +75,7 @@
       ></div>
       <canvas
         id="audioVisualizer"
-        width="300"
-        height="56"
-        class="invisible hidden"
+        class="invisible hidden w-full h-14"
       ></canvas>
     </div>
   </div>
@@ -178,6 +176,18 @@
     };
   }
 
+  function resizeCanvas() {
+    const canvas = document.getElementById('audioVisualizer');
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  }
+
+  // Add resize listener
+  window.addEventListener('resize', resizeCanvas);
+
+  // Initial resize
+  resizeCanvas();
+
   async function playAudio(audioData) {
     const micButton = document.getElementById("micButton");
     const stopButton = document.getElementById("stopAudioButton");
@@ -188,11 +198,12 @@
     micButton.style.display = "none";
     stopButton.style.display = "inline-flex";
     canvas.classList.remove("hidden", "invisible");
+    resizeCanvas();
     document.getElementById("status").classList.add("hidden");
 
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
     let analyser = audioContext.createAnalyser();
-    analyser.fftSize = 64;
+    analyser.fftSize = 256;
 
     try {
         const audioBuffer = await audioContext.decodeAudioData(audioData);
@@ -214,12 +225,13 @@
             canvasCtx.fillStyle = "rgb(255, 255, 255)";
             canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
 
-            const barWidth = (canvas.width / bufferLength) * 1.5;
+            const barWidth = (canvas.width / bufferLength) * 2.5;
             let x = 0;
 
             for (let i = 0; i < bufferLength; i++) {
-                const barHeight = dataArray[i] / 2;
-                canvasCtx.fillStyle = `rgb(50, ${barHeight + 100}, 50)`;
+                const barHeight = (dataArray[i] / 2) * (canvas.height / 100);
+                const greenIntensity = Math.min(255, 50 + dataArray[i] * 2); // Dynamic green gradient
+                canvasCtx.fillStyle = `rgb(0, ${greenIntensity}, 0)`;
                 canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
                 x += barWidth + 1;
             }
@@ -379,7 +391,7 @@
       window.webkitAudioContext)();
     const source = audioContext.createMediaStreamSource(stream);
     const analyser = audioContext.createAnalyser();
-    analyser.fftSize = 64;
+    analyser.fftSize = 2048;  // Better for waveform visualization
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 
@@ -388,31 +400,37 @@
     const canvas = document.getElementById("audioVisualizer");
     const canvasCtx = canvas.getContext("2d");
     canvas.classList.remove("hidden", "invisible");
+    resizeCanvas();
     document.getElementById("status").classList.add("hidden");
 
     function draw() {
       requestAnimationFrame(draw);
-      analyser.getByteFrequencyData(dataArray);
+      analyser.getByteTimeDomainData(dataArray); // For waveform visualization
 
       canvasCtx.fillStyle = "rgb(255, 255, 255)";
       canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const barWidth = (canvas.width / bufferLength) * 1.5;
+      canvasCtx.lineWidth = 2;
+      canvasCtx.strokeStyle = "#00ff00"; // Bright green waveform
+      canvasCtx.beginPath();
+
+      const sliceWidth = canvas.width * 1.0 / bufferLength;
       let x = 0;
 
       for (let i = 0; i < bufferLength; i++) {
-        const barHeight = dataArray[i] / 2;
-        
-        canvasCtx.fillStyle = `rgb(50, ${barHeight + 100}, 50)`;
-        canvasCtx.fillRect(
-          x,
-          canvas.height - barHeight,
-          barWidth,
-          barHeight
-        );
+        const y = v * canvas.height/2;
 
-        x += barWidth + 1;
+        if(i === 0) {
+          canvasCtx.moveTo(x, y);
+        } else {
+          canvasCtx.lineTo(x, y);
+        }
+
+        x += sliceWidth;
       }
+
+      canvasCtx.lineTo(canvas.width, canvas.height/2);
+      canvasCtx.stroke();
     }
 
     draw();
