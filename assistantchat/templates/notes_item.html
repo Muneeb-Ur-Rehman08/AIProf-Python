@@ -6,7 +6,10 @@
       <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50" 
            id="note-{{ notes.id }}">
         
-        <div class="mt-1 text-sm text-gray-500">{{ notes.notes | truncatechars:200 | markdown | safe }}</div>
+        <div class="mt-1 text-sm text-gray-500 cursor-pointer" 
+             onclick="openNoteModal('{{ notes.id }}')">
+            {{ notes.notes | truncatechars:200 | markdown | safe }}
+        </div>
         <div class="mt-2 flex items-center justify-between">
           <p class="text-xs text-gray-400">{{ notes.created_at|timesince }} ago</p>
           <button hx-delete="/notes/del/{{ notes.id }}/"
@@ -23,12 +26,40 @@
           </button>
         </div>
       </div>
+
+      <!-- Modal -->
+      <div id="noteModal{{ notes.id }}" 
+           class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50"
+           onclick="closeNoteModal('{{ notes.id }}')">
+        <div class="bg-white rounded-lg p-6 w-11/12 max-w-xl max-h-[80vh] overflow-y-auto"
+             onclick="event.stopPropagation()">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold">Note Details</h2>
+            <button onclick="closeNoteModal('{{ notes.id }}')" 
+                    class="text-gray-500 hover:text-gray-700">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="prose max-w-full">
+            {{ notes.notes | markdown | safe }}
+          </div>
+          <div class="mt-4 text-right text-sm text-gray-500">
+            Created {{ notes.created_at|timesince }} ago
+          </div>
+        </div>
+      </div>
     {% endfor %}
     {% else %}
     <div class="mb-4 rounded-lg border p-4 hover:bg-gray-50" 
          id="note-{{ note.id }}">
       
-      <div class="mt-1 text-sm text-gray-500">{{ note.notes| truncatechars:200 | markdown | safe }}</div>
+      <div class="mt-1 text-sm text-gray-500 cursor-pointer" 
+           onclick="openNoteModal('{{ note.id }}')">
+          {{ note.notes | truncatechars:200 | markdown | safe }}
+      </div>
       <div class="mt-2 flex items-center justify-between">
         <p class="text-xs text-gray-400">{{ note.created_at|timesince }} ago</p>
         <button hx-delete="/notes/del/{{ note.id }}/"
@@ -51,3 +82,32 @@
       <p class="mt-1 text-sm text-gray-500">You do not have any notes.</p>
     </div>
 {% endif %}
+
+<script>
+function openNoteModal(noteId) {
+    const modal = document.getElementById('noteModal' + noteId);
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+}
+
+function closeNoteModal(noteId) {
+    const modal = document.getElementById('noteModal' + noteId);
+    if (modal) {
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+    }
+}
+
+// Optional: Close modal on Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const openModals = document.querySelectorAll('[id^="noteModal"]:not(.hidden)');
+        openModals.forEach(modal => {
+            const noteId = modal.id.replace('noteModal', '');
+            closeNoteModal(noteId);
+        });
+    }
+});
+</script>
