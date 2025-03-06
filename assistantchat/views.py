@@ -175,8 +175,6 @@ def chat_query(request, ass_id=None):
                             'isLastChunk': False
                         }) + "\n"
                         
-                        # Explicitly flush the output buffer to ensure streaming
-                        sys.stdout.flush()
 
                 save_history(assistant_id, user_id, prompt, full_response)
 
@@ -187,7 +185,6 @@ def chat_query(request, ass_id=None):
                     'isLastChunk': True
                 }) + "\n"
 
-                sys.stdout.flush()
                 
             except Exception as e:
                 logger.error(f"Error in chat query response: {e}")
@@ -197,7 +194,7 @@ def chat_query(request, ass_id=None):
                     'showReview': show_review,
                     'isLastChunk': True
                 }) + "\n"
-                sys.stdout.flush()
+                
 
         return StreamingHttpResponse(response_stream(), content_type='text/event-stream')
 
