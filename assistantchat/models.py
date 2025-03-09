@@ -180,3 +180,72 @@ class KnowledgeAssessment(models.Model):
         if answers is not None:
             self.user_answers = answers
         self.save()
+
+
+
+class Quiz(models.Model):
+    user_id = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        default=None,
+        null=True,
+        db_column="user_id",
+        to_field='id'
+        
+    )
+    
+    assistant_id = models.ForeignKey(
+        Assistant, 
+        on_delete=models.CASCADE,
+        db_column="assistant_id",
+        to_field='id'
+        
+        )
+    context = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Quiz for {self.assistant} - {self.created_at}"
+
+class Question(models.Model):
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='questions')
+    question_text = models.TextField()
+    option_a = models.CharField(max_length=500)
+    option_b = models.CharField(max_length=500)
+    option_c = models.CharField(max_length=500)
+    option_d = models.CharField(max_length=500)
+    correct_answer = models.CharField(max_length=1)  # 'A', 'B', 'C', or 'D'
+
+    def __str__(self):
+        return self.question_text[:50]
+
+class QuizAttempt(models.Model):
+    user_id = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        default=None,
+        null=True,
+        db_column="user_id",
+        to_field='id'
+        
+    )
+    
+    assistant_id = models.ForeignKey(
+        Assistant, 
+        on_delete=models.CASCADE,
+        db_column="assistant_id",
+        to_field='id'
+        
+        )
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
+    total_correct = models.IntegerField(default=0)
+    completed = models.BooleanField(default=False)
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+class QuestionAttempt(models.Model):
+    quiz_attempt = models.ForeignKey(QuizAttempt, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    selected_option = models.CharField(max_length=1)  # 'A', 'B', 'C', or 'D'
+    is_correct = models.BooleanField()
+    answered_at = models.DateTimeField(auto_now_add=True)
