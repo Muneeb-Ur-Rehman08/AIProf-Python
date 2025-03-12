@@ -9,6 +9,7 @@ window.addEventListener('resize', () => {
 });
 
 function appendMessage(text, assistant_id, isUser = false) {
+    console.log("Text we get in append message", text);
     if (isUser) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `bg-purple-200 mb-4 rounded px-2.5 py-3 max-w-[60%] w-fit ml-auto text-black first-letter:uppercase first-letter:bold first-letter:text-xl`;
@@ -127,10 +128,10 @@ function processMarkdownWithMermaid(divElement, textChunk) {
         
         setTimeout(() => {
             try {
-                console.warn("Initializing Mermaid.js for rendering");
+                
                 mermaid.initialize({startOnLoad: false});
                 mermaid.init(undefined, divElement.querySelectorAll('.mermaid'));
-                console.info("Mermaid diagrams rendered successfully.");
+                
             } catch (err) {
                 console.error("Error rendering Mermaid diagrams:", err);
             }
@@ -198,22 +199,22 @@ function stripMarkdown(markdownText) {
     async function sendPayload(assistant_id) {
     const promptInput = document.getElementById('prompt-input');
     const promptValue = promptInput.value.trim();
-
+    
     if (!promptValue) return;
-
-    // Append the user's message
+    
+    // Append messages
     appendMessage(promptValue, assistant_id, true);
-    // Append the loader message (assistant-message-pending)
     appendMessage(createLoadingAnimation(), assistant_id, false);
-
+    
     promptInput.value = '';
-
+    
     const payload = {
         message: promptValue,
         id: assistant_id
     };
-
+    
     try {
+        console.log("Sending fetch request");
         const response = await fetch('/chat/', {
             method: 'POST',
             headers: {
@@ -222,68 +223,82 @@ function stripMarkdown(markdownText) {
             },
             body: JSON.stringify(payload)
         });
-
+        
+        console.log("Response received, starting to process stream");
+        
         const reader = response.body.getReader();
-        let buffer = '';
-        const decoder = new TextDecoder();
 
-        // Read the stream progressively
+        console.log("reader", reader)
+        const decoder = new TextDecoder();
+        let buffer = '';
+        
         const processStream = async ({ done, value }) => {
             if (done) {
-                // Streaming complete - remove the loader and show speak/plus buttons
+                console.log("Stream complete");
                 const pendingMessage = document.querySelector('.assistant-message-pending');
                 if (pendingMessage) {
                     pendingMessage.classList.remove('assistant-message-pending');
-                    // Show buttons (speak/plus)
                     const buttonGroup = pendingMessage.querySelector('.button-group');
                     if (buttonGroup) {
-                        buttonGroup.style.display = 'inline-flex'; // Show the buttons
+                        buttonGroup.style.display = 'inline-flex';
                     }
                 }
                 return;
             }
-
-            // Decode the current chunk
-            buffer += decoder.decode(value, { stream: true });
-
-            // Extract valid JSON objects from the buffer
-            const messages = buffer.split('\n').filter(line => line.trim() !== '');
-
-            messages.forEach(message => {
-                try {
-                    const parsedChunk = JSON.parse(message);
-
-                    // Process each parsed JSON chunk
-                    appendMessage(parsedChunk.text, assistant_id, false);
-
-                    // Handle the last chunk (e.g., show buttons)
-                    if (parsedChunk.isLastChunk) {
-                        let assistantMessageDiv = document.querySelector('.assistant-message-pending');
-                        if (assistantMessageDiv) {
-                            const buttonGroup = assistantMessageDiv.querySelector('.button-group');
-                            if (buttonGroup) {
-                                buttonGroup.style.display = 'inline-flex'; // Show the buttons
+            
+            // Add the decoded chunk to our buffer
+            const chunk = decoder.decode(value, { stream: true });
+            console.log("Received chunk:", chunk);
+            buffer += chunk;
+            
+            // Process SSE format (data: {...}\n\n)
+            const messages = buffer.split('\n\n');
+            buffer = messages.pop() || ''; // Keep the last incomplete chunk
+            
+            console.log(`Processing ${messages.length} complete chunks`);
+            
+            for (const message of messages) {
+                if (message.startsWith('data: ')) {
+                    const jsonStr = message.substring(6); // Remove 'data: ' prefix
+                    console.log("Parsing JSON:", jsonStr);
+                    
+                    try {
+                        const data = JSON.parse(jsonStr);
+                        
+                        if (data.text) {
+                            console.log("Adding text to UI:", data.text);
+                            appendMessage(data.text, assistant_id, false);
+                        }
+                        
+                        if (data.isLastChunk) {
+                            console.log("Final chunk received");
+                            const pendingMessage = document.querySelector('.assistant-message-pending');
+                            if (pendingMessage) {
+                                pendingMessage.classList.remove('assistant-message-pending');
+                                const buttonGroup = pendingMessage.querySelector('.button-group');
+                                if (buttonGroup) {
+                                    buttonGroup.style.display = 'inline-flex';
+                                }
+                            }
+                            
+                            if (data.showReview) {
+                                openReviewModal();
                             }
                         }
-                        if (parsedChunk.showReview) {
-                            openReviewModal();
-                        }
+                    } catch (e) {
+                        console.error("Error parsing JSON:", e, jsonStr);
                     }
-                } catch (e) {
-                    console.error('Error parsing JSON chunk:', e);
                 }
-            });
-
-            // Continue reading the stream
+            }
+            
+            // Continue reading
             reader.read().then(processStream);
         };
-
-        // Start processing the stream
+        
         reader.read().then(processStream);
-
+        
     } catch (error) {
         console.error('Error:', error);
-        // On error, remove the loader and show error message
         const pendingMessage = document.querySelector('.assistant-message-pending');
         if (pendingMessage) {
             pendingMessage.remove();
@@ -291,11 +306,9 @@ function stripMarkdown(markdownText) {
         appendMessage('Error: Failed to get response', assistant_id, false);
     }
 }
-
-    
     
 
-    function toggleSpeech(text, buttonElement) {
+function toggleSpeech(text, buttonElement) {
         if (window.speechSynthesis.speaking) {
             stopSpeech();
             updateSpeakButtons(false);
