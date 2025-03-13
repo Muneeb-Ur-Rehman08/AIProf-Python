@@ -3,22 +3,31 @@
 {% load widget_tweaks %}
 {% var render_fields=render_fields|default:"true" %}
 {% var use_default_button=use_default_button|default:"true" %}
-<form class="space-y-6" method="post" action="{{ url }}">
-    {% for error in form.non_field_errors %}
-        <span class="my-1 flex items-center max-w-xs mt-1 ml-1 text-sm font-medium tracking-wide text-error">{{ error }}</span>
-    {% endfor %}
-  <div class="space-y-4">
-    {% if render_fields == "true" %}
-    {% for field in form.visible_fields %}
-        {% if field.name != "remember" %}
-            {% #form_field field=field %}
-            {% /form_field %}
+
+
+<div class="mt-10">
+    <div>
+        <form class="space-y-6" method="post" action="{{ url }}">
+            {% for error in form.non_field_errors %}
+            <span class="my-1 flex items-center max-w-xs mt-1 ml-1 text-sm font-medium tracking-wide text-error">{{ error
+                }}</span>
+        {% endfor %}
+    
+        {% if render_fields == "true" %}
+            {% for field in form.visible_fields %}
+                {% if field.name != "remember" %}
+                 {% #form_field field=field %}
+                    {% /form_field %}
+                {% endif %}
+            {% endfor %}
         {% endif %}
-    {% endfor %}
-{% endif %}
+     
+        {{ children }}
+        {% if use_default_button == "true" %}
+            <div>
+                <button type="submit" class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">{{ button_text }}</button>
+            </div>
+        {% endif %}
+     </form>
+    </div>
 </div>
-    {{ children }}
-    {% if use_default_button == "true" %}
-        <button type="submit" class="my-3 btn btn-primary">{{ button_text }}</button>
-    {% endif %}
-</form>

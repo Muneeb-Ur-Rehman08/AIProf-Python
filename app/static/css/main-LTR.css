@@ -393,6 +393,7 @@ a:hover {
 
 .overlay-photo-image-bg {
   /*add  background-image value wherever you use this class to choose the custom image  */
+  background-image: url('/app/static/assets/images/sections-bg-images/classroomScenario.jpg');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;

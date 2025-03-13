@@ -1,79 +1,231 @@
-{# djlint:off H006 #}
-{% load i18n %}
-{% load static %}
-{% load allauth_ui %}
+{# djlint:off H006 #} {% load i18n %} {% load static %} {% load allauth_ui %}
 <!DOCTYPE html>
-<html data-theme="{% allauth_ui_theme %}">
-    <head>
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>
-            {% block head_title %}
-            {% endblock head_title %}
-        </title>
-        {% block extra_head %}
-            <link rel="stylesheet" href="{% static 'allauth_ui/output.css' %}">
-            <script src="https://cdn.tailwindcss.com"></script>
-        {% endblock extra_head %}
-    </head>
-    <body>
-        <div class="min-h-screen bg-[#F8F9FF] flex flex-col justify-center items-center p-4">
+<html class="h-full bg-white" data-theme="{% allauth_ui_theme %}">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block head_title %} {% endblock head_title %}</title>
+    {% block extra_head %}
+    <link rel="stylesheet" href="{% static 'allauth_ui/output.css' %}" />
 
-        {% block body %}
-            <!-- {% if messages %}
-                {% for message in messages %}
-                    <div role="alert"
-                         class="text-sm md:text-base alert alert-{{ message.tags }}">
-                        <span><strong>{{ message }}</strong></span>
-                    </div>
-                {% endfor %}
-            {% endif %} -->
-            {% block content %}
-            {% endblock content %}
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    {% endblock extra_head %}
+  </head>
+  <body  class="h-full">
 
-
-
-            <!-- <footer class="border-t py-6 text-center text-sm text-gray-500 bg-white">
-                <p>© 2025 AiProf. All rights reserved.</p>
-                <p class="mt-2">Empowering learners with AI technology</p>
-            </footer> -->
-
-            <!-- <div class="mx-auto [&_a]:link text-sm flex flex-col md:flex-row items-center justify-center gap-3 mt-3">
-                {% if user.is_authenticated %}
-                    {% url 'account_email' as email_url %}
-                    {% if email_url %}
-                        <a href="{{ email_url }}">{% trans "Change Email" %}</a>
-                    {% endif %}
-                    {% url 'account_change_password' as change_password_url %}
-                    {% if change_password_url %}
-                        <a href="{{ change_password_url }}">{% trans "Change Password" %}</a>
-                    {% endif %}
-                    {% url 'mfa_index' as mfa_url %}
-                    {% if mfa_url %}
-                        <a href="{{ mfa_url }}">{% trans "Two-Factor Authentication" %}</a>
-                    {% endif %}
-                    {% url 'usersessions_list' as usersessions_list_url %}
-                    {% if usersessions_list_url %}
-                        <a href="{{ usersessions_list_url }}">{% trans "Sessions" %}</a>
-                    {% endif %}
-                    {% url 'account_logout' as logout_url %}
-                    {% if logout_url %}
-                        <a href="{{ logout_url }}">{% trans "Sign Out" %}</a>
-                    {% endif %}
-                {% else %}
-                    {% url 'account_login' as login_url %}
-                    {% if login_url %}
-                        <a href="{{ login_url }}">{% trans "Sign In" %}</a>
-                    {% endif %}
-                    {% url 'account_signup' as signup_url %}
-                    {% if signup_url %}
-                        <a href="{{ signup_url }}">{% trans "Sign Up" %}</a>
-                    {% endif %} -->
-                {% endif %}
-            </div>
-        {% endblock body %}
-        {% block extra_body %}
-        {% endblock extra_body %}
+      <div class="flex min-h-full">
+        <div
+          class="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24"
+        >
+          {% block content %} {% endblock content %}
         </div>
-    </body>
+        <div class="relative hidden w-0 flex-1 lg:block overflow-hidden">
+          <div id="particles-js" class="absolute inset-0 size-full z-10"></div>
+          <div class="absolute inset-0 size-full">
+            <div id="randomImageContainer" class="relative w-full h-full">
+              <img 
+                src="/app/static/assets/images/hero/3D_Animation_Style_Einstein_front.png"
+                class="absolute inset-0 size-full object-cover overflow-hidden opacity-70 bg-black"
+                alt="AI Einstein Teacher"
+              />
+            </div>
+          </div>
+          <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+          <script>
+            // Array of AI teacher themed image URLs
+            const aiTeacherImages = [
+              "/app/static/assets/images/hero/3D_Animation_Style_Einstein_front.png", // Initial Einstein image
+              "https://images.unsplash.com/photo-1531482615713-2afd69097998", // AI/Tech classroom
+              "https://images.unsplash.com/photo-1620712943543-bcc4688e7485", // Digital teacher
+              "https://images.unsplash.com/photo-1597733336794-12d05021d510", // Robot teacher
+              "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04", // AI learning
+              "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5", // Digital education
+              "https://images.unsplash.com/photo-1677442136019-21780ecad995", // AI assistance
+              "https://images.unsplash.com/photo-1680795456471-e5784fcb9023"  // Modern AI teaching
+            ];
+
+            function createImageElement(src) {
+              const img = document.createElement('img');
+              img.src = src.startsWith('http') ? src + "?q=85&w=1932&auto=format&fit=crop" : src;
+              img.className = "absolute inset-0 size-full object-cover overflow-hidden opacity-0 transition-opacity duration-1000";
+              img.alt = "AI Teacher Scene";
+              return img;
+            }
+
+            function showRandomImage() {
+              const container = document.getElementById('randomImageContainer');
+              const randomIndex = Math.floor(Math.random() * aiTeacherImages.length);
+              const newImage = createImageElement(aiTeacherImages[randomIndex]);
+              
+              // Fade out current image if exists
+              const currentImage = container.querySelector('img');
+              if (currentImage) {
+                currentImage.style.opacity = '0';
+                setTimeout(() => currentImage.remove(), 1000);
+              }
+              
+              // Add and fade in new image
+              container.appendChild(newImage);
+              setTimeout(() => newImage.style.opacity = '0.7', 100);
+            }
+
+            // Set interval for changing images (starting after initial image display time)
+            setTimeout(() => {
+              showRandomImage();
+              setInterval(showRandomImage, 7000);
+            }, 5000);
+
+            // Particles configuration
+            particlesJS('particles-js', {
+              "particles": {
+                "number": {
+                  "value": 80,
+                  "density": {
+                    "enable": true,
+                    "value_area": 800
+                  }
+                },
+                "color": {
+                  "value": ["#3B82F6", "#10B981", "#8B5CF6", "#F59E0B"]
+                },
+                "shape": {
+                  "type": ["circle", "triangle", "edge"],
+                  "stroke": {
+                    "width": 0,
+                    "color": "#fff"
+                  },
+                  "polygon": {
+                    "nb_sides": 5
+                  }
+                },
+                "opacity": {
+                  "value": 0.6,
+                  "random": true,
+                  "anim": {
+                    "enable": true,
+                    "speed": 1,
+                    "opacity_min": 0.1,
+                    "sync": false
+                  }
+                },
+                "size": {
+                  "value": 5,
+                  "random": true,
+                  "anim": {
+                    "enable": true,
+                    "speed": 3,
+                    "size_min": 0.3,
+                    "sync": false
+                  }
+                },
+                "line_linked": {
+                  "enable": true,
+                  "distance": 150,
+                  "color": "#ffffff",
+                  "opacity": 0.4,
+                  "width": 1
+                },
+                "move": {
+                  "enable": true,
+                  "speed": 2,
+                  "direction": "none",
+                  "random": true,
+                  "straight": false,
+                  "out_mode": "bounce",
+                  "bounce": true,
+                  "attract": {
+                    "enable": true,
+                    "rotateX": 600,
+                    "rotateY": 1200
+                  }
+                }
+              },
+              "interactivity": {
+                "detect_on": "canvas",
+                "events": {
+                  "onhover": {
+                    "enable": true,
+                    "mode": "bubble"
+                  },
+                  "onclick": {
+                    "enable": true,
+                    "mode": "push"
+                  },
+                  "resize": true
+                },
+                "modes": {
+                  "bubble": {
+                    "distance": 200,
+                    "size": 12,
+                    "duration": 2,
+                    "opacity": 0.8,
+                    "speed": 3
+                  },
+                  "push": {
+                    "particles_nb": 4
+                  }
+                }
+              },
+              "retina_detect": true
+            });
+          </script>
+        </div>
+  
+        {% block body %}
+        <!-- {% if messages %}
+                  {% for message in messages %}
+                      <div role="alert"
+                           class="text-sm md:text-base alert alert-{{ message.tags }}">
+                          <span><strong>{{ message }}</strong></span>
+                      </div>
+                  {% endfor %}
+              {% endif %} -->
+  
+        <!-- <footer class="border-t py-6 text-center text-sm text-gray-500 bg-white">
+                  <p>© 2025 AiProf. All rights reserved.</p>
+                  <p class="mt-2">Empowering learners with AI technology</p>
+              </footer> -->
+  
+        <!-- <div class="mx-auto [&_a]:link text-sm flex flex-col md:flex-row items-center justify-center gap-3 mt-3">
+                  {% if user.is_authenticated %}
+                      {% url 'account_email' as email_url %}
+                      {% if email_url %}
+                          <a href="{{ email_url }}">{% trans "Change Email" %}</a>
+                      {% endif %}
+                      {% url 'account_change_password' as change_password_url %}
+                      {% if change_password_url %}
+                          <a href="{{ change_password_url }}">{% trans "Change Password" %}</a>
+                      {% endif %}
+                      {% url 'mfa_index' as mfa_url %}
+                      {% if mfa_url %}
+                          <a href="{{ mfa_url }}">{% trans "Two-Factor Authentication" %}</a>
+                      {% endif %}
+                      {% url 'usersessions_list' as usersessions_list_url %}
+                      {% if usersessions_list_url %}
+                          <a href="{{ usersessions_list_url }}">{% trans "Sessions" %}</a>
+                      {% endif %}
+                      {% url 'account_logout' as logout_url %}
+                      {% if logout_url %}
+                          <a href="{{ logout_url }}">{% trans "Sign Out" %}</a>
+                      {% endif %}
+                  {% else %}
+                      {% url 'account_login' as login_url %}
+                      {% if login_url %}
+                          <a href="{{ login_url }}">{% trans "Sign In" %}</a>
+                      {% endif %}
+                      {% url 'account_signup' as signup_url %}
+                      {% if signup_url %}
+                          <a href="{{ signup_url }}">{% trans "Sign Up" %}</a>
+                      {% endif %} 
+                  {% endif %}
+              </div> -->
+        {% endblock body %} {% block extra_body %} {% endblock extra_body %}
+      </div>
+ 
+  </body>
 </html>

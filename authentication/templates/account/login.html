@@ -7,24 +7,24 @@
 {% block content %}
 
 {% blocktranslate asvar subheading %}If you have not created an account yet, then please
-<a class="text-[#5BB5B0] hover:underline font-medium" href="{{ signup_url }}">sign up</a> first.{% endblocktranslate %}
+<a class="font-semibold text-indigo-600 hover:text-indigo-500" href="{{ signup_url }}">sign up</a> first.{% endblocktranslate %}
 {% trans "Sign In" as heading %}
 {% #container heading=heading subheading=subheading %}
 {% if not SOCIALACCOUNT_ONLY %}
 
 {% url 'account_login' as action_url %}
 {% #form form=form url=action_url button_text=heading %}
-<div class="items-start my-2 form-control">
-    <label class="cursor-pointer label">
-        {% render_field form.remember class="checkbox checkbox-accent" %}
-        <span class="ml-2 label-text">{% trans "Remember me" %}</span>
+<div class="flex items-center justify-between">
+    <label class="label cursor-pointer gap-3">
+        {% render_field form.remember class="appearance-none rounded-sm border border-gray-300 bg-white checked:border-indigo-600 checked:bg-indigo-600 indeterminate:border-indigo-600 indeterminate:bg-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:border-gray-300 disabled:bg-gray-100 disabled:checked:bg-gray-100 forced-colors:appearance-auto" %}
+        <span class="block text-sm/6 text-gray-900">{% trans "Remember me" %}</span>
     </label>
+  <div class="text-sm/6">
+    <a class="font-semibold text-indigo-600 hover:text-indigo-500" href="{% url 'account_reset_password' %}">{% trans "Forgot password?" %}</a>
+  </div>
 </div>
 {{ redirect_field }}
 {% csrf_token %}
-<div class="flex flex-col">
-    <a class="link self-end text-sm" href="{% url 'account_reset_password' %}">{% trans "Forgot password?" %}</a>
-</div>
 {% /form %}
 {% endif %}
 {% if LOGIN_BY_CODE_ENABLED %}
