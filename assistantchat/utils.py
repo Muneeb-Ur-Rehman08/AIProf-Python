@@ -454,14 +454,16 @@ class ChatModule:
             )
             response = rag_chain.stream(prompt)
 
-            full_response = ""
-            for chunk in response:
-                full_response += chunk
-                yield chunk
+            # full_response = ""
+            # for chunk in response:
+            #     full_response += chunk
+            #     yield chunk
+
+            return response
             
         except Exception as e:
             logger.error(f"Error processing message: {e}")
-            yield "I apologize, but I encountered an error processing your message. Please try again."
+            return "I apologize, but I encountered an error processing your message. Please try again."
         
     def clear_chat_history(self, assistant_id: str, user_id: str, 
                           conversation_id: Optional[uuid.UUID] = None) -> bool:

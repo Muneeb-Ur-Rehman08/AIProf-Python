@@ -195,117 +195,105 @@ function stripMarkdown(markdownText) {
     `;
     }
 
-    function sendPayload(assistant_id) {
-        const promptInput = document.getElementById('prompt-input');
-        const promptValue = promptInput.value.trim();
+    async function sendPayload(assistant_id) {
+    const promptInput = document.getElementById('prompt-input');
+    const promptValue = promptInput.value.trim();
 
-        if (!promptValue) return;
+    if (!promptValue) return;
 
-        // Append the user's message
-        appendMessage(promptValue, assistant_id, true);
-        // Append the loader message (assistant-message-pending)
-        appendMessage(createLoadingAnimation(), assistant_id, false);
+    // Append the user's message
+    appendMessage(promptValue, assistant_id, true);
+    // Append the loader message (assistant-message-pending)
+    appendMessage(createLoadingAnimation(), assistant_id, false);
 
-        promptInput.value = '';
+    promptInput.value = '';
 
-        const payload = {
-            message: promptValue,
-            id: assistant_id
-        };
+    const payload = {
+        message: promptValue,
+        id: assistant_id
+    };
 
-        fetch('/chat/', {
+    try {
+        const response = await fetch('/chat/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'HX-Request': 'true'
             },
             body: JSON.stringify(payload)
-        })
-            .then(response => {
-                const reader = response.body.getReader();
-                console.log('reader', reader);
-                let buffer = '';
-                const decoder = new TextDecoder();
+        });
 
-                function processStream({done, value}) {
-                    if (done) {
-                        // Streaming complete - remove the loader and add speak button
-                        const pendingMessage = document.querySelector('.assistant-message-pending');
-                        if (pendingMessage) {
-                            pendingMessage.classList.remove('assistant-message-pending');
-                            const messageDiv = pendingMessage.querySelector('div');
-                            // Add both speakButton and plusButton
-                            // Create speak button
-                    
-                        }
-                        return;
-                    }
+        const reader = response.body.getReader();
+        let buffer = '';
+        const decoder = new TextDecoder();
 
-                    // Decode the chunk
-                    buffer += decoder.decode(value, { stream: true });
-
-                    console.log("Buffer value", buffer)
-
-                    // Split the buffer into JSON objects
-                    const parts = buffer.split('}{').map((part, index, array) => {
-                        // Reconstruct valid JSON strings (handle split boundaries)
-                        if (index === 0) return part + '}';
-                        if (index === array.length - 1) return '{' + part;
-                        return '{' + part + '}';
-                    });
-                    
-                    console.log("Parts value", parts)
-                    // Parse and process each valid JSON object
-                    parts.forEach((chunk, index) => {
-                        try {
-                            const parsedChunk = JSON.parse(chunk); // Parse the JSON response
-
-                            console.log("parsedChunk value", parsedChunk)
-                            appendMessage(parsedChunk.text, assistant_id, false); // Append the parsed
-
-                            // Check if it's the last chunk, then display the plusButton and speakButton
-                            if (parsedChunk.isLastChunk === true) {
-                                let assistantMessageDiv = document.querySelector('.assistant-message-pending');
-                                
-                                // Ensure the assistantMessageDiv exists
-                                if (assistantMessageDiv) {
-                                    const buttonGroup = assistantMessageDiv.querySelector('.button-group');
-                                    if (buttonGroup) {
-                                        buttonGroup.style.display = 'inline-flex'; // Show the buttons
-                                    } else {
-                                        console.error('No button group found in assistant message div.');
-                                    }
-                                }
-                            }
-
-                            if (parsedChunk.showReview === true && parsedChunk.isLastChunk === true) {
-                                openReviewModal();
-                            }
-                        } catch (e) {
-                            // If the last part is incomplete, keep it in the buffer for the next chunk
-                            if (index === parts.length - 1) {
-                                buffer = chunk;
-                            } else {
-                                console.error('Error parsing JSON chunk:', chunk);
-                            }
-                        }
-                    });
-
-                    return reader.read().then(processStream);
-                }
-
-                return reader.read().then(processStream);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                // On error, remove the loader and show error message
+        // Read the stream progressively
+        const processStream = async ({ done, value }) => {
+            if (done) {
+                // Streaming complete - remove the loader and show speak/plus buttons
                 const pendingMessage = document.querySelector('.assistant-message-pending');
                 if (pendingMessage) {
-                    pendingMessage.remove();
+                    pendingMessage.classList.remove('assistant-message-pending');
+                    // Show buttons (speak/plus)
+                    const buttonGroup = pendingMessage.querySelector('.button-group');
+                    if (buttonGroup) {
+                        buttonGroup.style.display = 'inline-flex'; // Show the buttons
+                    }
                 }
-                appendMessage('Error: Failed to get response', assistant_id, false);
+                return;
+            }
+
+            // Decode the current chunk
+            buffer += decoder.decode(value, { stream: true });
+
+            // Extract valid JSON objects from the buffer
+            const messages = buffer.split('\n').filter(line => line.trim() !== '');
+
+            messages.forEach(message => {
+                try {
+                    const parsedChunk = JSON.parse(message);
+
+                    // Process each parsed JSON chunk
+                    appendMessage(parsedChunk.text, assistant_id, false);
+
+                    // Handle the last chunk (e.g., show buttons)
+                    if (parsedChunk.isLastChunk) {
+                        let assistantMessageDiv = document.querySelector('.assistant-message-pending');
+                        if (assistantMessageDiv) {
+                            const buttonGroup = assistantMessageDiv.querySelector('.button-group');
+                            if (buttonGroup) {
+                                buttonGroup.style.display = 'inline-flex'; // Show the buttons
+                            }
+                        }
+                        if (parsedChunk.showReview) {
+                            openReviewModal();
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error parsing JSON chunk:', e);
+                }
             });
+
+            // Continue reading the stream
+            reader.read().then(processStream);
+        };
+
+        // Start processing the stream
+        reader.read().then(processStream);
+
+    } catch (error) {
+        console.error('Error:', error);
+        // On error, remove the loader and show error message
+        const pendingMessage = document.querySelector('.assistant-message-pending');
+        if (pendingMessage) {
+            pendingMessage.remove();
+        }
+        appendMessage('Error: Failed to get response', assistant_id, false);
     }
+}
+
+    
+    
 
     function toggleSpeech(text, buttonElement) {
         if (window.speechSynthesis.speaking) {
@@ -366,5 +354,22 @@ function stripMarkdown(markdownText) {
         closeReviewModal();
         }
     });
+
+
+    // Function to open modal
+    function openQuizModal() {
+        var modal = document.getElementById('quiz-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+    }
+
+    // Function to close modal
+    function closeQuizModal() {
+        var modal = document.getElementById('quiz-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
 
     

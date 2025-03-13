@@ -26,6 +26,27 @@
     <h1 class="text-xl font-semibold text-black">{{assistant.name}}</h1>
     <div class="w-10"></div>
   </header>
+    <div id="quiz-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg shadow-lg max-w-3xl w-full mx-4 overflow-hidden">
+          <div class="p-6 max-h-[80vh] overflow-y-auto">
+              <div class="flex justify-between items-center mb-4">
+                  <h2 class="text-xl font-bold">Quiz</h2>
+                  <button type="button" class="text-gray-500 hover:text-gray-700" 
+                          onclick="closeQuizModal()">
+                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                      </svg>
+                  </button>
+              </div>
+              <div id="quiz-content">
+                  <!-- Quiz content will be loaded here -->
+                  <div class="flex justify-center items-center p-8">
+                      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>
   <main class="flex-1 bg-white p-6 overflow-auto" id="chat-container"></main>
 
   <form class="bg-white text-black pb-3 p-2" onsubmit="event.preventDefault();" id="chat-form">
