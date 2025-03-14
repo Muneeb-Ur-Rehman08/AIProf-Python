@@ -386,7 +386,7 @@ class ChatModule:
             logger.error(f"Error retrieving chat history: {e}")
             return []
 
-    def process_message(self, prompt: str, assistant_id: str, user_id: str, assistant_config: dict, chat_history):
+    def process_message(self, prompt: str, assistant_id: str, user_id: str, assistant_config: dict, chat_history) -> Generator[Any, Any, Any]:
         """Process message with LangGraph memory integration."""
         try:
             logger.info(f"chat_history in process_message: {chat_history}")
