@@ -113,36 +113,6 @@
           width: 15%;
           transition: width 0.3s ease-out;
       }
-
-      /* Animate to 85% over 2 seconds */
-      .htmx-request.htmx-loading .progress-bar {
-          width: 85%;
-          transition: width 2s ease-in;
-      }
-
-      /* Slow crawl to 98% over 10 seconds */
-      .htmx-request.htmx-loading .progress-bar:after {
-          width: 98%;
-          transition: width 10s cubic-bezier(0.1, 0.5, 0.2, 1);
-      }
-
-      /* Snap to 100% on completion */
-      .htmx-request.htmx-complete .progress-bar {
-          width: 100%;
-          transition: width 0.1s ease-out;
-      }
-
-      /* Error state */
-      .htmx-request.htmx-error .progress-bar {
-          background: #dc3545;
-          width: 100%;
-      }
-
-      /* Hide bar after completion */
-      .progress-bar.done {
-          opacity: 0;
-          transition: opacity 0.3s ease-out;
-      }
   </style>
   </head>
 
