@@ -196,103 +196,115 @@ function stripMarkdown(markdownText) {
     }
 
     async function sendPayload(assistant_id) {
-    const promptInput = document.getElementById('prompt-input');
-    const promptValue = promptInput.value.trim();
-
-    if (!promptValue) return;
-
-    // Append the user's message
-    appendMessage(promptValue, assistant_id, true);
-    // Append the loader message (assistant-message-pending)
-    appendMessage(createLoadingAnimation(), assistant_id, false);
-
-    promptInput.value = '';
-
-    const payload = {
-        message: promptValue,
-        id: assistant_id
-    };
-
-    try {
-        const response = await fetch('/chat/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'HX-Request': 'true'
-            },
-            body: JSON.stringify(payload)
-        });
-
-        const reader = response.body.getReader();
-        let buffer = '';
-        const decoder = new TextDecoder();
-
-        // Read the stream progressively
-        const processStream = async ({ done, value }) => {
-            if (done) {
-                // Streaming complete - remove the loader and show speak/plus buttons
-                const pendingMessage = document.querySelector('.assistant-message-pending');
-                if (pendingMessage) {
-                    pendingMessage.classList.remove('assistant-message-pending');
-                    // Show buttons (speak/plus)
-                    const buttonGroup = pendingMessage.querySelector('.button-group');
-                    if (buttonGroup) {
-                        buttonGroup.style.display = 'inline-flex'; // Show the buttons
-                    }
-                }
-                return;
-            }
-
-            // Decode the current chunk
-            buffer += decoder.decode(value, { stream: true });
-
-            // Extract valid JSON objects from the buffer
-            const messages = buffer.split('\n').filter(line => line.trim() !== '');
-
-            messages.forEach(message => {
-                try {
-                    const parsedChunk = JSON.parse(message);
-
-                    // Process each parsed JSON chunk
-                    appendMessage(parsedChunk.text, assistant_id, false);
-
-                    // Handle the last chunk (e.g., show buttons)
-                    if (parsedChunk.isLastChunk) {
-                        let assistantMessageDiv = document.querySelector('.assistant-message-pending');
-                        if (assistantMessageDiv) {
-                            const buttonGroup = assistantMessageDiv.querySelector('.button-group');
-                            if (buttonGroup) {
-                                buttonGroup.style.display = 'inline-flex'; // Show the buttons
-                            }
-                        }
-                        if (parsedChunk.showReview) {
-                            openReviewModal();
-                        }
-                    }
-                } catch (e) {
-                    console.error('Error parsing JSON chunk:', e);
-                }
-            });
-
-            // Continue reading the stream
-            reader.read().then(processStream);
+        const promptInput = document.getElementById('prompt-input');
+        const promptValue = promptInput.value.trim();
+        
+        if (!promptValue) return;
+        
+        // Append messages
+        appendMessage(promptValue, assistant_id, true);
+        appendMessage(createLoadingAnimation(), assistant_id, false);
+        
+        promptInput.value = '';
+        
+        const payload = {
+            message: promptValue,
+            id: assistant_id
         };
-
-        // Start processing the stream
-        reader.read().then(processStream);
-
-    } catch (error) {
-        console.error('Error:', error);
-        // On error, remove the loader and show error message
-        const pendingMessage = document.querySelector('.assistant-message-pending');
-        if (pendingMessage) {
-            pendingMessage.remove();
-        }
-        appendMessage('Error: Failed to get response', assistant_id, false);
-    }
-}
-
+        
+        try {
+            console.log("Sending fetch request");
+            const response = await fetch('/chat/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'HX-Request': 'true'
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            console.log("Response received, starting to process stream");
+            
+            const reader = response.body.getReader();
     
+            console.log("reader", reader)
+            const decoder = new TextDecoder();
+            let buffer = '';
+            
+            const processStream = async ({ done, value }) => {
+                if (done) {
+                    console.log("Stream complete");
+                    const pendingMessage = document.querySelector('.assistant-message-pending');
+                    if (pendingMessage) {
+                        pendingMessage.classList.remove('assistant-message-pending');
+                        const buttonGroup = pendingMessage.querySelector('.button-group');
+                        if (buttonGroup) {
+                            buttonGroup.style.display = 'inline-flex';
+                        }
+                    }
+                    return;
+                }
+                
+                // Add the decoded chunk to our buffer
+                const chunk = decoder.decode(value, { stream: true });
+                console.log("Received chunk:", chunk);
+                buffer += chunk;
+                
+                // Process SSE format (data: {...}\n\n)
+                const messages = buffer.split('\n\n');
+                buffer = messages.pop() || ''; // Keep the last incomplete chunk
+                
+                console.log(`Processing ${messages.length} complete chunks`);
+                
+                for (const message of messages) {
+                    if (message.startsWith('data: ')) {
+                        const jsonStr = message.substring(6); // Remove 'data: ' prefix
+                        console.log("Parsing JSON:", jsonStr);
+                        
+                        try {
+                            const data = JSON.parse(jsonStr);
+                            
+                            if (data.text) {
+                                console.log("Adding text to UI:", data.text);
+                                appendMessage(data.text, assistant_id, false);
+                            }
+                            
+                            if (data.isLastChunk) {
+                                console.log("Final chunk received");
+                                const pendingMessage = document.querySelector('.assistant-message-pending');
+                                if (pendingMessage) {
+                                    pendingMessage.classList.remove('assistant-message-pending');
+                                    const buttonGroup = pendingMessage.querySelector('.button-group');
+                                    if (buttonGroup) {
+                                        buttonGroup.style.display = 'inline-flex';
+                                    }
+                                }
+                                
+                                if (data.showReview) {
+                                    openReviewModal();
+                                }
+                            }
+                        } catch (e) {
+                            console.error("Error parsing JSON:", e, jsonStr);
+                        }
+                    }
+                }
+                
+                // Continue reading
+                reader.read().then(processStream);
+            };
+            
+            reader.read().then(processStream);
+            
+        } catch (error) {
+            console.error('Error:', error);
+            const pendingMessage = document.querySelector('.assistant-message-pending');
+            if (pendingMessage) {
+                pendingMessage.remove();
+            }
+            appendMessage('Error: Failed to get response', assistant_id, false);
+        }
+    }
     
 
     function toggleSpeech(text, buttonElement) {
@@ -326,21 +338,35 @@ function stripMarkdown(markdownText) {
         document.getElementById("review-modal").classList.add("hidden");
     }
 
-    // Function to show toast message
-    function showToast(message, isSuccess = true) {
-        const toast = document.createElement("div");
-        toast.classList.add("fixed", "bottom-4", "right-4", "px-4", "py-2", "rounded-lg", "shadow-lg");
-        toast.classList.add(isSuccess ? "bg-green-500" : "bg-red-500", "text-white");
-        toast.innerText = message;
-
-        document.body.appendChild(toast);
-
-        // Remove the toast after 3 seconds
-        setTimeout(() => {
-        toast.remove();
-        }, 3000);
+  
+  function showModalToast(message, isSuccess = true) {
+    // First, check if there's already a toast in the modal and remove it
+    const existingToast = document.querySelector("#modal-toast");
+    if (existingToast) {
+        existingToast.remove();
     }
 
+    // Create the toast element
+    const toast = document.createElement("div");
+    toast.id = "modal-toast";
+    toast.classList.add("px-4", "py-2", "rounded-lg", "shadow-lg", "mb-4", "text-center");
+    toast.classList.add(isSuccess ? "bg-green-500" : "bg-red-500", "text-white");
+    toast.innerText = message;
+
+    // Find the modal content and insert the toast at the top
+    const modalContent = document.querySelector("#review-modal .bg-white");
+    if (modalContent) {
+        modalContent.insertBefore(toast, modalContent.firstChild);
+
+        // Remove the toast after 3 seconds and then close the modal
+        setTimeout(() => {
+            toast.remove();
+            closeReviewModal();
+        }, 2000);
+    }
+}
+
+  
     // Close modal when clicking outside
     document.getElementById("review-modal").addEventListener("click", function(e) {
         if (e.target === this) {
