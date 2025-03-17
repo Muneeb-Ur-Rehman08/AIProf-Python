@@ -1,12 +1,16 @@
 <!-- Review Modal (Hidden Initially) -->
 <div id="review-modal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
   <div class="bg-white p-6 rounded-lg shadow-lg w-96">
+    <!-- Add the result div here -->
+    <div id="review-result" class="hidden"></div>
     <h3 class="text-lg font-semibold mb-2">Rate Your Experience</h3>
+
+
     <form
       id="review-form"
       hx-post="{% url 'submit_review' assistant.id %}"
-      hx-target="this"
-      hx-swap="outerHTML"
+      hx-target="#review-result"
+      hx-swap="innerHTML"
       class="space-y-3"
     >
       {% csrf_token %}

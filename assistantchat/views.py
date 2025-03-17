@@ -137,7 +137,7 @@ def chat_query(request, ass_id=None):
         chat_history, keys = get_history(assistant_id=assistant_id, user_id=user_id)
 
         has_reviewed = AssistantRating.objects.filter(user=request.user, assistant=assistant).exists()
-        show_review = len(chat_history) >= 9 and not has_reviewed
+        show_review = len(chat_history) >= 1 and not has_reviewed
 
         # Define assistant configuration
         # assistant_config = {
@@ -159,44 +159,51 @@ def chat_query(request, ass_id=None):
 
         logger.info(f"Response: {response}")
 
-        # Streaming the response
-        def response_stream() -> Generator[Any, Any, Any]:
+        def response_stream():
             full_response = ""
             try:
                 for chunk in response:
                     if chunk:
                         full_response += chunk
-
                         
-                        # Send the chunk along with review status
-                        yield json.dumps({
+                        logger.info(f"streaming chunks: {chunk}\n")
+                        # Format as SSE (Server-Sent Events)
+                        data = {
                             'text': chunk,
                             'showReview': show_review,
                             'isLastChunk': False
-                        }) + "\n"
-                        
-
+                        }
+                        yield f"data: {json.dumps(data)}\n\n"
+                
+                # Save history after all chunks processed
                 save_history(assistant_id, user_id, prompt, full_response)
-
-                # Send final chunk with review status
-                yield json.dumps({
+                
+                # Final event
+                yield f"data: {json.dumps({
                     'text': '',
                     'showReview': show_review,
                     'isLastChunk': True
-                }) + "\n"
-
+                })}\n\n"
                 
             except Exception as e:
                 logger.error(f"Error in chat query response: {e}")
-                # Send final chunk with review status
-                yield json.dumps({
-                    'text': '',
+                yield f"data: {json.dumps({
+                    'text': f"Error: {str(e)}",
                     'showReview': show_review,
                     'isLastChunk': True
-                }) + "\n"
-                
-
-        return StreamingHttpResponse(response_stream(), content_type='text/event-stream')
+                })}\n\n"
+        
+        # Use text/event-stream content type
+        stream_response = StreamingHttpResponse(
+            response_stream(), 
+            content_type='text/event-stream'
+        )
+        
+        # Add headers to prevent buffering
+        stream_response['Cache-Control'] = 'no-cache'
+        stream_response['X-Accel-Buffering'] = 'no'
+        
+        return stream_response
 
     except Exception as e:
         logger.error(f"Error in chat query endpoint: {e}")
@@ -205,8 +212,7 @@ def chat_query(request, ass_id=None):
                 'showReview': False,
                 'isLastChunk': True
             }) + "\n",
-            content_type='text/event-stream')
-    
+            content_type='application/json') 
 
 def voice_chat(request):
     return render(request, 'voiceAssistantview.html')
@@ -364,7 +370,10 @@ def submit_review(request, assistant_id):
 
     # Prevent duplicate reviews
     if AssistantRating.objects.filter(user=request.user, assistant=assistant).exists():
-        return JsonResponse({"status": "error", "message": "You have already submitted a review."})
+        return HttpResponse(
+            "<script>showModalToast('You have already submitted a review.', false);</script>",
+            status=200
+        )
 
     if request.method == "POST":
         rating = request.POST.get("rating")
@@ -377,9 +386,18 @@ def submit_review(request, assistant_id):
             review=review
         )
 
-        return JsonResponse({"status": "success", "message": "Thank you for your feedback!"})
+        # Return a script that shows the toast within the modal
+        return HttpResponse(
+            "<script>showModalToast('Thank you for your feedback!', true);</script>",
+            status=200
+        )
 
-    return JsonResponse({"status": "error", "message": "Invalid submission."}, status=400)
+    return HttpResponse(
+        "<script>showModalToast('Invalid submission.', false);</script>", 
+        status=200
+    )   
+
+
 
 @login_required
 @require_http_methods(["GET", "POST"])
@@ -396,7 +414,11 @@ def quiz_view(request, assistant_id):
         
         if not chat_history:
             logger.warning(f"No chat history found for assistant: {assistant_id}, user: {user.id}")
-            return HttpResponseBadRequest("No chat history found")
+            
+            return render(request, 'quiz_question.html', {
+                'no_chat_history': True,  # Add this variable to the context
+                'assistant': assistant
+            })
 
         context = "\n".join([
             f"{chat['AI']}"

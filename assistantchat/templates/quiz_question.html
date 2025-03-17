@@ -1,3 +1,4 @@
+{% if questions %}
 <form hx-post="{% url 'quiz_generate' assistant.id %}"
       hx-target="#quiz-content"
       hx-swap="innerHTML">
@@ -10,16 +11,16 @@
             <h3 class="text-lg font-bold mb-2">Q: {{ question.question_text }}</h3>
             
             <div class="mb-4">
-                <input type="radio" name="answer_{{ question.id }}" value="A" id="option_a_{{ question.id }}">
+                <input type="radio" name="answer_{{ question.id }}" value="A" id="option_a_{{ question.id }}" required>
                 <label for="option_a_{{ question.id }}">{{ question.option_a }}</label><br>
 
-                <input type="radio" name="answer_{{ question.id }}" value="B" id="option_b_{{ question.id }}">
+                <input type="radio" name="answer_{{ question.id }}" value="B" id="option_b_{{ question.id }}" required>
                 <label for="option_b_{{ question.id }}">{{ question.option_b }}</label><br>
 
-                <input type="radio" name="answer_{{ question.id }}" value="C" id="option_c_{{ question.id }}">
+                <input type="radio" name="answer_{{ question.id }}" value="C" id="option_c_{{ question.id }}" required>
                 <label for="option_c_{{ question.id }}">{{ question.option_c }}</label><br>
 
-                <input type="radio" name="answer_{{ question.id }}" value="D" id="option_d_{{ question.id }}">
+                <input type="radio" name="answer_{{ question.id }}" value="D" id="option_d_{{ question.id }}" required>
                 <label for="option_d_{{ question.id }}">{{ question.option_d }}</label><br>
             </div>
         </div>
@@ -29,3 +30,8 @@
         Submit Quiz
     </button>
 </form>
+{% else %}
+<div class="text-center p-8">
+    <p class="text-lg font-semibold">No questions available for this quiz.</p>
+</div>
+{% endif %}
