@@ -414,7 +414,11 @@ def quiz_view(request, assistant_id):
         
         if not chat_history:
             logger.warning(f"No chat history found for assistant: {assistant_id}, user: {user.id}")
-            return HttpResponseBadRequest("No chat history found")
+            
+            return render(request, 'quiz_question.html', {
+                'no_chat_history': True,  # Add this variable to the context
+                'assistant': assistant
+            })
 
         context = "\n".join([
             f"{chat['AI']}"
