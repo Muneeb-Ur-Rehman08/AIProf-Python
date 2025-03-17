@@ -13,9 +13,12 @@
             {% endfor %}
         {% endif %}
         {% provider_login_url provider process=process scope=scope auth_params=auth_params as href %}
-        <a class="btn w-full my-1 text-primary-content bg-primary hover:bg-accent "
-           title="{{ provider.name }}"
-           href="{{ href }}">{{ provider.name }}</a>
+    <div class="mt-6">
+        <a href="{{ href }}" class="flex w-full items-center justify-center gap-3 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 shadow-xs ring-gray-300 ring-inset hover:bg-gray-50 focus-visible:ring-transparent" title="{{ provider.name }}">
+                <img src="https://www.google.com/favicon.ico" class="h-5 w-5" alt="{{ provider.name }} icon" aria-hidden="true">
+                <span class="text-sm/6 font-semibold">{{ provider.name }}</span>
+              </a>
+    </div>
     {% endfor %}
 </div>
 {% endif %}

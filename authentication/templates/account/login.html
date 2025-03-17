@@ -5,35 +5,34 @@
 {% load slippers %}
 
 {% block content %}
-    {% trans "Sign In" as heading %}
-    {% #container heading=heading  %}
-    {% if not SOCIALACCOUNT_ONLY %}
-        <div class="py-3">
-            {% blocktranslate %}If you have not created an account yet, then please
-            <a class="link" href="{{ signup_url }}">sign up</a> first.{% endblocktranslate %}
-        </div>
-        {% url 'account_login' as action_url %}
-        {% #form form=form url=action_url button_text=heading %}
-        <div class="items-start my-2 form-control">
-            <label class="cursor-pointer label">
-                {% render_field form.remember class="checkbox checkbox-accent" %}
-                <span class="ml-2 label-text">{% trans "Remember me" %}</span>
-            </label>
-        </div>
-        {{ redirect_field }}
-        {% csrf_token %}
-        <div class="flex flex-col">
-            <a class="link self-end text-sm"
-               href="{% url "account_reset_password" %}">{% trans "Forgot password?" %}</a>
-        </div>
-        {% /form %}
-    {% endif %}
-    {% if LOGIN_BY_CODE_ENABLED %}
-        <div class="divider divider-neutral"></div>
-        <a href="{{ request_login_code_url }}" class="btn btn-neutral">{% trans "Mail me a sign-in code" %}</a>
-    {% endif %}
-    {% if SOCIALACCOUNT_ENABLED %}
-        {% include "socialaccount/snippets/login.html" with page_layout="entrance" %}
-    {% endif %}
-    {% /container %}
+
+{% blocktranslate asvar subheading %}If you have not created an account yet, then please
+<a class="font-semibold text-indigo-600 hover:text-indigo-500" href="{{ signup_url }}">sign up</a> first.{% endblocktranslate %}
+{% trans "Sign In" as heading %}
+{% #container heading=heading subheading=subheading %}
+{% if not SOCIALACCOUNT_ONLY %}
+
+{% url 'account_login' as action_url %}
+{% #form form=form url=action_url button_text=heading %}
+<div class="flex items-center justify-between">
+    <label class="label cursor-pointer gap-3">
+        {% render_field form.remember class="appearance-none rounded-sm border border-gray-300 bg-white checked:border-indigo-600 checked:bg-indigo-600 indeterminate:border-indigo-600 indeterminate:bg-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:border-gray-300 disabled:bg-gray-100 disabled:checked:bg-gray-100 forced-colors:appearance-auto" %}
+        <span class="block text-sm/6 text-gray-900">{% trans "Remember me" %}</span>
+    </label>
+  <div class="text-sm/6">
+    <a class="font-semibold text-indigo-600 hover:text-indigo-500" href="{% url 'account_reset_password' %}">{% trans "Forgot password?" %}</a>
+  </div>
+</div>
+{{ redirect_field }}
+{% csrf_token %}
+{% /form %}
+{% endif %}
+{% if LOGIN_BY_CODE_ENABLED %}
+<div class="divider divider-neutral"></div>
+<a href="{{ request_login_code_url }}" class="btn btn-neutral">{% trans "Mail me a sign-in code" %}</a>
+{% endif %}
+{% if SOCIALACCOUNT_ENABLED %}
+{% include "socialaccount/snippets/login.html" with page_layout="entrance" %}
+{% endif %}
+{% /container %}
 {% endblock content %}

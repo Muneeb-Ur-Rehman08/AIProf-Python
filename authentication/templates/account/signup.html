@@ -4,7 +4,10 @@
 {% load widget_tweaks %}
 {% block content %}
     {% trans "Sign Up" as heading %}
-    {% blocktranslate asvar subheading %}Already have an account? Then please <a href="{{ login_url }}" class="link">sign in</a>.{% endblocktranslate %}
+    {% blocktranslate asvar subheading %}Already have an account? Then please 
+    <a class="font-semibold text-indigo-600 hover:text-indigo-500" href="{{ login_url }}" class="link">
+        sign in
+    </a>.{% endblocktranslate %}
     {% #container heading=heading subheading=subheading  %}
     {% if not SOCIALACCOUNT_ONLY %}
         {% url 'account_signup' as action_url %}
