@@ -59,7 +59,7 @@ def chat_query(request, ass_id=None):
             return StreamingHttpResponse("User not authenticated", content_type='text/plain')
 
         
-
+        logger.info(f"we got instance of memorystore: {memory_store.list_namespaces(prefix=("chat", "21"))}")
 
         # Handle file uploads (images, PDFs)
         if 'file' in request.FILES:
