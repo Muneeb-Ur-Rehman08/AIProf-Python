@@ -243,6 +243,12 @@ class QuizAttempt(models.Model):
     started_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
 
+    def calculate_score(self):
+        total_questions = self.questionattempt_set.count()
+        if total_questions == 0:
+            return 0
+        return (self.total_correct / total_questions) * 100
+
 class QuestionAttempt(models.Model):
     quiz_attempt = models.ForeignKey(QuizAttempt, on_delete=models.CASCADE)
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
