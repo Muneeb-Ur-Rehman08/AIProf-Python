@@ -203,7 +203,7 @@
     {% include 'voiceAssistantview.html' %}
 </div>
 <div
-hx-get="{% url 'total_score' assistant.id %}"
+hx-get="{% url 'assistant_chat' assistant.id %}"
 hx-target="#avg-score"
 hx-swap="innerHTML"
 hx-trigger="load" 

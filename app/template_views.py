@@ -57,9 +57,13 @@ def assistant_chat_view(request, assistant_id):
     # Calculate average score across all attempts
     total_attempts = quiz_attempts.count()
     total_score = sum([attempt.calculate_score() for attempt in quiz_attempts])
-    avg_score = round(total_score / total_attempts, 3) if total_attempts > 0 else 0
+    avg_score = round(total_score / total_attempts, 2) if total_attempts > 0 else 0
 
-   
+    if request.htmx:
+        return HttpResponse(
+        f"<p>Avg Score: { avg_score }% (out of { total_attempts } quizzes)</p>"
+    )
+
 
     return render(request, 'assistant/chat_wrapper.html', {
         'assistant': assistant, 
@@ -71,18 +75,3 @@ def assistant_chat_view(request, assistant_id):
         'total_attempts': total_attempts
     })
 
-def total_score(request, assistant_id):
-    assistant = Assistant.objects.get(id=assistant_id)
-    # Fetch quiz attempts for the specific user
-    user = User.objects.get(id=request.user.id)
-    user_id = user.id
-    quiz_attempts = QuizAttempt.objects.filter(user_id=user, assistant_id=assistant, completed=True)
-    
-    # Calculate average score across all attempts
-    total_attempts = quiz_attempts.count()
-    total_score = sum([attempt.calculate_score() for attempt in quiz_attempts])
-    avg_score = round(total_score / total_attempts, 3) if total_attempts > 0 else 0
-
-    return HttpResponse(
-        f"<p>Avg Score: { avg_score }% (out of { total_attempts } quizzes)</p>"
-    )

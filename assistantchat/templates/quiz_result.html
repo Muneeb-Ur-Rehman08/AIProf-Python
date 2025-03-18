@@ -50,7 +50,7 @@
     
     <div class="mt-3 flex justify-center">
       <button type="button" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-      hx-get="{% url 'total_score' assistant.id %}"
+      hx-get="{% url 'assistant_chat' assistant.id %}"
         hx-target="#avg-score"
         hx-swap="innerHTML"
         hx-trigger="load" 
