@@ -5,6 +5,8 @@ from django.contrib.auth.decorators import login_required
 import uuid
 import logging
 from users.models import Assistant
+from assistantchat.models import QuizAttempt
+from django.contrib.auth.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -44,11 +46,43 @@ def assistant_chat_view(request, assistant_id):
     chat_mode = True  # Set this based on your routing/URL logic
     assistants = Assistant.objects.filter(user_id=request.user.id)
 
+    
+
+    # Fetch quiz attempts for the specific user
+    user = User.objects.get(id=request.user.id)
+    user_id = user.id
+    
+    quiz_attempts = QuizAttempt.objects.filter(user_id=user, assistant_id=assistant, completed=True)
+    
+    # Calculate average score across all attempts
+    total_attempts = quiz_attempts.count()
+    total_score = sum([attempt.calculate_score() for attempt in quiz_attempts])
+    avg_score = round(total_score / total_attempts, 3) if total_attempts > 0 else 0
+
+   
+
     return render(request, 'assistant/chat_wrapper.html', {
         'assistant': assistant, 
         'is_creator': is_creator, 
         'chat_mode': chat_mode,
         'assistants': assistants,
-        'user_id': request.user.id
+        'user_id': user_id,
+        'avg_score': avg_score,
+        'total_attempts': total_attempts
     })
 
+def total_score(request, assistant_id):
+    assistant = Assistant.objects.get(id=assistant_id)
+    # Fetch quiz attempts for the specific user
+    user = User.objects.get(id=request.user.id)
+    user_id = user.id
+    quiz_attempts = QuizAttempt.objects.filter(user_id=user, assistant_id=assistant, completed=True)
+    
+    # Calculate average score across all attempts
+    total_attempts = quiz_attempts.count()
+    total_score = sum([attempt.calculate_score() for attempt in quiz_attempts])
+    avg_score = round(total_score / total_attempts, 3) if total_attempts > 0 else 0
+
+    return HttpResponse(
+        f"<p>Avg Score: { avg_score }% (out of { total_attempts } quizzes)</p>"
+    )
