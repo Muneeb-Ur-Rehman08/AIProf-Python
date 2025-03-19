@@ -15,6 +15,7 @@ from django.http import Http404, HttpResponse, JsonResponse, StreamingHttpRespon
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.contrib.auth.models import User
 
 
 # Local/project imports
@@ -31,7 +32,8 @@ from app.utils.vector_store import (
     get_answer, 
     is_valid_uuid
 )
-from assistantchat.models import Conversation
+from assistantchat.models import Conversation, QuizAttempt, Quiz, Question
+from assistantchat.views import get_history
 from users.models import Assistant, AssistantRating, Subject, Topic
 from users.add import populate_subjects_and_topics
 
@@ -345,11 +347,12 @@ def list_assistants(request):
 def assistant_detail(request, assistant_id: Optional[str] = None):
     """
     Handle assistant detail view for both GET and POST requests.
-    GET: Returns assistant data as JSON
+    GET: Returns assistant data as JSON and provides quiz result details.
     POST: Updates rating and returns to the same page
     """
-    # Get logged in user id
     user_id = request.user.id
+
+    user = User.objects.get(id=request.user.id)
     
     # Get assistant or return 404
     assistant = get_object_or_404(Assistant, id=assistant_id)
@@ -359,16 +362,89 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
         interactions = Conversation.objects.filter(assistant_id=assistant_id).count()
         ratings = AssistantRating.objects.filter(assistant=assistant_id)
         is_creator = user_id == assistant.user_id.id
-        is_logged_in = request.user.id != None and request.user.id != ''
+        is_logged_in = request.user.id is not None and request.user.id != ''
         
-        # Return JSON response for GET requests
+
+        # Fetch all quizzes for the assistant
+        quizzes = Quiz.objects.filter(assistant_id=assistant, user_id=user)
+
+        # Count total questions across all quizzes for the assistant
+        total_questions = Question.objects.filter(quiz__in=quizzes).count()
+        # Fetch quiz-related data
+        quiz_attempts = QuizAttempt.objects.filter(user_id=user_id, assistant_id=assistant_id, completed=True)
+        total_quizzes = quiz_attempts.count()
+        total_correct = sum([attempt.total_correct for attempt in quiz_attempts])
+        total_questions = sum([attempt.questionattempt_set.count() for attempt in quiz_attempts])
+        total_wrong = total_questions - total_correct
+        completion_status = "Completed" if total_quizzes > 0 else "Not Completed"
+
+
+        # Calculate average score across all attempts
+        total_attempts = quiz_attempts.count()
+        total_score = sum([attempt.calculate_score() for attempt in quiz_attempts])
+        avg_score = round(total_score / total_attempts, 2) if total_attempts > 0 else 0
+        logger.info(f"get avg score: {avg_score}")
+
+
+        chat_history, keys = get_history(assistant_id=assistant_id, user_id=user_id)
+
+        knowledge_level = next(
+                (entry["knowledge_level"] for entry in chat_history if "summary" in entry),
+                "Beginner"
+            )
+
+        # Calculate knowledge level based on percentage correct
+        # Default grade
+        grade = "F"
+
+        if total_questions > 0:
+            correct_percentage = (total_correct / total_questions) * 100
+
+            # Assign grade based on the percentage
+            if correct_percentage >= 90:
+                grade = "A+"
+            elif correct_percentage >= 80:
+                grade = "A"
+            elif correct_percentage >= 70:
+                grade = "B"
+            elif correct_percentage >= 60:
+                grade = "C"
+            elif correct_percentage >= 50:
+                grade = "D"
+            else:
+                grade = "F"
+
+        
+
+        # Return JSON response for HTMX requests
+        if request.htmx:
+            return JsonResponse({
+                'total_quizzes': total_quizzes,
+                'total_correct': total_correct,
+                'total_wrong': total_wrong,
+                'completion_status': completion_status,
+                'knowledge_level': knowledge_level,
+                'total_questions': total_questions,
+                "avg_score": avg_score,
+                "grade": grade
+            })
+        
+        # Regular GET response for non-HTMX requests
         return render(request, 'assistant/assistant.html', {
             'assistant': assistant,
             'interactions': interactions,
             'reviews_count': len(ratings),
             'is_creator': is_creator,
             'is_logged_in': is_logged_in,
-            "reviews_by": ratings,
+            'reviews_by': ratings,
+            'total_quizzes': total_quizzes,
+            'total_correct': total_correct,
+            'total_wrong': total_wrong,
+            'completion_status': completion_status,
+            'knowledge_level': knowledge_level,
+            'total_questions': total_questions,
+            "avg_score": avg_score,
+            "grade": grade
         })
     
     else:  # POST request
@@ -394,13 +470,12 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
             interactions = Conversation.objects.filter(assistant_id=assistant_id).count()
             ratings = AssistantRating.objects.filter(assistant=assistant_id)
             is_creator = user_id == assistant.user_id.id
-            is_logged_in = request.user.id != None and request.user.id != ''
-
-            # Return to the same page with updated context
+            is_logged_in = request.user.id is not None and request.user.id != ''
+            
             return render(request, 'assistant/assistant.html', {
                 "assistant": assistant,
                 "interactions": interactions,
-                "reviews": len(ratings),
+                "reviews_count": len(ratings),
                 "is_creator": is_creator,
                 "is_logged_in": is_logged_in,
                 "success_message": "Rating updated successfully"
