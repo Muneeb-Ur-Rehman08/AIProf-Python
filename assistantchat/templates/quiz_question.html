@@ -1,37 +1,71 @@
+<div class="bg-white rounded-lg shadow-lg p-6 max-w-2xl mx-auto">
+    <div class="flex justify-between items-center mb-6 border-b pb-4">
+      <h3 class="text-2xl font-bold text-gray-800">Quiz</h3>
+      <button type="button" class="text-gray-500 hover:text-gray-700 focus:outline-none" 
+              hx-on:click="document.getElementById('quiz-modal').classList.add('hidden')">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
 {% if questions %}
 <form hx-post="{% url 'quiz_generate' assistant.id %}"
       hx-target="#quiz-content"
-      hx-swap="innerHTML">
+      hx-swap="innerHTML"
+      class="bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto">
     {% csrf_token %}
     
     <input type="hidden" name="quiz_id" value="{{ quiz.id }}">
-
-    {% for question in questions %}
-        <div class="mb-6">
-            <h3 class="text-lg font-bold mb-2">Q: {{ question.question_text }}</h3>
-            
-            <div class="mb-4">
-                <input type="radio" name="answer_{{ question.id }}" value="A" id="option_a_{{ question.id }}" required>
-                <label for="option_a_{{ question.id }}">{{ question.option_a }}</label><br>
-
-                <input type="radio" name="answer_{{ question.id }}" value="B" id="option_b_{{ question.id }}" required>
-                <label for="option_b_{{ question.id }}">{{ question.option_b }}</label><br>
-
-                <input type="radio" name="answer_{{ question.id }}" value="C" id="option_c_{{ question.id }}" required>
-                <label for="option_c_{{ question.id }}">{{ question.option_c }}</label><br>
-
-                <input type="radio" name="answer_{{ question.id }}" value="D" id="option_d_{{ question.id }}" required>
-                <label for="option_d_{{ question.id }}">{{ question.option_d }}</label><br>
-            </div>
-        </div>
-    {% endfor %}
     
-    <button type="submit" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded">
-        Submit Quiz
-    </button>
+    <!-- <h2 class="text-2xl font-bold text-center mb-6 text-indigo-700">Biology Quiz</h2> -->
+    
+    <div class="space-y-8">
+        {% for question in questions %}
+            <div class="bg-gray-50 p-5 rounded-lg border border-gray-200">
+                <h3 class="text-lg font-semibold mb-4 text-gray-800">Q: {{ question.question_text }}</h3>
+                
+                <div class="space-y-3">
+                    <div class="flex items-center">
+                        <input type="radio" name="answer_{{ question.id }}" value="A" id="option_a_{{ question.id }}" required
+                               class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+                        <label for="option_a_{{ question.id }}" class="ml-3 text-gray-700">{{ question.option_a }}</label>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input type="radio" name="answer_{{ question.id }}" value="B" id="option_b_{{ question.id }}" required
+                               class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+                        <label for="option_b_{{ question.id }}" class="ml-3 text-gray-700">{{ question.option_b }}</label>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input type="radio" name="answer_{{ question.id }}" value="C" id="option_c_{{ question.id }}" required
+                               class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+                        <label for="option_c_{{ question.id }}" class="ml-3 text-gray-700">{{ question.option_c }}</label>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input type="radio" name="answer_{{ question.id }}" value="D" id="option_d_{{ question.id }}" required
+                               class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+                        <label for="option_d_{{ question.id }}" class="ml-3 text-gray-700">{{ question.option_d }}</label>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <div class="mt-8 text-center">
+        <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-md shadow-sm transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            Submit Quiz
+        </button>
+    </div>
 </form>
 {% else %}
-<div class="text-center p-8">
-    <p class="text-lg font-semibold">No questions available for this quiz.</p>
+<div class="text-center p-12 bg-white rounded-lg shadow-md max-w-2xl mx-auto">
+    <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>
+    <p class="text-xl font-semibold text-gray-700">No questions available for this quiz.</p>
+    <p class="text-gray-500 mt-2">Please check back later or contact your instructor.</p>
 </div>
 {% endif %}
+</div>

@@ -108,7 +108,7 @@ class ChatModule:
         You are an adaptive AI educator specializing in {topic} in {subject}. Your role is to:
         1. **Analyze the user's query first** and tailor your response accordingly, considering context, user history, and {{knowledge level}}.
         2. Explain the user's query clearly and thoroughly using the provided **context**.
-        3. Adapt explanations and exercises based on user feedback and knowledge level (beginner, intermediate, advanced).
+        3. Adapt explanations and exercises based on user feedback and knowledge level (beginner, intermediate, advanced or expert).
         4. Apply the following **teacher instructions**: {teacher_instructions}.
         5. Generate exercises based on the following criteria:
         
@@ -256,7 +256,7 @@ class ChatModule:
 
             assessment_prompt = ChatPromptTemplate.from_messages([
                 SystemMessagePromptTemplate.from_template(
-                    "Based on the user's messages, assess their knowledge level as either 'beginner', 'intermediate', or 'advanced'. Consider technical vocabulary, complexity of questions, and depth of understanding shown."
+                    "Based on the user's messages, assess their knowledge level as either 'Beginner', 'Intermediate', 'Advanced' or 'Expert'. Consider technical vocabulary, complexity of questions, and depth of understanding shown."
                 ),
                 HumanMessagePromptTemplate.from_template("{input}")
             ])
@@ -265,8 +265,8 @@ class ChatModule:
             knowledge_level = chain.invoke(combined_messages).strip().lower()
             
             # Validate knowledge level
-            valid_levels = {'beginner', 'intermediate', 'advanced'}
-            knowledge_level = knowledge_level if knowledge_level in valid_levels else 'beginner'
+            valid_levels = ['Beginner', 'Intermediate', 'Advanced', 'Expert']
+            knowledge_level = knowledge_level if knowledge_level in valid_levels else 'Beginner'
             
             
         
