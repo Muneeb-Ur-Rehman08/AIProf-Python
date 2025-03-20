@@ -1,61 +1,111 @@
 <!-- quiz_results.html -->
-<div class="p-6">
-    <div class="text-center mb-6">
-      <h3 class="text-xl font-bold mb-2">Quiz Results</h3>
-      <div class="text-3xl font-bold text-blue-600 mb-2">
-        {{ attempt.total_correct }} / {{ attempt.questionattempt_set.count }}
+<div class="bg-white rounded-lg shadow-lg p-6 max-w-2xl mx-auto">
+  <div class="flex justify-between items-center mb-6 border-b pb-4">
+    <h3 class="text-2xl font-bold text-gray-800">Quiz Results</h3>
+    <button type="button" class="text-gray-500 hover:text-gray-700 focus:outline-none" 
+            hx-on:click="document.getElementById('quiz-modal').classList.add('hidden')">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+  
+  <div class="text-center mb-8">
+    <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-blue-50 mb-4">
+      <div class="text-center">
+        <div class="text-3xl font-bold text-blue-600">
+          {{ attempt.total_correct }} / {{ attempt.questionattempt_set.count }}
+        </div>
+        <div class="text-sm text-blue-500">score</div>
       </div>
-      <p class="text-gray-600">
-        {{ correct_percentage|floatformat:0 }}% Correct
-      </p>
     </div>
+    <p class="text-gray-600 text-lg font-medium">
+      {{ correct_percentage|floatformat:0 }}% Correct
+    </p>
     
-    <div class="space-y-4 mt-6">
-      {% for question_attempt in attempt.questionattempt_set.all %}
-        <div class="border rounded-lg p-4 {% if question_attempt.is_correct %}bg-green-50 border-green-200{% else %}bg-red-50 border-red-200{% endif %}">
-          <p class="font-medium mb-2">{{ question_attempt.question.question_text }}</p>
-          <p class="text-sm">
-            Your answer: <span class="font-medium {% if question_attempt.is_correct %}text-green-600{% else %}text-red-600{% endif %}">
-              {{ question_attempt.selected_option }}: 
-              {% if question_attempt.selected_option == "A" %}
-                {{ question_attempt.question.option_a }}
-              {% elif question_attempt.selected_option == "B" %}
-                {{ question_attempt.question.option_b }}
-              {% elif question_attempt.selected_option == "C" %}
-                {{ question_attempt.question.option_c }}
-              {% elif question_attempt.selected_option == "D" %}
-                {{ question_attempt.question.option_d }}
-              {% endif %}
+    <div class="w-full bg-gray-200 rounded-full h-2.5 mt-3 mb-6">
+      {% if correct_percentage <= 20 %}
+        <div class="bg-blue-600 h-2.5 rounded-full w-1/5"></div>
+      {% elif correct_percentage <= 40 %}
+        <div class="bg-blue-600 h-2.5 rounded-full w-2/5"></div>
+      {% elif correct_percentage <= 60 %}
+        <div class="bg-blue-600 h-2.5 rounded-full w-3/5"></div>
+      {% elif correct_percentage <= 80 %}
+        <div class="bg-blue-600 h-2.5 rounded-full w-4/5"></div>
+      {% else %}
+        <div class="bg-blue-600 h-2.5 rounded-full w-full"></div>
+      {% endif %}
+    </div>
+  </div>
+  
+  <div class="space-y-5 mt-6">
+    {% for question_attempt in attempt.questionattempt_set.all %}
+      <div class="border rounded-lg p-5 {% if question_attempt.is_correct %}bg-green-50 border-green-200{% else %}bg-red-50 border-red-200{% endif %}">
+        <p class="font-semibold text-gray-800 mb-3">{{ question_attempt.question.question_text }}</p>
+        
+        <div class="flex items-start space-x-2 mb-2">
+          <div class="min-w-8">
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full {% if question_attempt.is_correct %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+              {{ question_attempt.selected_option }}
             </span>
-          </p>
-          {% if not question_attempt.is_correct %}
-            <p class="text-sm mt-1">
-              Correct answer: <span class="font-medium text-green-600">
-                {{ question_attempt.question.correct_answer }}: 
-                {% if question_attempt.question.correct_answer == "A" %}
+          </div>
+          <div>
+            <p class="text-sm">
+              <span class="font-medium {% if question_attempt.is_correct %}text-green-700{% else %}text-red-700{% endif %}">
+                Your answer: 
+                {% if question_attempt.selected_option == "A" %}
                   {{ question_attempt.question.option_a }}
-                {% elif question_attempt.question.correct_answer == "B" %}
+                {% elif question_attempt.selected_option == "B" %}
                   {{ question_attempt.question.option_b }}
-                {% elif question_attempt.question.correct_answer == "C" %}
+                {% elif question_attempt.selected_option == "C" %}
                   {{ question_attempt.question.option_c }}
-                {% elif question_attempt.question.correct_answer == "D" %}
+                {% elif question_attempt.selected_option == "D" %}
                   {{ question_attempt.question.option_d }}
                 {% endif %}
               </span>
             </p>
-          {% endif %}
+          </div>
         </div>
-      {% endfor %}
-    </div>
-    
-    <div class="mt-3 flex justify-center">
-      <button type="button" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-      hx-get="{% url 'assistant_chat' assistant.id %}"
-        hx-target="#avg-score"
-        hx-swap="innerHTML"
-        hx-trigger="load" 
-              hx-on:click="document.getElementById('quiz-modal').classList.add('hidden')">
-        Close
-      </button>
-    </div>
+        
+        {% if not question_attempt.is_correct %}
+          <div class="flex items-start space-x-2 mt-3 pt-3 border-t border-red-200">
+            <div class="min-w-8">
+              <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-800">
+                {{ question_attempt.question.correct_answer }}
+              </span>
+            </div>
+            <div>
+              <p class="text-sm">
+                <span class="font-medium text-green-700">
+                  Correct answer:
+                  {% if question_attempt.question.correct_answer == "A" %}
+                    {{ question_attempt.question.option_a }}
+                  {% elif question_attempt.question.correct_answer == "B" %}
+                    {{ question_attempt.question.option_b }}
+                  {% elif question_attempt.question.correct_answer == "C" %}
+                    {{ question_attempt.question.option_c }}
+                  {% elif question_attempt.question.correct_answer == "D" %}
+                    {{ question_attempt.question.option_d }}
+                  {% endif %}
+                </span>
+              </p>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
   </div>
+  
+  <div class="mt-8 flex justify-center space-x-4">
+    
+    
+    <button type="button" class="px-6 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 shadow-sm transition duration-200"
+            hx-get="{% url 'assistant_chat' assistant.id %}"
+            hx-target="#avg-score"
+            hx-swap="innerHTML"
+            hx-trigger="load" 
+            hx-on:click="document.getElementById('quiz-modal').classList.add('hidden')">
+      Close
+    </button>
+  </div>
+</div>

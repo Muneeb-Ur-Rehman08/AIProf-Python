@@ -353,37 +353,68 @@
                 
 
                 <!-- Quiz Results Card -->
+                {%if is_logged_in%}
+                    <div 
+                        class="rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer transition-all hover:shadow-lg" 
+                        id="quiz-result-card" 
+                        onclick="openModal()"
+                    >
+                    <div class="quiz-card p-4 shadow-lg rounded-lg bg-white text-center max-w-xs mx-auto">
+                        <!-- Title -->
+                        <h3 class="text-2xl font-semibold text-gray-900 mb-4">Quiz Results</h3>
 
-<div 
-    class="rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer transition-all hover:shadow-lg" 
-    id="quiz-result-card" 
-    onclick="openModal()"
->
-<div class="quiz-card p-4 shadow-lg rounded-lg bg-white text-center max-w-xs mx-auto">
-    <!-- Title -->
-    <h3 class="text-2xl font-semibold text-gray-900 mb-4">Quiz Results</h3>
+                        <!-- Total Result Percentage -->
+                        <div class="relative w-32 h-32 mx-auto mb-4">
+                            <svg class="w-full h-full" viewBox="0 0 36 36">
+                                <path
+                                    class="text-gray-200"
+                                    d="M18 2.0845
+                                    a 15.9155 15.9155 0 0 1 0 31.831
+                                    a 15.9155 15.9155 0 0 1 0 -31.831"
+                                    fill="none"
+                                    stroke-width="3"
+                                    stroke="currentColor"
+                                />
+                                <path
+                                    class="text-blue-500"
+                                    d="M18 2.0845
+                                    a 15.9155 15.9155 0 0 1 0 31.831
+                                    a 15.9155 15.9155 0 0 1 0 -31.831"
+                                    fill="none"
+                                    stroke-width="3"
+                                    stroke-dasharray="{{avg_score}}, 100"
+                                    stroke-linecap="round"
+                                    stroke="currentColor"
+                                />
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <span class="text-2xl font-bold text-blue-600">{{grade}}</span>
+                                <span class="text-xs text-gray-500">Grade</span>
+                            </div>
+                        </div>
 
-    <!-- Total Result Percentage -->
-    <div class="relative inline-block w-20 h-20 mb-4">
-        <div class="absolute top-0 left-0 w-full h-full rounded-full border-4 border-gray-200"></div>
-        <div class="absolute top-0 left-0 w-full h-full rounded-full border-4 border-blue-500" style="transform: rotate(234deg);"></div>
-        <span class="absolute inset-0 flex items-center justify-center text-xl font-bold text-blue-600">{{grade}}</span> 
+                        <!-- Knowledge Level -->
+                        <p class="text-lg font-medium text-purple-600 mb-4">
+                            {{knowledge_level}}
+                        </p>
+
+                        <!-- Button to View Detailed Results -->
+                        <button 
+                            class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-50"
+                            >
+                            View Detailed Results
+                        </button>
+                    </div>
+                    </div>
+                {%endif%}
+
+
+
+            </div>
+        </div>
     </div>
-
-    <!-- Knowledge Level -->
-    <p class="text-lg font-medium text-purple-600 mb-4">
-        {{knowledge_level}}
-    </p>
-
-    <!-- Button to View Detailed Results -->
-    <button 
-        class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-50"
-        >
-        View Detailed Results
-    </button>
+    {% endif %}
 </div>
-</div>
-
 
 <!-- Modal Popup -->
 <div id="quizModal" class="fixed z-50 inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center">
@@ -394,58 +425,98 @@
         </button>
 
         <!-- Report Card Header -->
-        <div class="text-center mb-6">
-            <h3 class="text-2xl font-bold text-gray-800">Quiz Result Report</h3>
-            <p class="text-gray-500">Your detailed quiz performance</p>
+        <div class="text-center mb-4">
+            <h3 class="text-xl font-bold text-gray-800">Quiz Result Report</h3>
+            <p class="text-sm text-gray-500">Your detailed quiz performance</p>
         </div>
 
-        <div class="relative inline-block w-20 h-20 mb-4 mx-auto flex justify-center"">
-            <div class="absolute top-0 left-0 w-full h-full rounded-full border-4 border-gray-200"></div>
-            <div class="absolute top-0 left-0 w-full h-full rounded-full border-4 border-blue-500" style="transform: rotate(234deg);"></div>
-            <span class="absolute inset-0 flex items-center justify-center text-xl font-bold text-blue-600">{{avg_score}}%</span> 
-        </div>
-
-        <!-- Report Card Body -->
-        <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg p-6 shadow-md">
-            <div class="mb-4">
-                <p class="text-lg font-semibold text-gray-700">Total Questions:</p>
-                <p class="text-xl font-bold text-indigo-700">{{ total_questions }}</p>
-            </div>
-
-            <div class="mb-4">
-                <p class="text-lg font-semibold text-gray-700">Total Correct Answers:</p>
-                <p class="text-xl font-bold text-green-500">{{ total_correct }}</p>
-            </div>
-
-            <div class="mb-4">
-                <p class="text-lg font-semibold text-gray-700">Total Wrong Answers:</p>
-                <p class="text-xl font-bold text-red-500">{{ total_wrong }}</p>
-            </div>
-
-            <div class="mb-4">
-                <p class="text-lg font-semibold text-gray-700">Completion Status:</p>
-                <p class="text-xl font-bold text-blue-500">{{ completion_status }}</p>
-            </div>
-
-            <div class="mb-4">
-                <p class="text-lg font-semibold text-gray-700">Knowledge Level:</p>
-                <p class="text-xl font-bold text-purple-600">{{ knowledge_level }}</p>
+        <!-- Overall Score -->
+        <div class="relative w-32 h-32 mx-auto mb-4">
+            <svg class="w-full h-full" viewBox="0 0 36 36">
+                <path
+                    class="text-gray-200"
+                    d="M18 2.0845
+                    a 15.9155 15.9155 0 0 1 0 31.831
+                    a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke-width="3"
+                    stroke="currentColor"
+                />
+                <path
+                    class="text-blue-500"
+                    d="M18 2.0845
+                    a 15.9155 15.9155 0 0 1 0 31.831
+                    a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke-width="3"
+                    stroke-dasharray="{{avg_score}}, 100"
+                    stroke-linecap="round"
+                    stroke="currentColor"
+                />
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span class="text-2xl font-bold text-blue-600">{{avg_score}}%</span>
+                <span class="text-xs text-gray-500">Overall Score</span>
             </div>
         </div>
 
-        <!-- Close Button -->
-        <div class="mt-6 flex justify-center">
-            <button id="close-modal" class="px-6 py-2 bg-red-500 text-white font-medium rounded-md shadow hover:bg-red-600" onclick="closeModal()">Close</button>
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="bg-gray-50 p-3 rounded">
+                <p class="text-sm text-gray-600">Total Questions:</p>
+                <p class="text-lg font-bold text-gray-800">{{ total_questions }}</p>
+            </div>
+            <div class="bg-gray-50 p-3 rounded">
+                <p class="text-sm text-gray-600">Completion Status:</p>
+                <p class="text-lg font-bold text-blue-600">{{ completion_status }}</p>
+            </div>
+            <div class="bg-gray-50 p-3 rounded">
+                <p class="text-sm text-gray-600">Correct Answers:</p>
+                <p class="text-lg font-bold text-green-500">{{ total_correct }}</p>
+            </div>
+            <div class="bg-gray-50 p-3 rounded">
+                <p class="text-sm text-gray-600">Wrong Answers:</p>
+                <p class="text-lg font-bold text-red-500">{{ total_wrong }}</p>
+            </div>
+        </div>
+
+        <!-- Knowledge Level -->
+        <div class="mb-6">
+            <p class="text-sm text-gray-600 mb-1">Knowledge Level:</p>
+            <div class="relative w-full bg-gray-200 rounded h-2 mb-1">
+                <div class="h-full bg-purple-500 rounded" style="width: 25%;"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-500">
+                <span>Beginner</span>
+                <span>Intermediate</span>
+                <span>Advanced</span>
+                <span>Expert</span>
+            </div>
+        </div>
+
+        <!-- Recommendations -->
+        <div class="mb-6">
+            <p class="text-sm font-medium text-gray-700 mb-2">Recommendations:</p>
+            <div class="space-y-2">
+                <label class="flex items-center">
+                    <input type="checkbox" class="form-checkbox text-blue-500" checked onclick="return false;">
+                    <span class="ml-2 text-sm text-gray-600">Focus on reviewing incorrect answers</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="checkbox" class="form-checkbox text-blue-500" checked onclick="return false;">
+                    <span class="ml-2 text-sm text-gray-600">Complete additional practice exercises</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="grid grid-cols-2 gap-4">
+            <!-- <button class="py-2 bg-blue-500 text-white font-medium rounded text-sm hover:bg-blue-600">Review Answers</button> -->
+            <button class="py-2 bg-gray-200 text-gray-800 font-medium rounded text-sm hover:bg-gray-300" onclick="closeModal()">Close</button>
         </div>
     </div>
 </div>
 
-
-            </div>
-        </div>
-    </div>
-    {% endif %}
-</div>
 <script>
     // Function to open the modal
     function openModal() {
@@ -464,6 +535,24 @@
             closeModal();
         }
     }
+    
+    // Set knowledge level bar width based on level
+    document.addEventListener('DOMContentLoaded', function() {
+        const knowledgeLevel = "{{knowledge_level}}";
+        const knowledgeBar = document.querySelector('.bg-purple-500');
+        
+        if (knowledgeBar) {
+            if (knowledgeLevel === "Beginner") {
+                knowledgeBar.style.width = "25%";
+            } else if (knowledgeLevel === "Intermediate") {
+                knowledgeBar.style.width = "50%";
+            } else if (knowledgeLevel === "Advanced") {
+                knowledgeBar.style.width = "75%";
+            } else if (knowledgeLevel === "Expert") {
+                knowledgeBar.style.width = "100%";
+            }
+        }
+    });
 </script>
 
 
