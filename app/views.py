@@ -352,7 +352,7 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
     """
     user_id = request.user.id
 
-    user = User.objects.get(id=request.user.id)
+    # user = User.objects.get(id=request.user.id)
     
     # Get assistant or return 404
     assistant = get_object_or_404(Assistant, id=assistant_id)
@@ -366,7 +366,7 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
         
 
         # Fetch all quizzes for the assistant
-        quizzes = Quiz.objects.filter(assistant_id=assistant, user_id=user)
+        quizzes = Quiz.objects.filter(assistant_id=assistant, user_id=user_id)
 
         # Count total questions across all quizzes for the assistant
         total_questions = Question.objects.filter(quiz__in=quizzes).count()

@@ -353,60 +353,68 @@
                 
 
                 <!-- Quiz Results Card -->
+                {%if is_logged_in%}
+                    <div 
+                        class="rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer transition-all hover:shadow-lg" 
+                        id="quiz-result-card" 
+                        onclick="openModal()"
+                    >
+                    <div class="quiz-card p-4 shadow-lg rounded-lg bg-white text-center max-w-xs mx-auto">
+                        <!-- Title -->
+                        <h3 class="text-2xl font-semibold text-gray-900 mb-4">Quiz Results</h3>
 
-<div 
-    class="rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer transition-all hover:shadow-lg" 
-    id="quiz-result-card" 
-    onclick="openModal()"
->
-<div class="quiz-card p-4 shadow-lg rounded-lg bg-white text-center max-w-xs mx-auto">
-    <!-- Title -->
-    <h3 class="text-2xl font-semibold text-gray-900 mb-4">Quiz Results</h3>
+                        <!-- Total Result Percentage -->
+                        <div class="relative w-32 h-32 mx-auto mb-4">
+                            <svg class="w-full h-full" viewBox="0 0 36 36">
+                                <path
+                                    class="text-gray-200"
+                                    d="M18 2.0845
+                                    a 15.9155 15.9155 0 0 1 0 31.831
+                                    a 15.9155 15.9155 0 0 1 0 -31.831"
+                                    fill="none"
+                                    stroke-width="3"
+                                    stroke="currentColor"
+                                />
+                                <path
+                                    class="text-blue-500"
+                                    d="M18 2.0845
+                                    a 15.9155 15.9155 0 0 1 0 31.831
+                                    a 15.9155 15.9155 0 0 1 0 -31.831"
+                                    fill="none"
+                                    stroke-width="3"
+                                    stroke-dasharray="{{avg_score}}, 100"
+                                    stroke-linecap="round"
+                                    stroke="currentColor"
+                                />
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <span class="text-2xl font-bold text-blue-600">{{grade}}</span>
+                                <span class="text-xs text-gray-500">Grade</span>
+                            </div>
+                        </div>
 
-    <!-- Total Result Percentage -->
-    <div class="relative w-32 h-32 mx-auto mb-4">
-        <svg class="w-full h-full" viewBox="0 0 36 36">
-            <path
-                class="text-gray-200"
-                d="M18 2.0845
-                a 15.9155 15.9155 0 0 1 0 31.831
-                a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke-width="3"
-                stroke="currentColor"
-            />
-            <path
-                class="text-blue-500"
-                d="M18 2.0845
-                a 15.9155 15.9155 0 0 1 0 31.831
-                a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke-width="3"
-                stroke-dasharray="{{avg_score}}, 100"
-                stroke-linecap="round"
-                stroke="currentColor"
-            />
-        </svg>
-        <div class="absolute inset-0 flex flex-col items-center justify-center">
-            <span class="text-2xl font-bold text-blue-600">{{grade}}</span>
-            <span class="text-xs text-gray-500">Grade</span>
+                        <!-- Knowledge Level -->
+                        <p class="text-lg font-medium text-purple-600 mb-4">
+                            {{knowledge_level}}
+                        </p>
+
+                        <!-- Button to View Detailed Results -->
+                        <button 
+                            class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-50"
+                            >
+                            View Detailed Results
+                        </button>
+                    </div>
+                    </div>
+                {%endif%}
+
+
+
+            </div>
         </div>
     </div>
-
-    <!-- Knowledge Level -->
-    <p class="text-lg font-medium text-purple-600 mb-4">
-        {{knowledge_level}}
-    </p>
-
-    <!-- Button to View Detailed Results -->
-    <button 
-        class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-50"
-        >
-        View Detailed Results
-    </button>
+    {% endif %}
 </div>
-</div>
-
 
 <!-- Modal Popup -->
 <div id="quizModal" class="fixed z-50 inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center">
@@ -509,12 +517,6 @@
     </div>
 </div>
 
-
-            </div>
-        </div>
-    </div>
-    {% endif %}
-</div>
 <script>
     // Function to open the modal
     function openModal() {
