@@ -16,6 +16,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.models import User
+from django.template.loader import render_to_string
 
 
 # Local/project imports
@@ -418,7 +419,7 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
 
         # Return JSON response for HTMX requests
         if request.htmx:
-            return JsonResponse({
+            html = render_to_string('assistant/result_modal.html', {
                 'total_quizzes': total_quizzes,
                 'total_correct': total_correct,
                 'total_wrong': total_wrong,
@@ -428,6 +429,8 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
                 "avg_score": avg_score,
                 "grade": grade
             })
+
+            return HttpResponse(html)
         
         # Regular GET response for non-HTMX requests
         return render(request, 'assistant/assistant.html', {

@@ -98,8 +98,8 @@
               hx-trigger="click"
               hx-swap="innerHTML"
               hx-target="#quiz-content"
-              hx-indicator=".header-progress"
-              hx-on="htmx:afterRequest: openQuizModal()"
+              hx-indicator="#quiz-generating-loader"
+              hx-on="click: openQuizModal()"
           >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" class="mr-1">
                 <!-- Clipboard background -->
