@@ -1,6 +1,6 @@
 <div class="relative mx-auto p-6 w-96 shadow-xl rounded-lg bg-white">
     <!-- Close Button (X) -->
-    <button id="close-modal" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600" onclick="closeModal()">
+    <button id="close-modal" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600" hx-on="click: closeModal()">
         &times;
     </button>
 
@@ -92,6 +92,6 @@
     <!-- Action Buttons -->
     <div class="grid grid-cols-2 gap-4">
         <!-- <button class="py-2 bg-blue-500 text-white font-medium rounded text-sm hover:bg-blue-600">Review Answers</button> -->
-        <button class="py-2 bg-gray-200 text-gray-800 font-medium rounded text-sm hover:bg-gray-300" onclick="closeModal()">Close</button>
+        <button class="py-2 bg-gray-200 text-gray-800 font-medium rounded text-sm hover:bg-gray-300" hx-on="click: closeModal()">Close</button>
     </div>
 </div>
