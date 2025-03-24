@@ -358,6 +358,7 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
     # Get assistant or return 404
     assistant = get_object_or_404(Assistant, id=assistant_id)
     
+    
     if request.method == "GET":
         # Get related data
         interactions = Conversation.objects.filter(assistant_id=assistant_id).count()
@@ -365,72 +366,32 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
         is_creator = user_id == assistant.user_id.id
         is_logged_in = request.user.id is not None and request.user.id != ''
         
-
-        # Fetch all quizzes for the assistant
-        quizzes = Quiz.objects.filter(assistant_id=assistant, user_id=user_id)
-
-        # Count total questions across all quizzes for the assistant
-        total_questions = Question.objects.filter(quiz__in=quizzes).count()
-        # Fetch quiz-related data
+        # Fetch quiz-related data for display in the main page
         quiz_attempts = QuizAttempt.objects.filter(user_id=user_id, assistant_id=assistant_id, completed=True)
-        total_quizzes = quiz_attempts.count()
-        total_correct = sum([attempt.total_correct for attempt in quiz_attempts])
-        total_questions = sum([attempt.questionattempt_set.count() for attempt in quiz_attempts])
-        total_wrong = total_questions - total_correct
-        completion_status = "Completed" if total_quizzes > 0 else "Not Completed"
-
-
-        # Calculate average score across all attempts
-        total_attempts = quiz_attempts.count()
-        total_score = sum([attempt.calculate_score() for attempt in quiz_attempts])
-        avg_score = round(total_score / total_attempts, 2) if total_attempts > 0 else 0
-        logger.info(f"get avg score: {avg_score}")
-
-
-        chat_history, keys = get_history(assistant_id=assistant_id, user_id=user_id)
-
-        knowledge_level = next(
-                (entry["knowledge_level"] for entry in chat_history if "summary" in entry),
-                "Beginner"
-            )
-
-        # Calculate knowledge level based on percentage correct
-        # Default grade
-        grade = "F"
-
-        if total_questions > 0:
-            correct_percentage = (total_correct / total_questions) * 100
-
-            # Assign grade based on the percentage
-            if correct_percentage >= 90:
-                grade = "A+"
-            elif correct_percentage >= 80:
-                grade = "A"
-            elif correct_percentage >= 70:
-                grade = "B"
-            elif correct_percentage >= 60:
-                grade = "C"
-            elif correct_percentage >= 50:
-                grade = "D"
-            else:
-                grade = "F"
-
+        total_quizzes = len(quiz_attempts)
         
-
-        # Return JSON response for HTMX requests
-        if request.htmx:
-            html = render_to_string('assistant/result_modal.html', {
-                'total_quizzes': total_quizzes,
-                'total_correct': total_correct,
-                'total_wrong': total_wrong,
-                'completion_status': completion_status,
-                'knowledge_level': knowledge_level,
-                'total_questions': total_questions,
-                "avg_score": avg_score,
-                "grade": grade
-            })
-
-            return HttpResponse(html)
+        # Get knowledge level
+        chat_history, keys = get_history(assistant_id=assistant_id, user_id=user_id)
+        knowledge_level = next(
+            (entry["knowledge_level"] for entry in chat_history if "summary" in entry),
+            "Beginner"
+        )
+        
+        # Calculate grade for display
+        grade = "F"
+        if total_quizzes > 0:
+            total_correct = sum([attempt.total_correct for attempt in quiz_attempts])
+            total_questions = sum([attempt.questionattempt_set.count() for attempt in quiz_attempts])
+            
+            if total_questions > 0:
+                correct_percentage = (total_correct / total_questions) * 100
+                
+                if correct_percentage >= 90: grade = "A+"
+                elif correct_percentage >= 80: grade = "A"
+                elif correct_percentage >= 70: grade = "B"
+                elif correct_percentage >= 60: grade = "C"
+                elif correct_percentage >= 50: grade = "D"
+                else: grade = "F"
         
         # Regular GET response for non-HTMX requests
         return render(request, 'assistant/assistant.html', {
@@ -441,14 +402,9 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
             'is_logged_in': is_logged_in,
             'reviews_by': ratings,
             'total_quizzes': total_quizzes,
-            'total_correct': total_correct,
-            'total_wrong': total_wrong,
-            'completion_status': completion_status,
             'knowledge_level': knowledge_level,
-            'total_questions': total_questions,
-            "avg_score": avg_score,
-            "grade": grade
-        })
+            'grade': grade
+        })  
     
     else:  # POST request
         try:
@@ -491,3 +447,66 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
                 "is_logged_in": is_logged_in,
                 "error_message": "Error updating rating"
             })
+        
+
+
+def quiz_result_modal(request, assistant_id):
+    """
+    Handle the quiz result modal view for HTMX requests.
+    Returns the rendered HTML for the quiz result modal.
+    """
+    user_id = request.user.id
+    assistant = get_object_or_404(Assistant, id=assistant_id)
+    
+    # Fetch quiz-related data
+    quiz_attempts = QuizAttempt.objects.filter(user_id=user_id, assistant_id=assistant, completed=True)
+    total_quizzes = len(quiz_attempts)
+    total_correct = sum([attempt.total_correct for attempt in quiz_attempts])
+    total_questions = sum([attempt.questionattempt_set.count() for attempt in quiz_attempts])
+    total_wrong = total_questions - total_correct
+    completion_status = "Completed" if total_quizzes > 0 else "Not Completed"
+    
+    # Calculate average score across all attempts
+    total_attempts = quiz_attempts.count()
+    total_score = sum([attempt.calculate_score() for attempt in quiz_attempts])
+    avg_score = round(total_score / total_attempts, 2) if total_attempts > 0 else 0
+    
+    # Get knowledge level from chat history
+    chat_history, keys = get_history(assistant_id=assistant_id, user_id=user_id)
+    knowledge_level = next(
+        (entry["knowledge_level"] for entry in chat_history if "summary" in entry),
+        "Beginner"
+    )
+    
+    # Calculate grade based on percentage correct
+    grade = "F"
+    if total_questions > 0:
+        correct_percentage = (total_correct / total_questions) * 100
+        
+        # Assign grade based on the percentage
+        if correct_percentage >= 90:
+            grade = "A+"
+        elif correct_percentage >= 80:
+            grade = "A"
+        elif correct_percentage >= 70:
+            grade = "B"
+        elif correct_percentage >= 60:
+            grade = "C"
+        elif correct_percentage >= 50:
+            grade = "D"
+        else:
+            grade = "F"
+    
+    # Render the modal template
+    html = render_to_string('assistant/result_modal.html', {
+        'total_quizzes': total_quizzes,
+        'total_correct': total_correct,
+        'total_wrong': total_wrong,
+        'completion_status': completion_status,
+        'knowledge_level': knowledge_level,
+        'total_questions': total_questions,
+        "avg_score": avg_score,
+        "grade": grade
+    })
+    
+    return HttpResponse(html)
