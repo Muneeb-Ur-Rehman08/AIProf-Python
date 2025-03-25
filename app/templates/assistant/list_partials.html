@@ -3,7 +3,7 @@
         {% if assistants %}
         {% for assistant in assistants %}
         {% if assistant.subject and assistant.topic and assistant.description %}
-        <a href="{% url 'assistant_detail' assistant_id=assistant.id %}">
+        <a href="{% url 'assistant_detail' assistant.id %}">
             <div
                 class="card rounded-lg border bg-white hover:bg-gray-100 text-card-foreground shadow-sm overflow-hidden transition-all duration-300 hover:shadow-lg">
                 <!-- Card Header with Avatar -->

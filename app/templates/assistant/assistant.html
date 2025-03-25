@@ -221,38 +221,40 @@
                     <h3 class="text-2xl font-semibold text-gray-900">Reviews</h3>
                     
                     {% if reviews_by|length > 0 %}
-                        {% for last_review in reviews_by %}
-                        <div class="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden transition-all hover:shadow-lg" data-v0-t="card">
-                            <div class="p-6 bg-white hover:bg-gradient-to-br hover:from-indigo-50 hover:to-purple-50 transition-all duration-300">
-                                <div class="flex items-center mb-4">
-                                    {% for star in "12345"|make_list %}
-                                    {% if star|add:"0" <= last_review.rating|add:"0" %}
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                        height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round"
-                                        class="lucide lucide-star h-5 w-5 text-yellow-400 mr-1">
-                                        <polygon
-                                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
-                                        </polygon>
-                                    </svg>
-                                    {% else %}
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                        height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round"
-                                        class="lucide lucide-star h-5 w-5 text-gray-300 mr-1">
-                                        <polygon
-                                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
-                                        </polygon>
-                                    </svg>
-                                    {% endif %}
-                                    {% endfor %}
-                                    <p class="text-gray-600 ml-2">{{last_review.rating}}</p>
+                        <div class="max-h-[600px] overflow-y-auto space-y-4">
+                            {% for last_review in reviews_by %}
+                            <div class="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden transition-all hover:shadow-lg" data-v0-t="card">
+                                <div class="p-6 bg-white hover:bg-gradient-to-br hover:from-indigo-50 hover:to-purple-50 transition-all duration-300">
+                                    <div class="flex items-center mb-4">
+                                        {% for star in "12345"|make_list %}
+                                        {% if star|add:"0" <= last_review.rating|add:"0" %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                            height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round"
+                                            class="lucide lucide-star h-5 w-5 text-yellow-400 mr-1">
+                                            <polygon
+                                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                                            </polygon>
+                                        </svg>
+                                        {% else %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                            height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round"
+                                            class="lucide lucide-star h-5 w-5 text-gray-300 mr-1">
+                                            <polygon
+                                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                                            </polygon>
+                                        </svg>
+                                        {% endif %}
+                                        {% endfor %}
+                                        <p class="text-gray-600 ml-2">{{last_review.rating}}</p>
+                                    </div>
+                                    <p class="text-gray-600 mb-4">{{last_review.review}}</p>
+                                    <p class="text-sm text-gray-500">- {{last_review.user.username}}, {{last_review.created_at|date:"F j, Y"}}</p>
                                 </div>
-                                <p class="text-gray-600 mb-4">{{last_review.review}}</p>
-                                <p class="text-sm text-gray-500">- {{last_review.user.username}}, {{last_review.created_at|date:"F j, Y"}}</p>
                             </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
                     {% else %}
                         <div class="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden transition-all hover:shadow-lg" data-v0-t="card">
                             <div class="p-6 bg-white text-center">
@@ -260,7 +262,6 @@
                             </div>
                         </div>
                     {% endif %}
-              
                 </div>
             </div>
             <div class="space-y-8">
@@ -401,7 +402,7 @@
                             <!-- Button to View Detailed Results -->
                             <button 
                                 class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-50"
-                                hx-get="{% url 'assistant_detail' assistant.id %}"
+                                hx-get="{% url 'result_modal' assistant.id %}"
                                 hx-trigger="click" 
                                 hx-target="#quizModal" 
                                 hx-swap="innerHTML" 
