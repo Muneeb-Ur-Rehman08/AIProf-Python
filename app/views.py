@@ -15,6 +15,7 @@ from django.http import Http404, HttpResponse, JsonResponse, StreamingHttpRespon
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.cache import cache_page
 from django.contrib.auth.models import User
 from django.template.loader import render_to_string
 
@@ -345,6 +346,7 @@ def list_assistants(request):
 
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
+@cache_page(60 * 15)    # Cache for 15 minutes
 def assistant_detail(request, assistant_id: Optional[str] = None):
     """
     Handle assistant detail view for both GET and POST requests.
@@ -396,8 +398,6 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
         # Regular GET response for non-HTMX requests
         return render(request, 'assistant/assistant.html', {
             'assistant': assistant,
-            'interactions': interactions,
-            'reviews_count': len(ratings),
             'is_creator': is_creator,
             'is_logged_in': is_logged_in,
             'reviews_by': ratings,
@@ -433,8 +433,6 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
             
             return render(request, 'assistant/assistant.html', {
                 "assistant": assistant,
-                "interactions": interactions,
-                "reviews_count": len(ratings),
                 "is_creator": is_creator,
                 "is_logged_in": is_logged_in,
                 "success_message": "Rating updated successfully"
