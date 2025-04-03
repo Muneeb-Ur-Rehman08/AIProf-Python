@@ -96,6 +96,7 @@ class ChatModule:
         # prompt = assistant_config.get('prompt', '')
         teacher_instructions = assistant_config.get('teacher_instructions', '')
         prompt_instructions = assistant_config.get('prompt_instructions', '')
+        description = assistant_config.get('description', '')
         user_name = assistant_config.get('user_name', '')
         if 'def ' in prompt or 'class ' in prompt or '{' in prompt:  # Simplified check for code presence
             # Wrap in triple backticks and escape any curly braces
@@ -105,7 +106,7 @@ class ChatModule:
 
         # System message to explain the query first, provide tailored exercises, and adapt based on history
         system_message = f"""
-        You are an adaptive AI educator specializing in {topic} in {subject}. Your role is to:
+        You are an adaptive AI educator specializing in {topic} in {subject} with {description}. Your role is to:
         1. **Analyze the user's query first** and tailor your response accordingly, considering context, user history, and {{knowledge level}}.
         2. Explain the user's query clearly and thoroughly using the provided **context**.
         3. Adapt explanations and exercises based on user feedback and knowledge level (beginner, intermediate, advanced or expert).

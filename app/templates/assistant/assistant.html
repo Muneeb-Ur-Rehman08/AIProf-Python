@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+{% load youtube_filters %}
 
 <div class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-16">
     <!-- <header class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-sm shadow-sm z-10">
@@ -160,44 +161,104 @@
                         Read more
                     </button>
                 </div>
+
+
                 <div class="relative rounded-xl overflow-hidden shadow-2xl bg-gray-900">
-                    <div class="aspect-video bg-gray-800 flex items-center justify-center relative">
-                        <div
-                            class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent flex items-end p-8">
-                            <div class="w-full">
-                                <h3 class="text-2xl font-semibold text-white mb-2">Introduction to React Hooks</h3>
-                                <p class="text-gray-300 text-lg max-w-3xl">Learn the basics of React Hooks and how they
-                                    can simplify your components.</p>
-                            </div>
-                        </div><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round"
-                            class="lucide lucide-play h-20 w-20 text-white opacity-75 hover:opacity-100 transition-opacity cursor-pointer">
-                            <polygon points="6 3 20 12 6 21 6 3"></polygon>
-                        </svg>
-                    </div><button
-                        class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 h-9 rounded-md px-3 absolute top-4 right-4 bg-white text-indigo-600 hover:bg-indigo-50 shadow-lg hover:shadow-xl transition-all duration-300">Watch
-                        Now</button><button
-                        class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:text-accent-foreground h-10 w-10 absolute top-1/2 left-4 -translate-y-1/2 text-white hover:bg-white/20 transition-colors"><svg
-                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            class="lucide lucide-chevron-left h-8 w-8">
-                            <path d="m15 18-6-6 6-6"></path>
-                        </svg></button><button
-                        class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:text-accent-foreground h-10 w-10 absolute top-1/2 right-4 -translate-y-1/2 text-white hover:bg-white/20 transition-colors"><svg
-                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            class="lucide lucide-chevron-right h-8 w-8">
-                            <path d="m9 18 6-6-6-6"></path>
-                        </svg></button>
+    <div class="aspect-video bg-gray-800 flex items-center justify-center relative">
+        {% if youtube_urls %}
+            <div id="video-carousel" class="w-full h-full">
+                {% for url in youtube_urls %}
+                    <div class="video-slide {% if forloop.first %}active{% else %}hidden{% endif %}" data-index="{{ forloop.counter0 }}">
+                        <iframe 
+                            class="w-full h-full aspect-video"
+                            src="{{ url|youtube_embed_url }}" 
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                {% empty %}
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent flex items-end p-8">
+                        <div class="w-full">
+                            <h3 class="text-2xl font-semibold text-white mb-2">{{ assistant.topic|default:"Introduction to Topic" }}</h3>
+                    <p class="text-gray-300 text-lg max-w-3xl">No video available</p>
+                        </div>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="lucide lucide-play h-20 w-20 text-white opacity-75 hover:opacity-100 transition-opacity cursor-pointer">
+                        <polygon points="6 3 20 12 6 21 6 3"></polygon>
+                    </svg>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- Your original placeholder content -->
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent flex items-end p-8">
+                <div class="w-full">
+                    <h3 class="text-2xl font-semibold text-white mb-2">{{ assistant.topic|default:"Introduction to Topic" }}</h3>
+                    <p class="text-gray-300 text-lg max-w-3xl">No video available</p>
                 </div>
-                <div class="flex justify-center gap-2">
+            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide lucide-play h-20 w-20 text-white opacity-75 hover:opacity-100 transition-opacity cursor-pointer">
+                <polygon points="6 3 20 12 6 21 6 3"></polygon>
+            </svg>
+        {% endif %}
+    </div>
+    
+    {% if youtube_urls %}
+        <!-- Watch Now button -->
+        <!-- <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-9 rounded-md px-3 absolute top-4 right-4 bg-white text-indigo-600 hover:bg-indigo-50 shadow-lg hover:shadow-xl transition-all duration-300">
+            Watch Now
+        </button> -->
+        
+        <!-- Navigation buttons (only show if more than one video) -->
+        {% if youtube_urls|length > 1 %}
+            <button 
+                id="prev-video" 
+                class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:text-accent-foreground h-10 w-10 absolute top-1/2 left-4 -translate-y-1/2 text-white hover:bg-white/20 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="lucide lucide-chevron-left h-8 w-8">
+                    <path d="m15 18-6-6 6-6"></path>
+                </svg>
+            </button>
+            <button 
+                id="next-video" 
+                class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:text-accent-foreground h-10 w-10 absolute top-1/2 right-4 -translate-y-1/2 text-white hover:bg-white/20 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="lucide lucide-chevron-right h-8 w-8">
+                    <path d="m9 18 6-6-6-6"></path>
+                </svg>
+            </button>
+        {% endif %}
+    {% endif %}
+</div>
+
+<!-- Indicator dots -->
+{% if youtube_urls|length > 1 %}
+<div class="flex justify-center gap-2">
+    {% for url in youtube_urls %}
+        <button 
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground w-3 h-3 p-0 rounded-full {% if forloop.first %}bg-indigo-600{% else %}bg-gray-300{% endif %} video-indicator"
+            data-index="{{ forloop.counter0 }}">
+        </button>
+    {% endfor %}
+</div>
+{% endif %}
+
+
+                <!-- <div class="flex justify-center gap-2">
                     <button
                         class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground w-3 h-3 p-0 rounded-full bg-indigo-600"></button><button
                         class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground w-3 h-3 p-0 rounded-full bg-gray-300"></button><button
                         class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground w-3 h-3 p-0 rounded-full bg-gray-300">
                     </button>
-                </div>
+                </div> -->
                 <div class="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden transition-all hover:shadow-lg"
                     data-v0-t="card">
                     <div
@@ -508,6 +569,55 @@
             }
         }
     });
+    
+document.addEventListener('DOMContentLoaded', function() {
+    const videoSlides = document.querySelectorAll('.video-slide');
+    const indicators = document.querySelectorAll('.video-indicator');
+    const prevButton = document.getElementById('prev-video');
+    const nextButton = document.getElementById('next-video');
+    let currentIndex = 0;
+    const totalSlides = videoSlides.length;
+    
+    if (totalSlides <= 1) return; // No need for carousel if only one video
+    
+    function showSlide(index) {
+        // Hide all slides
+        videoSlides.forEach(slide => slide.classList.add('hidden'));
+        // Show the current slide
+        videoSlides[index].classList.remove('hidden');
+        
+        // Update indicators
+        indicators.forEach(indicator => indicator.classList.remove('bg-indigo-600'));
+        indicators.forEach(indicator => indicator.classList.add('bg-gray-300'));
+        indicators[index].classList.remove('bg-gray-300');
+        indicators[index].classList.add('bg-indigo-600');
+        
+        currentIndex = index;
+    }
+    
+    // Previous button
+    if (prevButton) {
+        prevButton.addEventListener('click', function() {
+            const newIndex = (currentIndex - 1 + totalSlides) % totalSlides;
+            showSlide(newIndex);
+        });
+    }
+    
+    // Next button
+    if (nextButton) {
+        nextButton.addEventListener('click', function() {
+            const newIndex = (currentIndex + 1) % totalSlides;
+            showSlide(newIndex);
+        });
+    }
+    
+    // Indicator buttons
+    indicators.forEach((indicator, index) => {
+        indicator.addEventListener('click', function() {
+            showSlide(index);
+        });
+    });
+});
 </script>
 
 

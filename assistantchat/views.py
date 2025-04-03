@@ -137,7 +137,7 @@ def chat_query(request, ass_id=None):
         chat_history, keys = get_history(assistant_id=assistant_id, user_id=user_id)
 
         has_reviewed = AssistantRating.objects.filter(user=request.user, assistant=assistant).exists()
-        show_review = len(chat_history) >= 1 and not has_reviewed
+        show_review = len(chat_history) >= 9 and not has_reviewed
 
         # Define assistant configuration
         # assistant_config = {
@@ -775,6 +775,7 @@ def assistant_config(assistant_id, user_id):
     return {
             "subject": assistant.subject,
             "topic": assistant.topic,
+            "description": assistant.description,
             "teacher_instructions": assistant.teacher_instructions,
             "user_name": user.first_name,
             "prompt_instructions": mermaid_instructions

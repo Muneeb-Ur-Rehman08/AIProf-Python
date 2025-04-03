@@ -45,37 +45,47 @@
         </label>
       </div>
 
-      <!-- Sort dropdown -->
-      <div class="hidden sm:w-56 sm:block">
-        <div class="dropdown w-full" id="sort-dropdown">
-          <label tabindex="0" class="btn btn-block border-gray-300 border justify-between bg-white text-black hover:bg-gray-100 rounded-lg">
-            Sort By
-            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </label>
-          <div tabindex="0" class="dropdown-content z-[1] w-full p-4 shadow border border-gray-300 bg-white rounded-lg mt-2">
-            <div class="space-y-2">
-              {% for value, label in sorting_options.items %}
-              <label class="label cursor-pointer justify-start gap-x-2 hover:bg-gray-100 rounded-lg px-2">
-                <input
-                  type="radio"
-                  name="sort" 
-                  value="{{ label }}"
-                  class="radio radio-sm"
-                  hx-get="{% url 'list_assistants' %}"
-                  hx-push-url="true"
-                  hx-target="#assistants-list"
-                  hx-trigger="change"
-                  hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort'],[name='created_by_me']"
-                />
-                <span class="label-text text-black">{{ label }}</span>
-              </label>
-              {% endfor %}
+      
+        <!-- Sort dropdown -->
+        <div class="hidden sm:w-56 sm:block">
+          <div class="dropdown w-full" id="sort-dropdown">
+            <label tabindex="0" class="btn btn-block border-gray-300 border justify-between bg-white text-black hover:bg-gray-100 rounded-lg">
+              Sort By
+              <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </label>
+            <div tabindex="0" class="dropdown-content z-[1] w-full p-4 shadow border border-gray-300 bg-white rounded-lg mt-2">
+              <div class="space-y-2">
+                {% for value, label in sorting_options.items %}
+                <label class="label cursor-pointer justify-start gap-x-2 hover:bg-gray-100 rounded-lg px-2">
+                  <input
+                    type="radio"
+                    name="sort" 
+                    value="{{ label }}"
+                    class="radio radio-sm"
+                    hx-get="{% url 'list_assistants' %}"
+                    hx-push-url="true"
+                    hx-target="#assistants-list"
+                    hx-trigger="change"
+                    hx-include="[name='subject']:checked,[name='topic']:checked,[name='keyword'],[name='filter_rating']:checked,[name='sort'],[name='created_by_me']"
+                  />
+                  <span class="label-text text-black">{{ label }}</span>
+                </label>
+                {% endfor %}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+
+
+        <!-- Selected Filters Container -->
+        <div class="selected-filters flex flex-wrap items-center">
+          
+          <div id="selected-filters" class="flex gap-2">
+              <!-- Filters will be dynamically inserted here -->
+          </div>
+        </div>
 
       <!-- Created by me filter -->
       <!-- <div class="flex items-center">
@@ -112,4 +122,36 @@
   </div>
 </div>
 </div>
+
+
+
+<script>
+  // Function to update the selected filters display
+  function updateSelectedFilters() {
+      const selectedSubject = document.querySelector('#subject-filter').value;
+      const selectedTopic = document.querySelector('#topic-filter').value;
+      const selectedRating = document.querySelector('#rating-filter').value;
+
+      let selectedFiltersHTML = '<span class="font-semibold">Selected Filters:</span>';
+
+      if (selectedSubject) {
+          selectedFiltersHTML += `<span class="bg-gray-200 px-2 py-1 rounded-full">${selectedSubject}</span>`;
+      }
+      if (selectedTopic) {
+          selectedFiltersHTML += `<span class="bg-gray-200 px-2 py-1 rounded-full">${selectedTopic}</span>`;
+      }
+      if (selectedRating) {
+          selectedFiltersHTML += `<span class="bg-gray-200 px-2 py-1 rounded-full">${selectedRating} Stars</span>`;
+      }
+
+      // Update the HTML content of the selected-filters div
+      document.getElementById('selected-filters').innerHTML = selectedFiltersHTML;
+  }
+
+  // Event listeners for when a filter is selected
+  document.querySelector('#subject-filter').addEventListener('change', updateSelectedFilters);
+  document.querySelector('#topic-filter').addEventListener('change', updateSelectedFilters);
+  document.querySelector('#rating-filter').addEventListener('change', updateSelectedFilters);
+</script>
+
 {% endblock %}
