@@ -36,7 +36,7 @@ from app.utils.vector_store import (
 )
 from assistantchat.models import Conversation, QuizAttempt, Quiz, Question
 from assistantchat.views import get_history
-from users.models import Assistant, AssistantRating, Subject, Topic
+from users.models import Assistant, AssistantRating, Subject, Topic, PDFDocument
 from users.add import populate_subjects_and_topics
 
 # populate_subjects_and_topics()
@@ -381,6 +381,18 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
             (entry["knowledge_level"] for entry in chat_history if "summary" in entry),
             "Beginner"
         )
+
+
+        # Get all YouTube URLs from PDFDocuments
+        youtube_urls = []
+        documents = PDFDocument.objects.filter(assistant_id=assistant_id)
+        
+        for document in documents:
+            if document.urls:
+                for url in document.urls:
+                    # Check if YouTube URL using existing validation logic
+                    if 'youtube.com' in url or 'youtu.be' in url:
+                        youtube_urls.append(url)
         
         # Calculate grade for display
         grade = "F"
@@ -406,7 +418,9 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
             'reviews_by': ratings,
             'total_quizzes': total_quizzes,
             'knowledge_level': knowledge_level,
-            'grade': grade
+            'grade': grade,
+            'youtube_urls': youtube_urls,
+            'total_videos': len(youtube_urls)
         })  
     
     else:  # POST request
