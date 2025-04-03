@@ -251,6 +251,7 @@ def list_assistants(request):
     if topics:
         filters &= Q(topic__in=topics)
     
+    selected_rating = request.GET.getlist('filter_rating')
     # Rating filter
     if request.GET.getlist('filter_rating'):
         rating_q = Q()
@@ -330,7 +331,10 @@ def list_assistants(request):
     if request.htmx:
         return render(request, 'assistant/list_partials.html', {
             'assistants': assistants,
-            'current_sort': sort_label
+            'current_sort': sort_label,
+            'selected_subject': subjects,
+            'selected_topic': topics,
+            'selected_rating': selected_rating,
         })
     
     return render(request, 'assistant/list.html', {
@@ -346,7 +350,6 @@ def list_assistants(request):
 
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
-@cache_page(60 * 15)    # Cache for 15 minutes
 def assistant_detail(request, assistant_id: Optional[str] = None):
     """
     Handle assistant detail view for both GET and POST requests.
@@ -370,7 +373,7 @@ def assistant_detail(request, assistant_id: Optional[str] = None):
         
         # Fetch quiz-related data for display in the main page
         quiz_attempts = QuizAttempt.objects.filter(user_id=user_id, assistant_id=assistant_id, completed=True)
-        total_quizzes = len(quiz_attempts)
+        total_quizzes = quiz_attempts.count()
         
         # Get knowledge level
         chat_history, keys = get_history(assistant_id=assistant_id, user_id=user_id)
