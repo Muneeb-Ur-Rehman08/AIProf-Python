@@ -13,6 +13,10 @@ from django.contrib.auth.models import User
 from typing import Optional
 from asgiref.sync import sync_to_async
 from .views import save_history
+import asyncio
+from collections import deque
+import re  # For sentence splitting
+import uuid
 
 
 load_dotenv()
@@ -249,69 +253,105 @@ class VoiceAssistantConsumer(AsyncWebsocketConsumer):
                 ]
             )
 
-            import re
-            # Initialize buffers for text and audio accumulation.
-            buffer_text = ""
-            buffer_audio = b""
+            # Create a queue for audio chunks
+            audio_queue = asyncio.Queue()
+            send_task = None
+            chunk_counter = 0
 
-            for chunk in completion:
+            async def audio_producer():
+                """Collect audio and text chunks from the stream"""
+                nonlocal chunk_counter
+                try:
+                    loop = asyncio.get_event_loop()
+                    for chunk in completion:
+                        if not chunk.choices or not chunk.choices[0].delta:
+                            continue
+                        
+                        delta = chunk.choices[0].delta
+                        text_chunk = ""
+                        audio_piece = None
 
-                # Safely check for choices and the delta attribute.
-                if not chunk.choices or len(chunk.choices) == 0:
-                    continue
+                        if hasattr(delta, 'audio') and delta.audio:
+                            # Extract both text transcript and audio data
+                            text_chunk = delta.audio.get('transcript', '')
+                            audio_piece = delta.audio.get('data')
 
-                delta = chunk.choices[0].delta
-                if not delta:
-                    continue
+                        # Process text chunk immediately
+                        if text_chunk:
+                            await audio_queue.put(('text', text_chunk))
 
-                text_chunk = ""
-                # Process audio: check if a transcript is provided and audio data is available.
-                if hasattr(delta, 'audio') and delta.audio:
-                    transcript_piece = delta.audio.get('transcript')
-                    if transcript_piece:
-                        text_chunk = transcript_piece
-                    audio_piece = delta.audio.get('data')
-                    if audio_piece:
-                        # Decode and accumulate audio binary data.
-                        audio_binary = base64.b64decode(audio_piece)
-                        buffer_audio += audio_binary
+                        # Process audio data
+                        if audio_piece:
+                            decoded_audio = await loop.run_in_executor(
+                                None, 
+                                base64.b64decode, 
+                                audio_piece
+                            )
+                            await audio_queue.put(('audio', decoded_audio))
+                            
+                except Exception as e:
+                    print(f"Audio producer error: {str(e)}")
+                finally:
+                    await audio_queue.put(None)
 
-                # Accumulate text if available.
-                if text_chunk:
-                    buffer_text += text_chunk
+            async def audio_consumer():
+                """Process combined text/audio chunks"""
+                nonlocal chunk_counter
+                buffer_audio = bytearray()
+                message_id = str(uuid.uuid4())  # Generate single ID for all chunks
 
-                    # Check for sentence boundaries using regex.
-                    # This splits the buffered text into sentences based on ending punctuation (.?!).
-                    sentences = re.split(r'(?<=[.!?])\s+', buffer_text)
-                    # If there is at least one full sentence (i.e. more than one segment) or
-                    # the entire buffer ends with a sentence-ending punctuation, send the completed sentences.
-                    if len(sentences) > 1 or buffer_text.endswith(('.', '?', '!')):
-                        # If the buffer does not end with punctuation then the last segment is incomplete.
-                        complete_sentences = sentences[:-1] if not buffer_text.endswith(('.', '?', '!')) else sentences
-                        for sent in complete_sentences:
-                            # Aggregate audio (if available) into a base64-encoded string.
-                            audio_base64 = base64.b64encode(buffer_audio).decode("utf-8") if buffer_audio else None
+                while True:
+                    item = await audio_queue.get()
+                    if item is None:  # End of stream
+                        # Send any remaining audio with complete=True
+                        if buffer_audio:
                             await self.send(json.dumps({
                                 "type": "assistant_response",
-                                "message": sent,
-                                "audio_data": audio_base64,
+                                "audio_data": base64.b64encode(bytes(buffer_audio)).decode("utf-8"),
                                 "assistant_id": assistant_id,
-                                "id": chunk.id
+                                "id": message_id,
+                                "chunk_id": f"chunk-{chunk_counter}",
+                                "complete": True  # Add complete flag for final chunk
                             }))
-                        # Retain any incomplete sentence in the buffer and reset the audio buffer.
-                        buffer_text = sentences[-1] if len(sentences) > 1 else ""
-                        buffer_audio = b""
+                        break
+                    
+                    item_type, data = item
+                    
+                    if item_type == 'text':
+                        await self.send(json.dumps({
+                            "type": "assistant_response",
+                            "message": data,
+                            "audio_data": base64.b64encode(bytes(buffer_audio)).decode("utf-8") if buffer_audio else None,
+                            "assistant_id": assistant_id,
+                            "id": message_id,
+                            "chunk_id": f"chunk-{chunk_counter}",
+                            "complete": False  # Regular chunk
+                        }))
+                        chunk_counter += 1
+                        buffer_audio.clear()
+                        
+                    elif item_type == 'audio':
+                        buffer_audio.extend(data)
+                        
+                        while len(buffer_audio) >= 30000:
+                            chunk_data = bytes(buffer_audio[:30000])
+                            del buffer_audio[:30000]
+                            await self.send(json.dumps({
+                                "type": "assistant_response",
+                                "audio_data": base64.b64encode(chunk_data).decode("utf-8"),
+                                "assistant_id": assistant_id,
+                                "id": message_id,
+                                "chunk_id": f"chunk-{chunk_counter}",
+                                "complete": False  # Regular chunk
+                            }))
+                            chunk_counter += 1
 
-            # Flush any remaining text or audio after the stream completes.
-            if buffer_text or buffer_audio:
-                audio_base64 = base64.b64encode(buffer_audio).decode("utf-8") if buffer_audio else None
-                await self.send(json.dumps({
-                    "type": "assistant_response",
-                    "message": buffer_text,
-                    "audio_data": audio_base64,
-                    "assistant_id": assistant_id,
-                    "id": chunk.id  # using the last chunk's id or a new unique identifier
-                }))
+            # Run producer and consumer concurrently
+            producer_task = asyncio.create_task(audio_producer())
+            consumer_task = asyncio.create_task(audio_consumer())
+            
+            # Wait for both tasks to complete
+            await asyncio.gather(producer_task, consumer_task)
 
         except Exception as e:
             error_message = f"Error processing audio: {str(e)}"
